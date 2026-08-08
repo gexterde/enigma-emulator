@@ -1,0 +1,6 @@
+{
+  "name": "Enigma Emulator",
+  "description": "Tactile WWII Enigma M3 Machine Emulator with rotor configuration, steckerbrett plugboard, illuminated lampboard, and real-time signal path tracing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,82 @@
+export type RotorType =
+  // Enigma I / M3 / M4 Naval
+  | 'I'
+  | 'II'
+  | 'III'
+  | 'IV'
+  | 'V'
+  | 'VI'
+  | 'VII'
+  | 'VIII'
+  // M4 Naval Greek Rotors
+  | 'Beta'
+  | 'Gamma'
+  // Commercial Enigma A, B (1924)
+  | 'IC'
+  | 'IIC'
+  | 'IIIC'
+  // German Railway (Rocket) (1941)
+  | 'I-Rocket'
+  | 'II-Rocket'
+  | 'III-Rocket'
+  // Swiss K (1939)
+  | 'I-K'
+  | 'II-K'
+  | 'III-K';
+
+export type ReflectorType =
+  // Standard Reflectors
+  | 'Reflector A'
+  | 'Reflector B'
+  | 'Reflector C'
+  | 'Reflector B Thin'
+  | 'Reflector C Thin'
+  // German Railway (Rocket)
+  | 'UKW-Rocket'
+  // Swiss K
+  | 'UKW-K'
+  // Backward compatibility aliases
+  | 'UKW-B'
+  | 'UKW-C';
+
+export interface RotorState {
+  type: RotorType;
+  ring: number; // 1 to 26
+  start: number; // 0 to 25 (0 = A, 1 = B, ...)
+  current: number; // 0 to 25
+}
+
+export interface EnigmaConfig {
+  leftRotor: RotorState;   // Position 1 (Fast rotor)
+  middleRotor: RotorState; // Position 2
+  rightRotor: RotorState;  // Position 3 (Slow rotor)
+  reflector: ReflectorType;
+  plugboard: Record<string, string>; // e.g. { 'A': 'B', 'B': 'A' }
+}
+
+export interface StepTrace {
+  stage: string;
+  inChar: string;
+  outChar: string;
+  inNum: number;
+  outNum: number;
+  note?: string;
+}
+
+export interface EncryptionResult {
+  outputChar: string;
+  trace: StepTrace[];
+  rotorsBefore: { left: string; middle: string; right: string };
+  rotorsAfter: { left: string; middle: string; right: string };
+}
+
+export interface LogEntry {
+  id: string;
+  timestamp: string;
+  inputChar: string;
+  outputChar: string;
+  configString: string;
+  trace: StepTrace[];
+}
+
+export type ActiveTab = 'machine' | 'plugboard' | 'rotors' | 'log' | 'codebook';
