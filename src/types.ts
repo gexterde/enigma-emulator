@@ -41,13 +41,6 @@ export type ReflectorType =
     // ─── ÚJ KETTŐS REFLEKTOR TÍPUS ───
   | 'UKW-Dual-Dynamic';
 
-export interface ReflectorState {
-  type: ReflectorType;
-  ring: number;    // 1 to 26 (Gyűrűbeállítás a reflektorhoz is!)
-  start: number;   // 0 to 25 (Kezdőpozíció: 0 = A, 1 = B, ...)
-  current: number; // 0 to 25 (Aktuális pozíció forgás közben)
-}
-
 export interface RotorState {
   type: RotorType;
   ring: number; // 1 to 26
@@ -60,7 +53,7 @@ export interface EnigmaConfig {
   middleRotor: RotorState; // Position 2
   rightRotor: RotorState;  // Position 3 (Fast rotor)
   fourthRotor: RotorState; // Position 4 (M4 Naval fixed 4th rotor: Beta/Gamma)
-  reflector: ReflectorState; //ReflectorType;
+  reflector: ReflectorType;
   plugboard: Record<string, string>; // e.g. { 'A': 'B', 'B': 'A' }
 }
 
@@ -76,8 +69,8 @@ export interface StepTrace {
 export interface EncryptionResult {
   outputChar: string;
   trace: StepTrace[];
-  rotorsBefore: { left: string; middle: string; right: string; fourth?: string; reflector: string };
-  rotorsAfter: { left: string; middle: string; right: string; fourth?: string; reflector: string };
+  rotorsBefore: { left: string; middle: string; right: string; fourth?: string };
+  rotorsAfter: { left: string; middle: string; right: string; fourth?: string };
 }
 
 export interface LogEntry {
