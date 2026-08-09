@@ -52,7 +52,8 @@ export const REFLECTOR_SPECS: Record<ReflectorType, { wiring: string; modelName:
 
   // Aliases for backward compatibility
   'UKW-B': { wiring: 'YRUHQSLDPXNGOKMIEBFZCWVJAT', modelName: 'Reflector B (UKW-B)' },
-  'UKW-C': { wiring: 'FVPJIAOYEDRZXWGCTKUQSBNMHL', modelName: 'Reflector C (UKW-C)' }
+  'UKW-C': { wiring: 'FVPJIAOYEDRZXWGCTKUQSBNMHL', modelName: 'Reflector C (UKW-C)' },
+  'UKW-Dual-Dynamic': { wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ',  modelName: 'Kombinált Önkódoló (Dinamikus)',  year: 'Alternatív 1943'  }
 };
 
 export const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -90,12 +91,14 @@ export function getRotorNotchPos(type: RotorType): number {
 
 // Formats string preview like: "UKW-B | I-II-III | 01-01-01 | 01-01-01" or "UKW-B | I-II-III-β | 01-01-01-01 | 01-01-01-01"
 export function generateConfigString(config: EnigmaConfig, ringFormat: 'number' | 'letter' = 'number'): string {
-  const reflector = config.reflector;
+ const reflectorName = typeof config.reflector === 'object' && config.reflector !== null
+    ? config.reflector.type 
+    : (config.reflector as unknown as string || 'UKW-B'); 
   const fourthLabel = config.fourthRotor.type === 'Beta' ? 'β' : config.fourthRotor.type === 'Gamma' ? 'γ' : config.fourthRotor.type;
   const rotors = `${config.leftRotor.type}-${config.middleRotor.type}-${config.rightRotor.type}-${fourthLabel}`;
   const starts = `${formatRotorPos(config.leftRotor.current, ringFormat)}-${formatRotorPos(config.middleRotor.current, ringFormat)}-${formatRotorPos(config.rightRotor.current, ringFormat)}-${formatRotorPos(config.fourthRotor.current, ringFormat)}`;
   const rings = `${formatRotorRing(config.leftRotor.ring, ringFormat)}-${formatRotorRing(config.middleRotor.ring, ringFormat)}-${formatRotorRing(config.rightRotor.ring, ringFormat)}-${formatRotorRing(config.fourthRotor.ring, ringFormat)}`;
-  return `${reflector} | ${rotors} | ${starts} | ${rings}`;
+  return `${reflectorName} | ${rotors} | ${starts} | ${rings}`;
 }
 
 /**
@@ -125,6 +128,10 @@ export function stepRotors(config: EnigmaConfig): EnigmaConfig {
     // 3. Left (Slow) rotor steps if middle rotor was at notch
     if (middleAtNotch) {
       newConfig.leftRotor.current = (newConfig.leftRotor.current + 1) % 26;
+
+      if (newConfig.reflector.type === 'UKW-Dual-Dynamic') {
+        newConfig.reflector.current = (newConfig.reflector.current + 1) % 26;
+      }
     }
   }
 
@@ -199,13 +206,15 @@ export function encryptChar(char: string, config: EnigmaConfig): { nextConfig: E
           left: numToChar(config.leftRotor.current),
           middle: numToChar(config.middleRotor.current),
           right: numToChar(config.rightRotor.current),
-          fourth: numToChar(config.fourthRotor.current)
+          fourth: numToChar(config.fourthRotor.current),
+          reflector: numToChar(config.reflector?.current || 0)
         },
         rotorsAfter: {
           left: numToChar(config.leftRotor.current),
           middle: numToChar(config.middleRotor.current),
           right: numToChar(config.rightRotor.current),
-          fourth: numToChar(config.fourthRotor.current)
+          fourth: numToChar(config.fourthRotor.current),
+          reflector: numToChar(config.reflector?.current || 0)
         }
       }
     };
@@ -215,7 +224,8 @@ export function encryptChar(char: string, config: EnigmaConfig): { nextConfig: E
     left: numToChar(config.leftRotor.current),
     middle: numToChar(config.middleRotor.current),
     right: numToChar(config.rightRotor.current),
-    fourth: numToChar(config.fourthRotor.current)
+    fourth: numToChar(config.fourthRotor.current),
+    reflector: numToChar(config.reflector?.current || 0)
   };
 
   // Step rotors prior to key contact (4th rotor does NOT step — it's a fixed stator)
@@ -225,7 +235,8 @@ export function encryptChar(char: string, config: EnigmaConfig): { nextConfig: E
     left: numToChar(nextConfig.leftRotor.current),
     middle: numToChar(nextConfig.middleRotor.current),
     right: numToChar(nextConfig.rightRotor.current),
-    fourth: numToChar(nextConfig.fourthRotor.current)
+    fourth: numToChar(nextConfig.fourthRotor.current),
+    reflector: numToChar(config.reflector?.current || 0)
   };
 
   const trace: StepTrace[] = [];
@@ -296,10 +307,37 @@ export function encryptChar(char: string, config: EnigmaConfig): { nextConfig: E
   });
 
   // 5. Reflector (Umkehrwalze - Left)
-  const reflectorSpec = REFLECTOR_SPECS[nextConfig.reflector] || REFLECTOR_SPECS['UKW-B'];
+  const reflectorState = nextConfig.reflector;
+  const reflectorSpec = REFLECTOR_SPECS[reflectorState.type] || REFLECTOR_SPECS['UKW-B'];
   const reflectorWiring = typeof reflectorSpec === 'string' ? reflectorSpec : reflectorSpec.wiring;
   const refInChar = numToChar(currentNum);
-  const refOutChar = reflectorWiring[currentNum];
+  //const refOutChar = reflectorWiring[currentNum];
+  let refOutChar: string;
+  let refNote = `Signal reflected back using ${reflectorState.type}`;
+
+  if (reflectorState.type === 'UKW-Dual-Dynamic') {
+    // Dinamikus eltolások számítása (Rotor módra)
+    const shift = (reflectorState.current - (reflectorState.ring - 1) + 26) % 26;
+    const indexWithShift = (currentNum + shift) % 26;
+
+    // Aszimmetrikus huzalozáson áthaladás
+    const forwardChar = reflectorWiring[indexWithShift];
+    const forwardNum = charToNum(forwardChar);
+
+    // Vissza-eltolás a csúszógyűrű miatt
+    const postRefNum = (forwardNum - shift + 26) % 26;
+    refOutChar = numToChar(postRefNum);
+
+    // Különleges log az önkódoláshoz
+    if (postRefNum === currentNum) {
+      refNote = `Kritikus Önkódolás! ${refInChar} ➔ ${refOutChar} (Turing-Bombe hurok megszakadt)`;
+    } else {
+      refNote = `Dinamikus aszimmetrikus visszaverés`;
+    }
+  } else {
+    // Klasszikus, fix szimmetrikus visszaverés
+    refOutChar = reflectorWiring[currentNum];
+  }
   currentNum = charToNum(refOutChar);
   trace.push({
     stage: `Reflector (${nextConfig.reflector} - Left)`,
@@ -391,6 +429,11 @@ export const DEFAULT_ENIGMA_CONFIG: EnigmaConfig = {
   middleRotor: { type: 'II', ring: 1, start: 0, current: 0 },
   rightRotor: { type: 'III', ring: 1, start: 0, current: 0 },
   fourthRotor: { type: 'I', ring: 1, start: 0, current: 0 },
-  reflector: 'UKW-B',
+  reflector: {
+    type: 'UKW-B',
+    ring: 1,
+    start: 0,
+    current: 0
+  },
   plugboard: {}
 };

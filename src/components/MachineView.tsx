@@ -34,7 +34,7 @@ const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
   if (!isOpen) return null;
 
   const rotorOptions: RotorType[] = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
-  const reflectorOptions: ReflectorType[] = ['Reflector B', 'Reflector C', 'Reflector A', 'Reflector B Thin', 'Reflector C Thin'];
+  const reflectorOptions: ReflectorType[] = ['Reflector B', 'Reflector C', 'Reflector A', 'Reflector B Thin', 'Reflector C Thin', 'UKW-Dual-Dynamic'];
 
   const handleUpdateRotorType = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor', type: RotorType) => {
     playRotorClickSound(soundEnabled);
@@ -66,9 +66,14 @@ const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
     });
   };
 
-  const handleUpdateReflector = (reflector: ReflectorType) => {
+  const handleUpdateReflector = (reflectorType: ReflectorType) => {
     playRotorClickSound(soundEnabled);
-    onUpdateConfig({ ...config, reflector });
+    onUpdateConfig({ ...config,    reflector: {
+      type: reflectorType,
+      ring: config.reflector?.ring || 1,
+      start: config.reflector?.start || 0,
+      current: config.reflector?.current || 0
+    } });
   };
 
   const handleResetPositions = () => {
@@ -114,7 +119,7 @@ const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
               Reflector (Umkehrwalze - UKW)
             </label>
             <select
-              value={config.reflector}
+              value={config.reflector.type}
               onChange={(e) => handleUpdateReflector(e.target.value as ReflectorType)}
               className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2.5 py-1.5 text-xs text-[#ebc238] font-bold focus:outline-none focus:border-[#ebc238] cursor-pointer"
             >
@@ -138,7 +143,12 @@ const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   onUpdateConfig({
                     ...config,
                     fourthRotor: { ...config.fourthRotor, type: 'Beta' },
-                    reflector: 'Reflector B Thin'
+                     reflector: {
+                      type: 'Reflector B Thin',
+                      ring: config.reflector?.ring || 1,
+                      start: config.reflector?.start || 0,
+                      current: config.reflector?.current || 0
+                    }
                   });
                 }}
                 className={`flex-1 py-1 px-2 text-xs rounded border cursor-pointer font-bold transition-all ${
@@ -154,7 +164,12 @@ const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   onUpdateConfig({
                     ...config,
                     fourthRotor: { ...config.fourthRotor, type: 'Gamma' },
-                    reflector: 'Reflector C Thin'
+                     reflector: {
+                      type: 'Reflector C Thin',
+                      ring: config.reflector?.ring || 1,
+                      start: config.reflector?.start || 0,
+                      current: config.reflector?.current || 0
+                    }
                   });
                 }}
                 className={`flex-1 py-1 px-2 text-xs rounded border cursor-pointer font-bold transition-all ${
@@ -195,6 +210,72 @@ const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
               </div>
             </div>
           )}
+               {/* ─── 'UKW-Dual-Dynamic' rotor quick settings ─── */}
+        {config.reflector.type === 'UKW-Dual-Dynamic' && (
+          <div className="bg-[#120e04] p-3 rounded-lg border border-[#3b3426] flex flex-col items-center">
+            <span className="text-[10px] font-monospaced-technical text-[#ebc238] font-bold uppercase mb-1 tracking-wider">
+              Reflector (UKW)
+            </span>
+            <div className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2 py-1 text-xs text-center text-gray-400 font-bold mb-2 select-none">
+              UKW-Dual-Dynamic
+            </div>
+
+            {/* Ring Setting */}
+            <div className="w-full mb-2">
+              <label className="block text-[9px] uppercase font-mono text-[#a89985] mb-0.5 text-center">Ring</label>
+              <div className="flex items-center justify-between bg-[#201b0f] border border-[#4e453b] rounded px-2 py-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    let currentRing = config.reflector.ring - 1;
+                    if (currentRing < 1) currentRing = 26;
+                    onUpdateConfig({ ...config, reflector: { ...config.reflector, ring: currentRing } });
+                  }}
+                  className="text-xs font-bold text-[#d1c4b7] hover:text-[#ebc238] px-1 cursor-pointer"
+                >-</button>
+                <span className="font-mono text-xs font-bold text-[#ebc238]">
+                  {formatRotorRing(config.reflector.ring, ringFormat)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    let currentRing = config.reflector.ring + 1;
+                    if (currentRing > 26) currentRing = 1;
+                    onUpdateConfig({ ...config, reflector: { ...config.reflector, ring: currentRing } });
+                  }}
+                  className="text-xs font-bold text-[#d1c4b7] hover:text-[#ebc238] px-1 cursor-pointer"
+                >+</button>
+              </div>
+            </div>
+
+            {/* Start Position */}
+            <div className="w-full">
+              <label className="block text-[9px] uppercase font-mono text-[#a89985] mb-0.5 text-center">Start</label>
+              <div className="flex items-center justify-between bg-[#201b0f] border border-[#4e453b] rounded px-2 py-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    let newStart = (config.reflector.start - 1 + 26) % 26;
+                    onUpdateConfig({ ...config, reflector: { ...config.reflector, start: newStart, current: newStart } });
+                  }}
+                  className="text-xs font-bold text-[#d1c4b7] hover:text-[#ebc238] px-1 cursor-pointer"
+                >-</button>
+                <span className="font-mono text-xs font-bold text-[#ebc238]">
+                  {formatRotorPos(config.reflector.start, ringFormat)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    let newStart = (config.reflector.start + 1) % 26;
+                    onUpdateConfig({ ...config, reflector: { ...config.reflector, start: newStart, current: newStart } });
+                  }}
+                  className="text-xs font-bold text-[#d1c4b7] hover:text-[#ebc238] px-1 cursor-pointer"
+                >+</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* ─────────────────────────────────────────────────────────────────── */}
 
           {/* Left / Slow Rotor */}
           <div className="bg-[#120e04] p-3 rounded-lg border border-[#3b3426] flex flex-col items-center">
@@ -465,7 +546,12 @@ const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
         start: 0,
         current: 0
       },
-      reflector: isM4 ? 'Reflector B Thin' : 'Reflector B',
+     reflector: {
+        type: (entry as any).reflectorType || (isM4 ? 'Reflector B Thin' : 'Reflector B'),
+        ring: (entry as any).reflectorRing || 1, // Ha a kódkönyvben a reflektornak is lenne gyűrűje
+        start: 0,
+        current: 0
+      },
       plugboard: plugboardRecord
     };
 
@@ -1359,7 +1445,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   </button>
                 </div>
                 <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
-                  Reflector: <span className="text-[#ebc238] font-bold">{config.reflector}</span>
+                  Reflector: <span className="text-[#ebc238] font-bold">{config.reflector.type}</span>
                 </div>
               </div>
 
@@ -1701,12 +1787,50 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   </button>
                 </div>
                 <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
-                  Reflector: <span className="text-[#ebc238] font-bold">{config.reflector}</span>
+                  Reflector: <span className="text-[#ebc238] font-bold">{config.reflector.type}</span>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2.5 rounded-xl border border-[#3b3426]">
-                <div className={`grid grid-cols-2 ${config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'sm:grid-cols-4 max-w-xs sm:max-w-md' : 'sm:grid-cols-3 max-w-xs sm:max-w-sm'} gap-2 w-full mx-auto`}>
+               <div className={`grid grid-cols-2 ${
+                  config.reflector.type === 'UKW-Dual-Dynamic'
+                    ? (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'sm:grid-cols-4 max-w-xs sm:max-w-md')
+                    : (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'sm:grid-cols-4 max-w-xs sm:max-w-md' : 'sm:grid-cols-3 max-w-xs sm:max-w-sm')
+                } gap-2 w-full mx-auto`}>
+                  {/* ─── UKW-Dual-Dynamic─── */}
+                  {config.reflector.type === 'UKW-Dual-Dynamic' && (
+                    <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
+                      <span className="text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider">
+                        UKW-ROTOR
+                      </span>
+                      <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => handleManualRotorStep('reflector' as any, 1)}
+                          className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                          title="Rotate Reflector Up (manual)"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">expand_less</span>
+                        </button>
+                        <span key={config.reflector.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
+                          {formatRotorPos(config.reflector.current, ringFormat)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleManualRotorStep('reflector' as any, -1)}
+                          className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                          title="Rotate Reflector Down (manual)"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">expand_more</span>
+                        </button>
+                      </div>
+                      <span className="text-[8px] text-[#83715d] font-monospaced-technical mt-0.5">
+                        Dynamic Stator
+                      </span>
+                    </div>
+                  )}
+                  {/* ────────────────────────────────────────────────────── */}
+
                   {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
                   {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
                     <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm">
@@ -1835,7 +1959,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 </div>
 
                 {/* Battery Switch */}
-                <div className="flex flex-col items-center justify-center pt-2 sm:pt-0 sm:pl-3 border-t sm:border-t-0 sm:border-l border-[#3b3426]">
+                <div className={`flex justify-center items-center w-full ${compactMode ? 'max-w-[145px] mx-auto' : 'max-w-[160px] mx-auto'}`}>
                   <BatterySwitch mode={batteryMode} onChangeMode={handleSetBatteryMode} compact={false} />
                 </div>
               </div>

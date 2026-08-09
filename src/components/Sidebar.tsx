@@ -54,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div>
               <h2 className="text-ui-header font-ui-header font-bold text-[#e3c193]">Configuration</h2>
               <p className="text-monospaced-technical font-monospaced-technical text-[#d1c4b7] text-[10px] tracking-tight">
-                {config.reflector} ({config.leftRotor.type}-{config.middleRotor.type}-{config.rightRotor.type})
+                {config.reflector.type} ({config.leftRotor.type}-{config.middleRotor.type}-{config.rightRotor.type})
               </p>
             </div>
           </div>

@@ -210,7 +210,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
     { id: 'rotor_right', label: `4. Right Rotor`, desc: config.rightRotor.type, pos: 'top-right-1' },
     { id: 'rotor_middle', label: `5. Middle Rotor`, desc: config.middleRotor.type, pos: 'top-right-2' },
     { id: 'rotor_left', label: `6. Left Rotor`, desc: config.leftRotor.type, pos: 'top-right-3' },
-    { id: 'reflector', label: `7. Reflector`, desc: config.reflector, pos: 'top-far-left' },
+    { id: 'reflector', label: `7. Reflector`, desc: config.reflector.type, pos: 'top-far-left' },
     { id: 'rotor_left_rev', label: `8. Left Rotor (Rev)`, desc: `${config.leftRotor.type} Return`, pos: 'top-left-3' },
     { id: 'rotor_middle_rev', label: `9. Middle Rotor (Rev)`, desc: `${config.middleRotor.type} Return`, pos: 'top-left-2' },
     { id: 'rotor_right_rev', label: `10. Right Rotor (Rev)`, desc: `${config.rightRotor.type} Return`, pos: 'top-left-1' },
@@ -392,7 +392,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                           {isLit ? '● LIT' : '● IDLE'}
                         </span>
                       </div>
-                      <span className="text-sm font-rotor-label font-bold block">{config.reflector}</span>
+                      <span className="text-sm font-rotor-label font-bold block">{config.reflector.type}</span>
                     </div>
 
                     <div className="mt-3 pt-2 border-t border-current/20">

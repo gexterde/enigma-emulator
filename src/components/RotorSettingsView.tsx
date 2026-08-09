@@ -84,9 +84,43 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
     });
   };
 
-  const updateReflector = (reflector: ReflectorType) => {
+  const updateReflector = (type: ReflectorType) => {
     playRotorClickSound(soundEnabled);
-    setDraftConfig((prev) => ({ ...prev, reflector }));
+    setDraftConfig((prev) => ({
+      ...prev,
+      reflector: {
+        type,
+        // Megtartja a korábbi értékeket, vagy ha még nem léteztek, inicializálja őket (Ring: 1, Start: 0)
+        ring: prev.reflector?.ring || 1,
+        start: prev.reflector?.start || 0,
+        current: prev.reflector?.current || 0
+      }
+    }));
+  };
+
+  const adjustReflectorRing = (delta: number) => {
+    playRotorClickSound(soundEnabled);
+    setDraftConfig((prev) => {
+      let currentRing = (prev.reflector?.ring || 1) + delta;
+      if (currentRing > 26) currentRing = 1;
+      if (currentRing < 1) currentRing = 26;
+      return {
+        ...prev,
+        reflector: { ...prev.reflector, ring: currentRing }
+      };
+    });
+  };
+
+  const adjustReflectorStart = (delta: number) => {
+    playRotorClickSound(soundEnabled);
+    setDraftConfig((prev) => {
+      const currentStart = prev.reflector?.start ?? 0;
+      let newStart = (currentStart + delta + 26) % 26;
+      return {
+        ...prev,
+        reflector: { ...prev.reflector, start: newStart, current: newStart }
+      };
+    });
   };
 
   const updateFourthRotorType = (type: RotorType) => {
@@ -129,6 +163,13 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
 
   const applyMachinePreset = (preset: 'M3' | 'M4Naval' | 'Commercial' | 'Railway' | 'SwissK') => {
     playRotorClickSound(soundEnabled);
+    const makeReflector = (type: ReflectorType) => ({
+      type,
+      ring: 1,
+      start: 0,
+      current: 0
+    });
+
     if (preset === 'M3') {
       setDraftConfig((prev) => ({
         ...prev,
@@ -136,7 +177,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
         middleRotor: { ...prev.middleRotor, type: 'II' },
         rightRotor: { ...prev.rightRotor, type: 'III' },
         fourthRotor: { ...prev.fourthRotor, type: 'I' },
-        reflector: 'Reflector B'
+        reflector: makeReflector('Reflector B')
       }));
     } else if (preset === 'M4Naval') {
       setDraftConfig((prev) => ({
@@ -145,7 +186,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
         middleRotor: { ...prev.middleRotor, type: 'VII' },
         rightRotor: { ...prev.rightRotor, type: 'VIII' },
         fourthRotor: { ...prev.fourthRotor, type: 'Beta', ring: 1, start: 0 },
-        reflector: 'Reflector B Thin'
+        reflector: makeReflector('Reflector B Thin')
       }));
     } else if (preset === 'Commercial') {
       setDraftConfig((prev) => ({
@@ -154,7 +195,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
         middleRotor: { ...prev.middleRotor, type: 'IIC' },
         rightRotor: { ...prev.rightRotor, type: 'IIIC' },
         fourthRotor: { ...prev.fourthRotor, type: 'I' },
-        reflector: 'Reflector A'
+        reflector: makeReflector('Reflector A')
       }));
     } else if (preset === 'Railway') {
       setDraftConfig((prev) => ({
@@ -163,7 +204,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
         middleRotor: { ...prev.middleRotor, type: 'II-Rocket' },
         rightRotor: { ...prev.rightRotor, type: 'III-Rocket' },
         fourthRotor: { ...prev.fourthRotor, type: 'I' },
-        reflector: 'UKW-Rocket'
+        reflector: makeReflector('UKW-Rocket')
       }));
     } else if (preset === 'SwissK') {
       setDraftConfig((prev) => ({
@@ -171,8 +212,8 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
         leftRotor: { ...prev.leftRotor, type: 'I-K' },
         middleRotor: { ...prev.middleRotor, type: 'II-K' },
         rightRotor: { ...prev.rightRotor, type: 'III-K' },
-        fourthRotor: { ...prev.fourthRotor, type: 'I' },
-        reflector: 'UKW-K'
+        fourthRotor: { ...prev.fourthRotor, type: 'I' },    
+        reflector: makeReflector('UKW-K')
       }));
     }
   };
@@ -444,6 +485,90 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
             </div>
           </div>
         )}
+        {/* ─── DINAMIKUS REFLEKTOR JAVÍTOTT INTERFÉSZ PANEL ─── */}
+        {draftConfig.reflector.type === 'UKW-Dual-Dynamic' && (
+          <div className="bg-[#201b0f] rounded-lg p-4 md:p-5 border border-[#4e453b] shadow-panel texture-metal relative overflow-hidden group mt-6">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-[#e3c193]/5 rounded-bl-full -z-10 group-hover:bg-[#e3c193]/10 transition-colors" />
+            <h3 className="text-ui-header font-ui-header text-[#ede1cd] border-b border-[#3b3426] pb-2 mb-4 flex justify-between items-center">
+              <span>Reflector Mechanics (UKW-Rotor)</span>
+              <span className="text-monospaced-technical text-[10px] text-[#ebc238] font-bold">UNLOCKED</span>
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
+              {/* Reflektor Gyűrűállítás */}
+              <div>
+                <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7] mb-2">
+                  Reflector Ring ({ringFormat === 'number' ? '01-26' : 'A-Z'})
+                </label>
+                <div className="relative bg-[#3b3426] border border-[#3b3426] rounded shadow-rotor-window h-14 min-h-[48px] flex items-center justify-center overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => adjustReflectorRing(1)}
+                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Increase Reflector Ring"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_less</span>
+                  </button>
+                  <span className="text-rotor-label font-rotor-label text-[#e3c193] z-10 pointer-events-none">
+                    {formatRotorRing(draftConfig.reflector.ring, ringFormat)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => adjustReflectorRing(-1)}
+                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Decrease Reflector Ring"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Reflektor Kezdőpozíció állítás */}
+              <div>
+                <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7] mb-2">
+                  Reflector Start ({ringFormat === 'number' ? '00-25' : 'A-Z'})
+                </label>
+                <div className="relative bg-[#3b3426] border border-[#3b3426] rounded shadow-rotor-window h-14 min-h-[48px] flex items-center justify-center overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => adjustReflectorStart(1)}
+                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Increase Reflector Start"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_less</span>
+                  </button>
+                  <span className="text-rotor-label font-rotor-label text-[#e3c193] z-10 pointer-events-none">
+                    {formatRotorPos(draftConfig.reflector.start, ringFormat)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => adjustReflectorStart(-1)}
+                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Decrease Reflector Start"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Alternatív Történelmi Infó panel */}
+            <div className="bg-[#120e04]/80 p-2.5 rounded border border-[#3b3426] text-xs mt-4">
+              <div className="flex items-center justify-between text-[#ebc238] font-monospaced-technical font-bold text-[11px] mb-1">
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">autorenew</span>
+                  Reflector Action: Dynamic Stepping
+                </span>
+                <span className="text-[#8c7e6a] text-[10px]">Asymmetric 1943</span>
+              </div>
+              <p className="text-[#a89985] text-[10px] leading-snug">
+                Az önkódolást gátló mechanizmus kikapcsolva. A reflektor minden alkalommal egyet fordul, amikor a bal oldali (Slow) rotor tesz egy teljes kört.
+              </p>
+            </div>
+          </div>
+        )}
+        {/* ─────────────────────────────────────────────────── */}
+
 
         {/* Left Rotor (Slow) */}
         <div className="bg-[#201b0f] rounded-lg p-4 md:p-5 border border-[#4e453b] shadow-panel texture-metal relative overflow-hidden group">
@@ -707,7 +832,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
             <h3 className="text-ui-header font-ui-header text-[#ede1cd] mb-1">Reflector (Umkehrwalze)</h3>
             <p className="text-ui-body text-[#d1c4b7] mb-3 text-xs">Determines the signal return path back through the scrambler rotors.</p>
             <select
-              value={draftConfig.reflector}
+              value={draftConfig.reflector.type}
               onChange={(e) => updateReflector(e.target.value as ReflectorType)}
               className="w-full min-h-[48px] bg-[#3b3426] border border-[#3b3426] rounded px-3 py-2 text-[#e3c193] font-rotor-label text-rotor-label appearance-none cursor-pointer focus:border-[#ebc238] focus:ring-1 focus:ring-[#ebc238] focus:outline-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]"
             >
@@ -723,6 +848,9 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
               <optgroup label="Special / Regional Variants">
                 <option value="UKW-Rocket">UKW German Railway / Rocket (7 Feb 1941)</option>
                 <option value="UKW-K">UKW-K Swiss K (Feb 1939)</option>
+              </optgroup>
+              <optgroup label="Alternatív Történelem (Feltörhetetlen)">
+                <option value="UKW-Dual-Dynamic">UKW-Dual-Dynamic (Kombinált Önkódoló)</option>
               </optgroup>
             </select>
           </div>
