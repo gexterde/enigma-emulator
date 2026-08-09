@@ -74,6 +74,23 @@ export const MachineView: React.FC<MachineViewProps> = ({
   const [showChamber, setShowChamber] = useState<boolean>(true);
   const [showSignalAnimation, setShowSignalAnimation] = useState<boolean>(false);
   const [keyboardBulbsOnly, setKeyboardBulbsOnly] = useState<boolean>(false);
+  const [isCompactMode, setIsCompactMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('enigma_compact_mode') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const handleToggleCompactMode = () => {
+    const next = !isCompactMode;
+    setIsCompactMode(next);
+    try {
+      localStorage.setItem('enigma_compact_mode', String(next));
+    } catch (e) {
+      // ignore
+    }
+  };
 
   // Active signal path key
   const [activeSignalKey, setActiveSignalKey] = useState<string>('A');
@@ -222,6 +239,22 @@ export const MachineView: React.FC<MachineViewProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            onClick={handleToggleCompactMode}
+            className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+              isCompactMode
+                ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
+                : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+            }`}
+            title="Toggle Compact Enigma Machine Mode"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {isCompactMode ? 'compress' : 'aspect_ratio'}
+            </span>
+            Compact Mode
+          </button>
+
+          <button
+            type="button"
             onClick={() => setKeyboardBulbsOnly(!keyboardBulbsOnly)}
             className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
               keyboardBulbsOnly
@@ -292,21 +325,274 @@ export const MachineView: React.FC<MachineViewProps> = ({
         </div>
       </div>
 
-      {keyboardBulbsOnly && (
-        <div className="bg-[#120e04] border border-[#ebc238]/40 text-[#ebc238] rounded-lg p-2.5 text-center text-xs font-monospaced-technical flex items-center justify-between shadow-panel">
-          <span className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm">lightbulb</span>
-            Keys & Bulbs Only View Active (Minimalist Machine View)
-          </span>
-          <button
-            type="button"
-            onClick={() => setKeyboardBulbsOnly(false)}
-            className="text-white hover:text-[#ebc238] underline font-ui-header cursor-pointer ml-2"
-          >
-            Show All Panels
-          </button>
+      {isCompactMode ? (
+        <div className="wood-texture p-3 sm:p-5 rounded-2xl border border-[#4a3e2e] shadow-2xl space-y-4 max-w-2xl mx-auto">
+          {/* Output Tape */}
+          <div className="bg-[#1b1710]/90 p-3 rounded-xl border border-[#3d3526] shadow-lg flex flex-col gap-2 w-full">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] tracking-wider uppercase flex items-center gap-1.5 font-bold">
+                <span className="material-symbols-outlined text-xs text-[#ebc238]">receipt_long</span>
+                OUTPUT TAPE
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => cipherTape && navigator.clipboard.writeText(formatTapeText(cipherTape))}
+                  className="p-1 text-[#8c7e6a] hover:text-[#e3c193] transition-colors rounded cursor-pointer"
+                  title="Copy Output Tape"
+                  aria-label="Copy Output"
+                >
+                  <span className="material-symbols-outlined text-sm">content_copy</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setInputTape(''); setCipherTape(''); }}
+                  className="p-1 text-[#8c7e6a] hover:text-[#ff8a80] transition-colors rounded cursor-pointer"
+                  title="Clear Output Tape"
+                  aria-label="Clear Output"
+                >
+                  <span className="material-symbols-outlined text-sm">backspace</span>
+                </button>
+              </div>
+            </div>
+            <div className="paper-tape min-h-[44px] max-h-[80px] w-full px-3 py-2 font-monospaced-technical text-[#2b261f] overflow-y-auto break-all tracking-widest text-sm sm:text-base font-bold rounded shadow-inner flex items-center justify-between">
+              <span>{formatTapeText(cipherTape) || <span className="text-[#8c7e6a] italic font-normal text-xs">Tape output will appear here as you type...</span>}</span>
+            </div>
+          </div>
+
+          {/* Rotor Bay (Walzenlage) */}
+          <div className="metal-plate p-3 rounded-xl shadow-md">
+            <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#3d3526]/60 px-1">
+              <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] tracking-widest uppercase flex items-center gap-1 font-bold">
+                <span className="material-symbols-outlined text-xs text-[#ebc238]">tune</span>
+                WALZENLAGE (ROTORS)
+              </span>
+              <div className="flex items-center gap-1 text-[10px] font-monospaced-technical">
+                <button
+                  type="button"
+                  onClick={() => handleSetRingFormat('number')}
+                  className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'number' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
+                >
+                  01–26
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetRingFormat('letter')}
+                  className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'letter' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
+                >
+                  A–Z
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-center items-center gap-2 sm:gap-4 py-1">
+              {/* If M4 4th rotor present */}
+              {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+                <div className="flex flex-col items-center">
+                  <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">
+                    FIXED
+                  </span>
+                  <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-14 sm:h-16 flex flex-col items-center justify-between py-1">
+                    <button
+                      type="button"
+                      onClick={() => handleManualRotorStep('fourthRotor', 1)}
+                      className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-xs">expand_less</span>
+                    </button>
+                    <span className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold">
+                      {formatRotorPos(config.fourthRotor.current, ringFormat)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleManualRotorStep('fourthRotor', -1)}
+                      className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-xs">expand_more</span>
+                    </button>
+                  </div>
+                  <span className="text-[9px] font-monospaced-technical text-[#ebc238] mt-1 font-bold">
+                    {config.fourthRotor.type === 'Beta' ? 'β' : 'γ'}
+                  </span>
+                </div>
+              )}
+
+              {/* Left Rotor */}
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">SLOW</span>
+                <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-14 sm:h-16 flex flex-col items-center justify-between py-1">
+                  <button
+                    type="button"
+                    onClick={() => handleManualRotorStep('leftRotor', 1)}
+                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-xs">expand_less</span>
+                  </button>
+                  <span className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold">
+                    {formatRotorPos(config.leftRotor.current, ringFormat)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleManualRotorStep('leftRotor', -1)}
+                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-xs">expand_more</span>
+                  </button>
+                </div>
+                <span className="text-[9px] font-monospaced-technical text-[#d1c4b7] mt-1 font-bold">
+                  {config.leftRotor.type}
+                </span>
+              </div>
+
+              {/* Middle Rotor */}
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">MID</span>
+                <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-14 sm:h-16 flex flex-col items-center justify-between py-1">
+                  <button
+                    type="button"
+                    onClick={() => handleManualRotorStep('middleRotor', 1)}
+                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-xs">expand_less</span>
+                  </button>
+                  <span className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold">
+                    {formatRotorPos(config.middleRotor.current, ringFormat)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleManualRotorStep('middleRotor', -1)}
+                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-xs">expand_more</span>
+                  </button>
+                </div>
+                <span className="text-[9px] font-monospaced-technical text-[#d1c4b7] mt-1 font-bold">
+                  {config.middleRotor.type}
+                </span>
+              </div>
+
+              {/* Right Rotor */}
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">FAST</span>
+                <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-14 sm:h-16 flex flex-col items-center justify-between py-1">
+                  <button
+                    type="button"
+                    onClick={() => handleManualRotorStep('rightRotor', 1)}
+                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-xs">expand_less</span>
+                  </button>
+                  <span className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold">
+                    {formatRotorPos(config.rightRotor.current, ringFormat)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleManualRotorStep('rightRotor', -1)}
+                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-xs">expand_more</span>
+                  </button>
+                </div>
+                <span className="text-[9px] font-monospaced-technical text-[#d1c4b7] mt-1 font-bold">
+                  {config.rightRotor.type}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Lampboard (Lampenfeld) */}
+          <div className="metal-plate p-3 sm:p-4 rounded-xl shadow-md flex flex-col items-center">
+            <div className="w-full flex justify-between items-center mb-3 pb-1 border-b border-[#3d3526]/60 px-1">
+              <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] tracking-widest uppercase flex items-center gap-1.5 font-bold">
+                <span className="material-symbols-outlined text-xs text-[#ebc238]">lightbulb</span>
+                LAMPENFELD (LAMPBOARD)
+              </span>
+              {litLamp && (
+                <span className="animate-pulse text-[10px] font-monospaced-technical text-[#ebc238] bg-[#ebc238]/20 px-2 py-0.5 rounded border border-[#ebc238]/40 font-bold">
+                  {litLamp}
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2.5 w-full max-w-lg">
+              {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
+                <div key={rIdx} className="flex justify-center gap-1.5 sm:gap-2.5">
+                  {row.map((char) => {
+                    const isLit = litLamp === char;
+                    return (
+                      <div
+                        key={char}
+                        className={`lamp-socket w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${
+                          isLit ? 'lamp-on scale-105' : ''
+                        }`}
+                      >
+                        <div className="lamp-glass w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-lamp-char text-xs sm:text-sm font-bold">
+                          {char}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bakelite Keyboard (Tastatur) */}
+          <div className="metal-plate p-3 sm:p-4 rounded-xl shadow-md flex flex-col items-center">
+            <div className="w-full flex justify-between items-center mb-3 pb-1 border-b border-[#3d3526]/60 px-1">
+              <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] tracking-widest uppercase flex items-center gap-1.5 font-bold">
+                <span className="material-symbols-outlined text-xs text-[#8c7e6a]">keyboard</span>
+                TASTATUR (KEYBOARD)
+              </span>
+              <span className="text-[9px] font-monospaced-technical text-[#83715d]">
+                PRESS OR CLICK KEYS
+              </span>
+            </div>
+
+            <div className="space-y-2.5 w-full max-w-lg">
+              {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
+                <div key={rIdx} className="flex justify-center gap-1.5 sm:gap-2.5">
+                  {row.map((char) => {
+                    const isPressed = pressedKey === char;
+                    return (
+                      <button
+                        key={char}
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); handleKeyPressStart(char); }}
+                        onMouseUp={(e) => { e.preventDefault(); handleKeyPressEnd(char); }}
+                        onMouseLeave={() => handleKeyPressEnd(char)}
+                        onTouchStart={(e) => { e.preventDefault(); handleKeyPressStart(char); }}
+                        onTouchEnd={(e) => { e.preventDefault(); handleKeyPressEnd(char); }}
+                        className={`bakelite-key w-8 h-8 sm:w-10 sm:h-10 rounded-full text-[#e3c193] font-rotor-label font-bold text-xs sm:text-sm flex items-center justify-center cursor-pointer select-none ${
+                          isPressed ? 'key-pressed' : ''
+                        }`}
+                      >
+                        {char}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      )}
+      ) : (
+        <>
+        {keyboardBulbsOnly && (
+          <div className="bg-[#120e04] border border-[#ebc238]/40 text-[#ebc238] rounded-lg p-2.5 text-center text-xs font-monospaced-technical flex items-center justify-between shadow-panel">
+            <span className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">lightbulb</span>
+              Keys & Bulbs Only View Active (Minimalist Machine View)
+            </span>
+            <button
+              type="button"
+              onClick={() => setKeyboardBulbsOnly(false)}
+              className="text-white hover:text-[#ebc238] underline font-ui-header cursor-pointer ml-2"
+            >
+              Show All Panels
+            </button>
+          </div>
+        )}
 
       {/* Top Section: Rotors Chamber (Walzen) */}
       {!keyboardBulbsOnly && (
@@ -694,6 +980,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
           soundEnabled={soundEnabled}
           lastTraceResult={lastTraceResult}
         />
+      )}
+        </>
       )}
     </div>
   );

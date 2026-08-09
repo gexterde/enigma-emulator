@@ -17,11 +17,16 @@ export default function App() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
-  // Modals state
+  // Modals and sidebar state
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024;
+    }
+    return false;
+  });
 
   // Apply new configuration (from Rotor Settings)
   const handleApplyConfig = (newConfig: EnigmaConfig) => {
@@ -42,7 +47,7 @@ export default function App() {
     <div className="bg-[#181307] text-[#ede1cd] min-h-screen flex flex-col font-ui-body text-ui-body texture-wood overflow-hidden">
       {/* Top Header */}
       <Header
-        onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
+        onToggleMobileMenu={() => setIsMenuOpen((prev) => !prev)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenInfo={() => setIsInfoOpen(true)}
         onOpenShare={() => setIsShareOpen(true)}
@@ -54,8 +59,8 @@ export default function App() {
           activeTab={activeTab}
           onSelectTab={setActiveTab}
           onResetMachine={handleResetMachine}
-          isMobileOpen={isMobileMenuOpen}
-          onCloseMobile={() => setIsMobileMenuOpen(false)}
+          isMobileOpen={isMenuOpen}
+          onCloseMobile={() => setIsMenuOpen(false)}
           config={config}
         />
 

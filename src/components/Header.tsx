@@ -18,9 +18,10 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-2 md:gap-4">
         <button
           onClick={onToggleMobileMenu}
-          className="md:hidden w-11 h-11 flex items-center justify-center text-[#d1c4b7] hover:bg-[#2f291c] rounded-full transition-colors"
+          className="w-11 h-11 flex items-center justify-center text-[#d1c4b7] hover:bg-[#2f291c] rounded-full transition-colors cursor-pointer"
           id="mobile-menu-btn"
-          aria-label="Toggle mobile menu"
+          aria-label="Toggle menu"
+          title="Toggle Navigation Menu"
         >
           <span className="material-symbols-outlined">menu</span>
         </button>

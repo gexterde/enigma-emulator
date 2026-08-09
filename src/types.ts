@@ -47,9 +47,10 @@ export interface RotorState {
 }
 
 export interface EnigmaConfig {
-  leftRotor: RotorState;   // Position 1 (Fast rotor)
+  leftRotor: RotorState;   // Position 1 (Slow rotor)
   middleRotor: RotorState; // Position 2
-  rightRotor: RotorState;  // Position 3 (Slow rotor)
+  rightRotor: RotorState;  // Position 3 (Fast rotor)
+  fourthRotor: RotorState; // Position 4 (M4 Naval fixed 4th rotor: Beta/Gamma)
   reflector: ReflectorType;
   plugboard: Record<string, string>; // e.g. { 'A': 'B', 'B': 'A' }
 }
@@ -66,8 +67,8 @@ export interface StepTrace {
 export interface EncryptionResult {
   outputChar: string;
   trace: StepTrace[];
-  rotorsBefore: { left: string; middle: string; right: string };
-  rotorsAfter: { left: string; middle: string; right: string };
+  rotorsBefore: { left: string; middle: string; right: string; fourth?: string };
+  rotorsAfter: { left: string; middle: string; right: string; fourth?: string };
 }
 
 export interface LogEntry {

@@ -28,22 +28,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Overlay for mobile sidebar */}
+      {/* Overlay for sidebar */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-30 md:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/60 z-30 transition-opacity duration-300"
           onClick={onCloseMobile}
         />
       )}
 
       <nav
         id="sidebar"
-        className={`fixed md:static left-0 top-16 h-[calc(100vh-4rem)] flex flex-col z-40 w-64 border-r border-[#4e453b] bg-[#201b0f] shadow-xl shrink-0 transform transition-transform duration-300 ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] flex flex-col z-40 w-64 border-r border-[#4e453b] bg-[#201b0f] shadow-2xl shrink-0 transform transition-transform duration-300 ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="p-6 border-b border-[#3b3426]">
-          <div className="flex items-center gap-3 mb-2">
+        <div className="p-4 border-b border-[#3b3426] flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#3b3426] border-2 border-[#8b6f47] flex items-center justify-center shadow-inner overflow-hidden shrink-0">
               <img
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7GMVXh7JLwrcaJvJTMyXLWWowPJqQX9w-yJChY-oPx9x1aRjP881JIB1z1cXVJb0A1Uvaa_s2hTz8t0fjBALhR0I2jIgyh2PpOwglmuEO5CsnL4YMAbdkf4Wg6KhwBJhteZBUs_uja_8Js_KiIFN34gHjSsQTGWfnVPydhqxPbrHnC9pMLeRTOFhwUUyPBl4kLlT2PQcGIpXiqDCOBkSDq_NGe_UcglPvqhWWqintsiTuAA4o3faK"
@@ -58,6 +58,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </p>
             </div>
           </div>
+          <button
+            onClick={onCloseMobile}
+            className="w-8 h-8 flex items-center justify-center text-[#d1c4b7] hover:text-[#e3c193] hover:bg-[#3b3426] rounded transition-colors cursor-pointer shrink-0"
+            title="Close Menu"
+            aria-label="Close Menu"
+          >
+            <span className="material-symbols-outlined text-xl">close</span>
+          </button>
         </div>
 
         <div className="flex-1 py-4 flex flex-col gap-1 overflow-y-auto">
