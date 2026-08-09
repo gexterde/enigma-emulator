@@ -31,6 +31,8 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [speedMs, setSpeedMs] = useState<number>(900); // ms per step
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const isM4Active = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
 
   // Sync selected char whenever activeKey changes from external keyboard presses
   useEffect(() => {
@@ -181,6 +183,12 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
       const isReturn = traceStep.stage.includes('Return') || traceStep.stage.includes('Reverse');
       componentId = isReturn ? 'rotor_left_rev' : 'rotor_left';
       direction = isReturn ? 'RETURN' : 'FORWARD';
+    } else if (traceStep.stage.includes('4th Rotor')) {
+      icon = 'tune';
+      location = `Top Chamber - 4th Rotor (${config.fourthRotor.type})`;
+      const isReturn = traceStep.stage.includes('Return') || traceStep.stage.includes('Reverse');
+      componentId = isReturn ? 'rotor_fourth_rev' : 'rotor_fourth';
+      direction = isReturn ? 'RETURN' : 'FORWARD';
     } else if (traceStep.stage.includes('Entry Wheel')) {
       icon = 'input';
       location = 'Top Chamber - Fixed Stator (ETW)';
@@ -210,6 +218,10 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
     { id: 'rotor_right', label: `4. Right Rotor`, desc: config.rightRotor.type, pos: 'top-right-1' },
     { id: 'rotor_middle', label: `5. Middle Rotor`, desc: config.middleRotor.type, pos: 'top-right-2' },
     { id: 'rotor_left', label: `6. Left Rotor`, desc: config.leftRotor.type, pos: 'top-right-3' },
+    ...(isM4Active ? [
+      { id: 'rotor_fourth', label: `6.5. 4th Rotor`, desc: config.fourthRotor.type, pos: 'top-right-4' },
+      { id: 'rotor_fourth_rev', label: `7.5. 4th Rotor (Rev)`, desc: `${config.fourthRotor.type} Return`, pos: 'top-left-4' }
+    ] : []),
     { id: 'reflector', label: `7. Reflector`, desc: config.reflector.type, pos: 'top-far-left' },
     { id: 'rotor_left_rev', label: `8. Left Rotor (Rev)`, desc: `${config.leftRotor.type} Return`, pos: 'top-left-3' },
     { id: 'rotor_middle_rev', label: `9. Middle Rotor (Rev)`, desc: `${config.middleRotor.type} Return`, pos: 'top-left-2' },
@@ -349,7 +361,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
         <div className="text-[10px] font-monospaced-technical text-[#8b6f47] uppercase tracking-widest mb-4 flex items-center justify-between">
           <span className="flex items-center gap-2">
             <span className="material-symbols-outlined text-sm text-[#ebc238]">developer_board</span>
-            ENIGMA M3 PHYSICAL SCHEMATIC & SIGNAL FLOW
+            {isM4Active ? 'ENIGMA M4' : 'ENIGMA M3'} PHYSICAL SCHEMATIC & SIGNAL FLOW
           </span>
           <span className="text-[#ebc238] font-bold bg-[#201b0f] px-2.5 py-1 rounded border border-[#3b3426]">
             ● Active Stage: {activeStage.name}
@@ -367,12 +379,12 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                 Top Chamber: Rotor Assembly (Walzensatz) & Reflector
               </span>
               <span className="text-[10px] font-monospaced-technical text-[#d1c4b7]">
-                 Signal Path: ETW ➔ Right Rotor ➔ Mid Rotor ➔ Left Rotor ➔ Reflector ➔ Return Pass
+                 Signal Path: ETW ➔ Right Rotor ➔ Mid Rotor ➔ Left Rotor {isM4Active ? '➔ 4th Rotor ' : ''}➔ Reflector ➔ Return Pass
               </span>
             </div>
 
-            {/* 5 Physical Rotor / Stator Components in Chamber */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {/* Scrambler Components in Chamber */}
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${isM4Active ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} gap-3`}>
               {/* Reflector (UKW) */}
               {(() => {
                 const reflectorStep = trace.find((s) => s.stage.includes('Reflector'));
@@ -399,6 +411,58 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                       <span className="text-[9px] font-monospaced-technical uppercase block opacity-90 font-semibold">Internal Mirror:</span>
                       <div className={`text-xs font-monospaced-technical font-bold mt-1 px-2 py-1 rounded text-center shadow ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#201b0f] text-[#ede1cd]'}`}>
                         {reflectorStep ? `${reflectorStep.inChar} ➔ ${reflectorStep.outChar}` : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 4th Rotor (Fixed) */}
+              {isM4Active && (() => {
+                const fwdStep = trace.find((s) => s.stage.includes('4th Rotor') && !s.stage.includes('Return') && !s.stage.includes('Reverse'));
+                const revStep = trace.find((s) => s.stage.includes('4th Rotor') && (s.stage.includes('Return') || s.stage.includes('Reverse')));
+                const isLit = activeStage.componentId === 'rotor_fourth' || activeStage.componentId === 'rotor_fourth_rev' || isKeyPressed;
+                return (
+                  <div
+                    className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
+                      isLit
+                        ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
+                        : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[9px] font-monospaced-technical uppercase opacity-90">Rotor 4 ({config.fourthRotor.type})</span>
+                        <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#251f12] text-[#8b6f47]'}`}>
+                          {isLit ? '● LIT' : '● IDLE'}
+                        </span>
+                      </div>
+
+                      {/* Rotor Window Dial */}
+                      <div className={`my-1.5 p-1.5 rounded text-center border shadow-inner ${isLit ? 'bg-[#25190b] border-[#ebc238]' : 'bg-[#201b0f] border-[#3b3426]'}`}>
+                        <span className="text-[9px] font-monospaced-technical uppercase block text-[#d1c4b7]">Position</span>
+                        <span className={`text-2xl font-rotor-label font-bold ${isLit ? 'text-[#ebc238]' : 'text-[#ede1cd]'}`}>
+                          {numToChar(config.fourthRotor.current)}
+                        </span>
+                        <span className="text-[8px] font-monospaced-technical block opacity-75">
+                          Ring: {formatRotorRing(config.fourthRotor.ring)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Parameter Transformations */}
+                    <div className="mt-2 pt-1.5 border-t border-current/20 space-y-1 text-[10px] font-monospaced-technical">
+                      <div className="flex justify-between items-center">
+                        <span className="opacity-90">FWD:</span>
+                        <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
+                          {fwdStep ? `${fwdStep.inChar} ➔ ${fwdStep.outChar}` : '-'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="opacity-90">REV:</span>
+                        <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
+                          {revStep ? `${revStep.inChar} ➔ ${revStep.outChar}` : '-'}
+                        </span>
                       </div>
                     </div>
                   </div>

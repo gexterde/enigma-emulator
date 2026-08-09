@@ -255,21 +255,6 @@ export function encryptChar(char: string, config: EnigmaConfig): { nextConfig: E
     note: nextConfig.plugboard[pbInChar] ? `Stecker: ${pbInChar} ↔ ${pbOutChar}` : 'Direct connection'
   });
 
-  // 1.5. 4th Rotor Forward (Fixed stator — does not step, acts as additional wiring layer)
-  // Only active for Beta/Gamma types; other types act as pass-through
-  if (nextConfig.fourthRotor.type === 'Beta' || nextConfig.fourthRotor.type === 'Gamma') {
-    const rFourthFwd = passRotorForward(currentNum, nextConfig.fourthRotor);
-    currentNum = rFourthFwd.result;
-    trace.push({
-      stage: `4th Rotor (${nextConfig.fourthRotor.type} - Fixed)`,
-      inChar: rFourthFwd.inChar,
-      outChar: rFourthFwd.outChar,
-      inNum: charToNum(rFourthFwd.inChar),
-      outNum: currentNum,
-      note: `Fixed position: ${numToChar(nextConfig.fourthRotor.current)}, Ring: ${formatRotorRing(nextConfig.fourthRotor.ring)}`
-    });
-  }
-
   // 2. Right Rotor Forward (Fast)
   const rRightFwd = passRotorForward(currentNum, nextConfig.rightRotor);
   currentNum = rRightFwd.result;
@@ -306,6 +291,21 @@ export function encryptChar(char: string, config: EnigmaConfig): { nextConfig: E
     note: `Pos: ${numToChar(nextConfig.leftRotor.current)}, Ring: ${formatRotorRing(nextConfig.leftRotor.ring)}`
   });
 
+  // 4.5. 4th Rotor Forward (Fixed stator — does not step, acts as additional wiring layer)
+  // Only active for Beta/Gamma types; other types act as pass-through
+  if (nextConfig.fourthRotor.type === 'Beta' || nextConfig.fourthRotor.type === 'Gamma') {
+    const rFourthFwd = passRotorForward(currentNum, nextConfig.fourthRotor);
+    currentNum = rFourthFwd.result;
+    trace.push({
+      stage: `4th Rotor (${nextConfig.fourthRotor.type} - Fixed)`,
+      inChar: rFourthFwd.inChar,
+      outChar: rFourthFwd.outChar,
+      inNum: charToNum(rFourthFwd.inChar),
+      outNum: currentNum,
+      note: `Fixed position: ${numToChar(nextConfig.fourthRotor.current)}, Ring: ${formatRotorRing(nextConfig.fourthRotor.ring)}`
+    });
+  }
+
   // 5. Reflector (Umkehrwalze - Left)
   const reflectorState = nextConfig.reflector;
   const reflectorSpec = REFLECTOR_SPECS[reflectorState.type] || REFLECTOR_SPECS['UKW-B'];
@@ -340,13 +340,27 @@ export function encryptChar(char: string, config: EnigmaConfig): { nextConfig: E
   }
   currentNum = charToNum(refOutChar);
   trace.push({
-    stage: `Reflector (${nextConfig.reflector} - Left)`,
+    stage: `Reflector (${nextConfig.reflector.type} - Left)`,
     inChar: refInChar,
     outChar: refOutChar,
     inNum: charToNum(refInChar),
     outNum: currentNum,
     note: 'Signal reflected back'
   });
+
+  // 5.5. 4th Rotor Return (Fixed stator — does not step)
+  if (nextConfig.fourthRotor.type === 'Beta' || nextConfig.fourthRotor.type === 'Gamma') {
+    const rFourthBwd = passRotorBackward(currentNum, nextConfig.fourthRotor);
+    currentNum = rFourthBwd.result;
+    trace.push({
+      stage: `4th Rotor Return (${nextConfig.fourthRotor.type} - Fixed)`,
+      inChar: rFourthBwd.inChar,
+      outChar: rFourthBwd.outChar,
+      inNum: charToNum(rFourthBwd.inChar),
+      outNum: currentNum,
+      note: `Fixed position: ${numToChar(nextConfig.fourthRotor.current)}, Ring: ${formatRotorRing(nextConfig.fourthRotor.ring)}`
+    });
+  }
 
   // 6. Left Rotor Return (Slow)
   const rLeftBwd = passRotorBackward(currentNum, nextConfig.leftRotor);
@@ -380,20 +394,6 @@ export function encryptChar(char: string, config: EnigmaConfig): { nextConfig: E
     inNum: charToNum(rRightBwd.inChar),
     outNum: currentNum
   });
-
-  // 8.5. 4th Rotor Return (Fixed stator — does not step)
-  if (nextConfig.fourthRotor.type === 'Beta' || nextConfig.fourthRotor.type === 'Gamma') {
-    const rFourthBwd = passRotorBackward(currentNum, nextConfig.fourthRotor);
-    currentNum = rFourthBwd.result;
-    trace.push({
-      stage: `4th Rotor Return (${nextConfig.fourthRotor.type} - Fixed)`,
-      inChar: rFourthBwd.inChar,
-      outChar: rFourthBwd.outChar,
-      inNum: charToNum(rFourthBwd.inChar),
-      outNum: currentNum,
-      note: `Fixed position: ${numToChar(nextConfig.fourthRotor.current)}, Ring: ${formatRotorRing(nextConfig.fourthRotor.ring)}`
-    });
-  }
 
   // 9. Plugboard Out
   const pb2InChar = numToChar(currentNum);
