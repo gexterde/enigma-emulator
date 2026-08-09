@@ -6,6 +6,7 @@ import {
   formatRotorPos,
   formatRotorRing,
   generateConfigString,
+  ROTOR_SPECS,
   ALPHABET
 } from '../lib/enigmaEngine';
 import { playKeyClickSound, playRotorClickSound } from '../lib/audio';
@@ -269,7 +270,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
             Keys & Bulbs Only
           </button>
 
-          {!keyboardBulbsOnly && (
+          {!keyboardBulbsOnly && !isCompactMode && (
             <>
               <button
                 type="button"
@@ -327,178 +328,215 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
       {isCompactMode ? (
         <div className="wood-texture p-3 sm:p-5 rounded-2xl border border-[#4a3e2e] shadow-2xl space-y-4 max-w-2xl mx-auto">
-          {/* Output Tape */}
-          <div className="bg-[#1b1710]/90 p-3 rounded-xl border border-[#3d3526] shadow-lg flex flex-col gap-2 w-full">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] tracking-wider uppercase flex items-center gap-1.5 font-bold">
-                <span className="material-symbols-outlined text-xs text-[#ebc238]">receipt_long</span>
-                OUTPUT TAPE
+          {keyboardBulbsOnly && (
+            <div className="bg-[#120e04] border border-[#ebc238]/40 text-[#ebc238] rounded-lg p-2.5 text-center text-xs font-monospaced-technical flex items-center justify-between shadow-panel">
+              <span className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">lightbulb</span>
+                Keys & Bulbs Only View Active (Minimalist Compact View)
               </span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => cipherTape && navigator.clipboard.writeText(formatTapeText(cipherTape))}
-                  className="p-1 text-[#8c7e6a] hover:text-[#e3c193] transition-colors rounded cursor-pointer"
-                  title="Copy Output Tape"
-                  aria-label="Copy Output"
-                >
-                  <span className="material-symbols-outlined text-sm">content_copy</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setInputTape(''); setCipherTape(''); }}
-                  className="p-1 text-[#8c7e6a] hover:text-[#ff8a80] transition-colors rounded cursor-pointer"
-                  title="Clear Output Tape"
-                  aria-label="Clear Output"
-                >
-                  <span className="material-symbols-outlined text-sm">backspace</span>
-                </button>
+              <button
+                type="button"
+                onClick={() => setKeyboardBulbsOnly(false)}
+                className="text-white hover:text-[#ebc238] underline font-ui-header cursor-pointer ml-2"
+              >
+                Show All Panels
+              </button>
+            </div>
+          )}
+
+          {/* Output Tape */}
+          {!keyboardBulbsOnly && (
+            <div className="bg-[#1b1710]/90 p-3 rounded-xl border border-[#3d3526] shadow-lg flex flex-col gap-2 w-full">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] tracking-wider uppercase flex items-center gap-1.5 font-bold">
+                  <span className="material-symbols-outlined text-xs text-[#ebc238]">receipt_long</span>
+                  OUTPUT TAPE
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => cipherTape && navigator.clipboard.writeText(formatTapeText(cipherTape))}
+                    className="p-1 text-[#8c7e6a] hover:text-[#e3c193] transition-colors rounded cursor-pointer"
+                    title="Copy Output Tape"
+                    aria-label="Copy Output"
+                  >
+                    <span className="material-symbols-outlined text-sm">content_copy</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setInputTape(''); setCipherTape(''); }}
+                    className="p-1 text-[#8c7e6a] hover:text-[#ff8a80] transition-colors rounded cursor-pointer"
+                    title="Clear Output Tape"
+                    aria-label="Clear Output"
+                  >
+                    <span className="material-symbols-outlined text-sm">backspace</span>
+                  </button>
+                </div>
+              </div>
+              <div className="paper-tape min-h-[44px] max-h-[80px] w-full px-3 py-2 font-monospaced-technical text-[#2b261f] overflow-y-auto break-all tracking-widest text-sm sm:text-base font-bold rounded shadow-inner flex items-center justify-between">
+                <span>{formatTapeText(cipherTape) || <span className="text-[#8c7e6a] italic font-normal text-xs">Tape output will appear here as you type...</span>}</span>
               </div>
             </div>
-            <div className="paper-tape min-h-[44px] max-h-[80px] w-full px-3 py-2 font-monospaced-technical text-[#2b261f] overflow-y-auto break-all tracking-widest text-sm sm:text-base font-bold rounded shadow-inner flex items-center justify-between">
-              <span>{formatTapeText(cipherTape) || <span className="text-[#8c7e6a] italic font-normal text-xs">Tape output will appear here as you type...</span>}</span>
-            </div>
-          </div>
+          )}
 
           {/* Rotor Bay (Walzenlage) */}
-          <div className="metal-plate p-3 rounded-xl shadow-md">
-            <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#3d3526]/60 px-1">
-              <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] tracking-widest uppercase flex items-center gap-1 font-bold">
-                <span className="material-symbols-outlined text-xs text-[#ebc238]">tune</span>
-                WALZENLAGE (ROTORS)
-              </span>
-              <div className="flex items-center gap-1 text-[10px] font-monospaced-technical">
-                <button
-                  type="button"
-                  onClick={() => handleSetRingFormat('number')}
-                  className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'number' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
-                >
-                  01–26
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSetRingFormat('letter')}
-                  className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'letter' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
-                >
-                  A–Z
-                </button>
+          {!keyboardBulbsOnly && (
+            <div className="metal-plate p-3 rounded-xl shadow-md">
+              <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#3d3526]/60 px-1">
+                <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] tracking-widest uppercase flex items-center gap-1 font-bold">
+                  <span className="material-symbols-outlined text-xs text-[#ebc238]">tune</span>
+                  WALZENLAGE (ROTORS)
+                </span>
+                <div className="flex items-center gap-1 text-[10px] font-monospaced-technical">
+                  <button
+                    type="button"
+                    onClick={() => handleSetRingFormat('number')}
+                    className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'number' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
+                  >
+                    01–26
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetRingFormat('letter')}
+                    className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'letter' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
+                  >
+                    A–Z
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="flex justify-center items-center gap-2 sm:gap-4 py-1">
-              {/* If M4 4th rotor present */}
-              {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+              <div className="flex justify-center items-center gap-2 sm:gap-4 py-1">
+                {/* If M4 4th rotor present */}
+                {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">
+                      FIXED
+                    </span>
+                    <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-16 sm:h-18 flex items-center justify-center my-0.5 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('fourthRotor', 1)}
+                        className="absolute top-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
+                        title="Rotate Up"
+                      >
+                        <span className="material-symbols-outlined text-[14px] leading-none">expand_less</span>
+                      </button>
+                      <span key={config.fourthRotor.current} className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold select-none leading-none animate-rotor-step">
+                        {formatRotorPos(config.fourthRotor.current, ringFormat)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('fourthRotor', -1)}
+                        className="absolute bottom-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
+                        title="Rotate Down"
+                      >
+                        <span className="material-symbols-outlined text-[14px] leading-none">expand_more</span>
+                      </button>
+                    </div>
+                    <span className="text-[10px] font-monospaced-technical text-[#ebc238] mt-1.5 font-bold tracking-wider">
+                      {config.fourthRotor.type === 'Beta' ? 'β' : 'γ'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Left Rotor */}
                 <div className="flex flex-col items-center">
-                  <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">
-                    FIXED
-                  </span>
-                  <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-14 sm:h-16 flex flex-col items-center justify-between py-1">
+                  <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">SLOW</span>
+                  <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-16 sm:h-18 flex items-center justify-center my-0.5 overflow-hidden">
                     <button
                       type="button"
-                      onClick={() => handleManualRotorStep('fourthRotor', 1)}
-                      className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
+                      onClick={() => handleManualRotorStep('leftRotor', 1)}
+                      className="absolute top-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
+                      title="Rotate Up"
                     >
-                      <span className="material-symbols-outlined text-xs">expand_less</span>
+                      <span className="material-symbols-outlined text-[14px] leading-none">expand_less</span>
                     </button>
-                    <span className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold">
-                      {formatRotorPos(config.fourthRotor.current, ringFormat)}
+                    <span key={config.leftRotor.current} className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold select-none leading-none animate-rotor-step">
+                      {formatRotorPos(config.leftRotor.current, ringFormat)}
                     </span>
                     <button
                       type="button"
-                      onClick={() => handleManualRotorStep('fourthRotor', -1)}
-                      className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
+                      onClick={() => handleManualRotorStep('leftRotor', -1)}
+                      className="absolute bottom-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
+                      title="Rotate Down"
                     >
-                      <span className="material-symbols-outlined text-xs">expand_more</span>
+                      <span className="material-symbols-outlined text-[14px] leading-none">expand_more</span>
                     </button>
                   </div>
-                  <span className="text-[9px] font-monospaced-technical text-[#ebc238] mt-1 font-bold">
-                    {config.fourthRotor.type === 'Beta' ? 'β' : 'γ'}
+                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] mt-1.5 font-bold tracking-wider">
+                    {config.leftRotor.type}
+                  </span>
+                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.leftRotor.type]?.turnoverAction}>
+                    Notch: {ROTOR_SPECS[config.leftRotor.type]?.notch}
                   </span>
                 </div>
-              )}
 
-              {/* Left Rotor */}
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">SLOW</span>
-                <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-14 sm:h-16 flex flex-col items-center justify-between py-1">
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('leftRotor', 1)}
-                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-xs">expand_less</span>
-                  </button>
-                  <span className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold">
-                    {formatRotorPos(config.leftRotor.current, ringFormat)}
+                {/* Middle Rotor */}
+                <div className="flex flex-col items-center">
+                  <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">MID</span>
+                  <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-16 sm:h-18 flex items-center justify-center my-0.5 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => handleManualRotorStep('middleRotor', 1)}
+                      className="absolute top-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
+                      title="Rotate Up"
+                    >
+                      <span className="material-symbols-outlined text-[14px] leading-none">expand_less</span>
+                    </button>
+                    <span key={config.middleRotor.current} className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold select-none leading-none animate-rotor-step">
+                      {formatRotorPos(config.middleRotor.current, ringFormat)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleManualRotorStep('middleRotor', -1)}
+                      className="absolute bottom-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
+                      title="Rotate Down"
+                    >
+                      <span className="material-symbols-outlined text-[14px] leading-none">expand_more</span>
+                    </button>
+                  </div>
+                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] mt-1.5 font-bold tracking-wider">
+                    {config.middleRotor.type}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('leftRotor', -1)}
-                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-xs">expand_more</span>
-                  </button>
+                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.middleRotor.type]?.turnoverAction}>
+                    Notch: {ROTOR_SPECS[config.middleRotor.type]?.notch}
+                  </span>
                 </div>
-                <span className="text-[9px] font-monospaced-technical text-[#d1c4b7] mt-1 font-bold">
-                  {config.leftRotor.type}
-                </span>
-              </div>
 
-              {/* Middle Rotor */}
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">MID</span>
-                <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-14 sm:h-16 flex flex-col items-center justify-between py-1">
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('middleRotor', 1)}
-                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-xs">expand_less</span>
-                  </button>
-                  <span className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold">
-                    {formatRotorPos(config.middleRotor.current, ringFormat)}
+                {/* Right Rotor */}
+                <div className="flex flex-col items-center">
+                  <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">FAST</span>
+                  <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-16 sm:h-18 flex items-center justify-center my-0.5 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => handleManualRotorStep('rightRotor', 1)}
+                      className="absolute top-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
+                      title="Rotate Up"
+                    >
+                      <span className="material-symbols-outlined text-[14px] leading-none">expand_less</span>
+                    </button>
+                    <span key={config.rightRotor.current} className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold select-none leading-none animate-rotor-step">
+                      {formatRotorPos(config.rightRotor.current, ringFormat)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleManualRotorStep('rightRotor', -1)}
+                      className="absolute bottom-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
+                      title="Rotate Down"
+                    >
+                      <span className="material-symbols-outlined text-[14px] leading-none">expand_more</span>
+                    </button>
+                  </div>
+                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] mt-1.5 font-bold tracking-wider">
+                    {config.rightRotor.type}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('middleRotor', -1)}
-                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-xs">expand_more</span>
-                  </button>
-                </div>
-                <span className="text-[9px] font-monospaced-technical text-[#d1c4b7] mt-1 font-bold">
-                  {config.middleRotor.type}
-                </span>
-              </div>
-
-              {/* Right Rotor */}
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">FAST</span>
-                <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-14 sm:h-16 flex flex-col items-center justify-between py-1">
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('rightRotor', 1)}
-                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-xs">expand_less</span>
-                  </button>
-                  <span className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold">
-                    {formatRotorPos(config.rightRotor.current, ringFormat)}
+                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.rightRotor.type]?.turnoverAction}>
+                    Notch: {ROTOR_SPECS[config.rightRotor.type]?.notch}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('rightRotor', -1)}
-                    className="text-[#83715d] hover:text-[#ebc238] cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-xs">expand_more</span>
-                  </button>
                 </div>
-                <span className="text-[9px] font-monospaced-technical text-[#d1c4b7] mt-1 font-bold">
-                  {config.rightRotor.type}
-                </span>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Lampboard (Lampenfeld) */}
           <div className="metal-plate p-3 sm:p-4 rounded-xl shadow-md flex flex-col items-center">
@@ -656,7 +694,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     >
                       <span className="material-symbols-outlined text-[14px]">expand_less</span>
                     </button>
-                    <span className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none">
+                    <span key={config.fourthRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
                       {formatRotorPos(config.fourthRotor.current, ringFormat)}
                     </span>
                     <button
@@ -686,7 +724,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   >
                     <span className="material-symbols-outlined text-[14px]">expand_less</span>
                   </button>
-                  <span className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none">
+                  <span key={config.leftRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
                     {formatRotorPos(config.leftRotor.current, ringFormat)}
                   </span>
                   <button
@@ -714,7 +752,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   >
                     <span className="material-symbols-outlined text-[14px]">expand_less</span>
                   </button>
-                  <span className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none">
+                  <span key={config.middleRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
                     {formatRotorPos(config.middleRotor.current, ringFormat)}
                   </span>
                   <button
@@ -742,7 +780,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   >
                     <span className="material-symbols-outlined text-[14px]">expand_less</span>
                   </button>
-                  <span className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none">
+                  <span key={config.rightRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
                     {formatRotorPos(config.rightRotor.current, ringFormat)}
                   </span>
                   <button

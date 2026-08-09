@@ -1,35 +1,43 @@
 import { EnigmaConfig, RotorType, ReflectorType, EncryptionResult, StepTrace } from '../types';
 
+export interface RotorSpec {
+  wiring: string;
+  notch: string;
+  turnoverAction?: string;
+  modelName: string;
+  year: string;
+}
+
 // Historical Enigma Rotor Wirings & Turnovers (Notch)
-export const ROTOR_SPECS: Record<RotorType, { wiring: string; notch: string; modelName: string; year: string }> = {
+export const ROTOR_SPECS: Record<RotorType, RotorSpec> = {
   // Enigma I / M3 Army & Air Force
-  'I':    { wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ', notch: 'Q', modelName: 'Enigma I / M3', year: '1930' },
-  'II':   { wiring: 'AJDKSIRUXBLHWTMCQGZNPYFVOE', notch: 'E', modelName: 'Enigma I / M3', year: '1930' },
-  'III':  { wiring: 'BDFHJLCPRTXVZNYEIWGAKMUSQO', notch: 'V', modelName: 'Enigma I / M3', year: '1930' },
-  'IV':   { wiring: 'ESOVPZJAYQUIRHXLNFTGKDCMWB', notch: 'J', modelName: 'M3 Army', year: 'Dec 1938' },
-  'V':    { wiring: 'VZBRGITYUPSDNHLXAWMJQOFECK', notch: 'Z', modelName: 'M3 Army', year: 'Dec 1938' },
-  'VI':   { wiring: 'JPGVOUMFYQBENHZRDKASXLICTW', notch: 'Z', modelName: 'M3 & M4 Naval', year: '1939' },
-  'VII':  { wiring: 'NZJHGRCXMYSWBOUFAIVLPEKQDT', notch: 'Z', modelName: 'M3 & M4 Naval', year: '1939' },
-  'VIII': { wiring: 'FKQHTLXOCBJSPDZRAMEWNIUYGV', notch: 'Z', modelName: 'M3 & M4 Naval', year: '1939' },
+  'I':    { wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ', notch: 'Q', turnoverAction: 'Moving from Q → R steps the next rotor.', modelName: 'Enigma I / M3', year: '1930' },
+  'II':   { wiring: 'AJDKSIRUXBLHWTMCQGZNPYFVOE', notch: 'E', turnoverAction: 'Moving from E → F steps the next rotor.', modelName: 'Enigma I / M3', year: '1930' },
+  'III':  { wiring: 'BDFHJLCPRTXVZNYEIWGAKMUSQO', notch: 'V', turnoverAction: 'Moving from V → W steps the next rotor.', modelName: 'Enigma I / M3', year: '1930' },
+  'IV':   { wiring: 'ESOVPZJAYQUIRHXLNFTGKDCMWB', notch: 'J', turnoverAction: 'Moving from J → K steps the next rotor.', modelName: 'M3 Army', year: 'Dec 1938' },
+  'V':    { wiring: 'VZBRGITYUPSDNHLXAWMJQOFECK', notch: 'Z', turnoverAction: 'Moving from Z → A steps the next rotor.', modelName: 'M3 Army', year: 'Dec 1938' },
+  'VI':   { wiring: 'JPGVOUMFYQBENHZRDKASXLICTW', notch: 'Z', turnoverAction: 'Two notches: Z → A and M → N step next rotor.', modelName: 'M3 & M4 Naval', year: '1939' },
+  'VII':  { wiring: 'NZJHGRCXMYSWBOUFAIVLPEKQDT', notch: 'Z', turnoverAction: 'Two notches: Z → A and M → N step next rotor.', modelName: 'M3 & M4 Naval', year: '1939' },
+  'VIII': { wiring: 'FKQHTLXOCBJSPDZRAMEWNIUYGV', notch: 'Z', turnoverAction: 'Two notches: Z → A and M → N step next rotor.', modelName: 'M3 & M4 Naval', year: '1939' },
 
   // M4 Naval Greek Rotors (Thin)
-  'Beta':  { wiring: 'LEYJVCNIXWPBQMDRTAKZGFUHOS', notch: 'Z', modelName: 'M4 R2', year: 'Spring 1941' },
-  'Gamma': { wiring: 'FSOKANUERHMBTIYCWLQPZXVGJD', notch: 'Z', modelName: 'M4 R2', year: 'Spring 1942' },
+  'Beta':  { wiring: 'LEYJVCNIXWPBQMDRTAKZGFUHOS', notch: 'Z', turnoverAction: 'Fixed stator (does not step or turn next rotor)', modelName: 'M4 R2', year: 'Spring 1941' },
+  'Gamma': { wiring: 'FSOKANUERHMBTIYCWLQPZXVGJD', notch: 'Z', turnoverAction: 'Fixed stator (does not step or turn next rotor)', modelName: 'M4 R2', year: 'Spring 1942' },
 
   // Commercial Enigma A, B (1924)
-  'IC':   { wiring: 'DMTWSILRUYQNKFEJCAZBPGXOHV', notch: 'Z', modelName: 'Commercial Enigma A, B', year: '1924' },
-  'IIC':  { wiring: 'HQZGPJTMOBLNCIFDYAWVEUSRKX', notch: 'Z', modelName: 'Commercial Enigma A, B', year: '1924' },
-  'IIIC': { wiring: 'UQNTLSZFMREHDPXKIBVYGJCWOA', notch: 'Z', modelName: 'Commercial Enigma A, B', year: '1924' },
+  'IC':   { wiring: 'DMTWSILRUYQNKFEJCAZBPGXOHV', notch: 'Z', turnoverAction: 'Moving from Z → A steps the next rotor.', modelName: 'Commercial Enigma A, B', year: '1924' },
+  'IIC':  { wiring: 'HQZGPJTMOBLNCIFDYAWVEUSRKX', notch: 'Z', turnoverAction: 'Moving from Z → A steps the next rotor.', modelName: 'Commercial Enigma A, B', year: '1924' },
+  'IIIC': { wiring: 'UQNTLSZFMREHDPXKIBVYGJCWOA', notch: 'Z', turnoverAction: 'Moving from Z → A steps the next rotor.', modelName: 'Commercial Enigma A, B', year: '1924' },
 
   // German Railway (Rocket) (1941)
-  'I-Rocket':   { wiring: 'JGDQOXUSCAMIFRVTPNEWKBLZYH', notch: 'Q', modelName: 'German Railway (Rocket)', year: '7 Feb 1941' },
-  'II-Rocket':  { wiring: 'NTZPSFBOKMWRCJDIVLAEYUXHGQ', notch: 'E', modelName: 'German Railway (Rocket)', year: '7 Feb 1941' },
-  'III-Rocket': { wiring: 'JVIUBHTCDYAKEQZPOSGXNRMWFL', notch: 'V', modelName: 'German Railway (Rocket)', year: '7 Feb 1941' },
+  'I-Rocket':   { wiring: 'JGDQOXUSCAMIFRVTPNEWKBLZYH', notch: 'Q', turnoverAction: 'Moving from Q → R steps the next rotor.', modelName: 'German Railway (Rocket)', year: '7 Feb 1941' },
+  'II-Rocket':  { wiring: 'NTZPSFBOKMWRCJDIVLAEYUXHGQ', notch: 'E', turnoverAction: 'Moving from E → F steps the next rotor.', modelName: 'German Railway (Rocket)', year: '7 Feb 1941' },
+  'III-Rocket': { wiring: 'JVIUBHTCDYAKEQZPOSGXNRMWFL', notch: 'V', turnoverAction: 'Moving from V → W steps the next rotor.', modelName: 'German Railway (Rocket)', year: '7 Feb 1941' },
 
   // Swiss K (1939)
-  'I-K':   { wiring: 'PEZUOHXSCVFMTBGLRINQJWAYDK', notch: 'Q', modelName: 'Swiss K', year: 'Feb 1939' },
-  'II-K':  { wiring: 'ZOUESYDKFWPCIQXHMVBLGNJRAT', notch: 'E', modelName: 'Swiss K', year: 'Feb 1939' },
-  'III-K': { wiring: 'EHRVXGAOBQUSIMZFLYNWKTPDJC', notch: 'V', modelName: 'Swiss K', year: 'Feb 1939' }
+  'I-K':   { wiring: 'PEZUOHXSCVFMTBGLRINQJWAYDK', notch: 'Q', turnoverAction: 'Moving from Q → R steps the next rotor.', modelName: 'Swiss K', year: 'Feb 1939' },
+  'II-K':  { wiring: 'ZOUESYDKFWPCIQXHMVBLGNJRAT', notch: 'E', turnoverAction: 'Moving from E → F steps the next rotor.', modelName: 'Swiss K', year: 'Feb 1939' },
+  'III-K': { wiring: 'EHRVXGAOBQUSIMZFLYNWKTPDJC', notch: 'V', turnoverAction: 'Moving from V → W steps the next rotor.', modelName: 'Swiss K', year: 'Feb 1939' }
 };
 
 // Reflector Wirings (Umkehrwalze)

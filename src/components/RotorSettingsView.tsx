@@ -5,7 +5,8 @@ import {
   numToChar,
   charToNum,
   formatRotorRing,
-  formatRotorPos
+  formatRotorPos,
+  ROTOR_SPECS
 } from '../lib/enigmaEngine';
 import { playRotorClickSound } from '../lib/audio';
 
@@ -426,6 +427,20 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                   </button>
                 </div>
               </div>
+
+              {/* Turnover Notch Info */}
+              <div className="bg-[#120e04]/80 p-2.5 rounded border border-[#3b3426] text-xs">
+                <div className="flex items-center justify-between text-[#ebc238] font-monospaced-technical font-bold text-[11px] mb-1">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs">lock</span>
+                    Fixed Stator
+                  </span>
+                  <span className="text-[#8c7e6a] text-[10px]">{ROTOR_SPECS[draftConfig.fourthRotor.type]?.year}</span>
+                </div>
+                <p className="text-[#a89985] text-[10px] leading-snug">
+                  {ROTOR_SPECS[draftConfig.fourthRotor.type]?.turnoverAction}
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -497,6 +512,20 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Turnover Notch Info */}
+            <div className="bg-[#120e04]/80 p-2.5 rounded border border-[#3b3426] text-xs">
+              <div className="flex items-center justify-between text-[#ebc238] font-monospaced-technical font-bold text-[11px] mb-1">
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">turn_right</span>
+                  Turnover Notch: {ROTOR_SPECS[draftConfig.leftRotor.type]?.notch}
+                </span>
+                <span className="text-[#8c7e6a] text-[10px]">{ROTOR_SPECS[draftConfig.leftRotor.type]?.year}</span>
+              </div>
+              <p className="text-[#a89985] text-[10px] leading-snug">
+                {ROTOR_SPECS[draftConfig.leftRotor.type]?.turnoverAction}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -566,6 +595,20 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Turnover Notch Info */}
+            <div className="bg-[#120e04]/80 p-2.5 rounded border border-[#3b3426] text-xs">
+              <div className="flex items-center justify-between text-[#ebc238] font-monospaced-technical font-bold text-[11px] mb-1">
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">turn_right</span>
+                  Turnover Notch: {ROTOR_SPECS[draftConfig.middleRotor.type]?.notch}
+                </span>
+                <span className="text-[#8c7e6a] text-[10px]">{ROTOR_SPECS[draftConfig.middleRotor.type]?.year}</span>
+              </div>
+              <p className="text-[#a89985] text-[10px] leading-snug">
+                {ROTOR_SPECS[draftConfig.middleRotor.type]?.turnoverAction}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -634,6 +677,20 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                   <span className="material-symbols-outlined text-[16px]">expand_more</span>
                 </button>
               </div>
+            </div>
+
+            {/* Turnover Notch Info */}
+            <div className="bg-[#120e04]/80 p-2.5 rounded border border-[#3b3426] text-xs">
+              <div className="flex items-center justify-between text-[#ebc238] font-monospaced-technical font-bold text-[11px] mb-1">
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">turn_right</span>
+                  Turnover Notch: {ROTOR_SPECS[draftConfig.rightRotor.type]?.notch}
+                </span>
+                <span className="text-[#8c7e6a] text-[10px]">{ROTOR_SPECS[draftConfig.rightRotor.type]?.year}</span>
+              </div>
+              <p className="text-[#a89985] text-[10px] leading-snug">
+                {ROTOR_SPECS[draftConfig.rightRotor.type]?.turnoverAction}
+              </p>
             </div>
           </div>
         </div>

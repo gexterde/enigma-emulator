@@ -130,6 +130,52 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
           <li><strong className="text-[#ede1cd]">Reciprocity:</strong> Encryption is symmetrical—if letter 'A' encrypts to 'G', setting the machine to the same key and typing 'G' will yield 'A'. No letter can ever encrypt to itself.</li>
         </ul>
 
+        <h4 className="font-bold text-[#ebc238] mt-3 pt-2 border-t border-[#3b3426]">Historical Rotor Turnover Notches:</h4>
+        <div className="overflow-x-auto bg-[#120e04] rounded border border-[#3b3426] p-2">
+          <table className="w-full text-left text-[11px] font-monospaced-technical">
+            <thead>
+              <tr className="border-b border-[#3b3426] text-[#ebc238]">
+                <th className="pb-1 px-1">Rotor</th>
+                <th className="pb-1 px-1">Turnover</th>
+                <th className="pb-1 px-1">Letter in Window</th>
+                <th className="pb-1 px-1">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#201b0f] text-[#d1c4b7]">
+              <tr>
+                <td className="py-1 px-1 font-bold text-[#e3c193]">Rotor I</td>
+                <td className="py-1 px-1 text-[#ebc238]">Q</td>
+                <td className="py-1 px-1">Q</td>
+                <td className="py-1 px-1 text-[#a89985]">Moving from Q → R steps the next rotor.</td>
+              </tr>
+              <tr>
+                <td className="py-1 px-1 font-bold text-[#e3c193]">Rotor II</td>
+                <td className="py-1 px-1 text-[#ebc238]">E</td>
+                <td className="py-1 px-1">E</td>
+                <td className="py-1 px-1 text-[#a89985]">Moving from E → F steps the next rotor.</td>
+              </tr>
+              <tr>
+                <td className="py-1 px-1 font-bold text-[#e3c193]">Rotor III</td>
+                <td className="py-1 px-1 text-[#ebc238]">V</td>
+                <td className="py-1 px-1">V</td>
+                <td className="py-1 px-1 text-[#a89985]">Moving from V → W steps the next rotor.</td>
+              </tr>
+              <tr>
+                <td className="py-1 px-1 font-bold text-[#e3c193]">Rotor IV</td>
+                <td className="py-1 px-1 text-[#ebc238]">J</td>
+                <td className="py-1 px-1">J</td>
+                <td className="py-1 px-1 text-[#a89985]">Moving from J → K steps the next rotor.</td>
+              </tr>
+              <tr>
+                <td className="py-1 px-1 font-bold text-[#e3c193]">Rotor V</td>
+                <td className="py-1 px-1 text-[#ebc238]">Z</td>
+                <td className="py-1 px-1">Z</td>
+                <td className="py-1 px-1 text-[#a89985]">Moving from Z → A steps the next rotor.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <p className="text-[10px] text-[#d1c4b7] italic pt-2 border-t border-[#3b3426]">
           Historical Note: Bletchley Park cryptanalysts including Alan Turing and Marian Rejewski exploited structural weaknesses in Enigma operation, pioneering modern computing with the electromechanical Bombe machine.
         </p>
