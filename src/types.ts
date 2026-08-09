@@ -37,7 +37,9 @@ export type ReflectorType =
   | 'UKW-K'
   // Backward compatibility aliases
   | 'UKW-B'
-  | 'UKW-C';
+  | 'UKW-C'
+  // ─── ÚJ KETTŐS REFLEKTOR TÍPUS ───
+  | 'UKW-Dual-Dynamic';
 
 export interface RotorState {
   type: RotorType;
@@ -67,8 +69,9 @@ export interface StepTrace {
 export interface EncryptionResult {
   outputChar: string;
   trace: StepTrace[];
-  rotorsBefore: { left: string; middle: string; right: string; fourth?: string };
-  rotorsAfter: { left: string; middle: string; right: string; fourth?: string };
+   // KIEGÉSZÍTVE: A nyomkövetéshez hozzáadjuk a reflektor állását is
+  rotorsBefore: { left: string; middle: string; right: string; fourth?: string; reflector: string };
+  rotorsAfter: { left: string; middle: string; right: string; fourth?: string; reflector: string };
 }
 
 export interface LogEntry {
