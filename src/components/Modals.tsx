@@ -190,6 +190,67 @@ interface ShareModalProps {
   config: EnigmaConfig;
 }
 
+export const ShortcutsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  const shortcuts = [
+    {
+      category: 'Navigation Tabs',
+      items: [
+        { key: 'F1 or Ctrl + M', desc: 'Machine View' },
+        { key: 'F2 or Ctrl + R', desc: 'Rotor Settings' },
+        { key: 'F3 or Ctrl + P', desc: 'Plugboard View' },
+        { key: 'F4 or Ctrl + B', desc: 'Codebook / Key Sheets' },
+        { key: 'F5 or Ctrl + L', desc: 'Log & History View' },
+      ]
+    },
+    {
+      category: 'Machine View Controls',
+      items: [
+        { key: 'Ctrl + C (or Ctrl + Shift + C)', desc: 'Toggle Compact Mode (Compact Battery Switch / Dense Layout)' },
+        { key: 'A – Z', desc: 'Type / Press Enigma Keys' },
+        { key: 'Backspace', desc: 'Remove last character from paper tape' },
+        { key: 'Space', desc: 'Add space separator on paper tape' },
+      ]
+    },
+    {
+      category: 'Modals & Dialogs',
+      items: [
+        { key: 'F6 or Ctrl + S', desc: 'Emulator Settings Modal' },
+        { key: 'F7 or Ctrl + H', desc: 'Historical Info & Manual' },
+        { key: 'F8 or Ctrl + Shift + S', desc: 'Share Key Configuration' },
+        { key: 'F9 or ?', desc: 'Keyboard Shortcuts (this dialog)' },
+        { key: 'Escape', desc: 'Close open dialog or menu' },
+      ]
+    }
+  ];
+
+  return (
+    <BaseModal isOpen={isOpen} onClose={onClose} title="Keyboard Shortcuts" icon="keyboard">
+      <div className="space-y-4">
+        {shortcuts.map((group, idx) => (
+          <div key={idx} className="space-y-2">
+            <h3 className="font-bold text-[#ebc238] text-xs uppercase tracking-wider border-b border-[#3b3426] pb-1">
+              {group.category}
+            </h3>
+            <div className="grid grid-cols-1 gap-1.5">
+              {group.items.map((item, itemIdx) => (
+                <div
+                  key={itemIdx}
+                  className="flex justify-between items-center bg-[#120e04] p-2 rounded border border-[#3b3426] text-[11px]"
+                >
+                  <span className="text-[#d1c4b7]">{item.desc}</span>
+                  <span className="font-monospaced-technical text-[#ebc238] bg-[#282113] px-2 py-0.5 rounded border border-[#4e422c] font-bold shrink-0 ml-2">
+                    {item.key}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </BaseModal>
+  );
+};
+
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, config }) => {
   const configStr = generateConfigString(config);
 

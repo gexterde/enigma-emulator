@@ -5,13 +5,15 @@ interface HeaderProps {
   onOpenSettings: () => void;
   onOpenInfo: () => void;
   onOpenShare: () => void;
+  onOpenShortcuts: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   onToggleMobileMenu,
   onOpenSettings,
   onOpenInfo,
-  onOpenShare
+  onOpenShare,
+  onOpenShortcuts
 }) => {
   return (
     <header className="shadow-[inset_0_-2px_4px_rgba(0,0,0,0.6)] bg-[#3b3426] shadow-md flex justify-between items-center w-full px-4 md:px-8 h-16 shrink-0 z-50">
@@ -29,11 +31,19 @@ export const Header: React.FC<HeaderProps> = ({
           Enigma Emulator
         </span>
       </div>
-      <div className="flex items-center gap-1 md:gap-4">
+      <div className="flex items-center gap-1 md:gap-2">
+        <button
+          onClick={onOpenShortcuts}
+          className="w-11 h-11 flex items-center justify-center text-[#d1c4b7] hover:bg-[#2f291c] hover:text-[#ebc238] transition-colors rounded-full transform active:scale-95 transition-all"
+          title="Keyboard Shortcuts (F9 / ?)"
+          aria-label="Keyboard Shortcuts"
+        >
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>keyboard</span>
+        </button>
         <button
           onClick={onOpenSettings}
           className="w-11 h-11 flex items-center justify-center text-[#d1c4b7] hover:bg-[#2f291c] transition-colors rounded-full transform active:scale-95 transition-all"
-          title="Settings"
+          title="Settings (F6 / ^S)"
           aria-label="Settings"
         >
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>settings</span>
@@ -41,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onOpenInfo}
           className="w-11 h-11 flex items-center justify-center text-[#d1c4b7] hover:bg-[#2f291c] transition-colors rounded-full transform active:scale-95 transition-all"
-          title="Historical Information"
+          title="Historical Information (F7 / ^H)"
           aria-label="Info"
         >
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>info</span>
@@ -49,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onOpenShare}
           className="w-11 h-11 flex items-center justify-center text-[#d1c4b7] hover:bg-[#2f291c] transition-colors rounded-full transform active:scale-95 transition-all hidden md:flex"
-          title="Share Configuration"
+          title="Share Configuration (F8 / ^Shift+S)"
           aria-label="Share"
         >
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>share</span>

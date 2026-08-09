@@ -18,12 +18,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
   config
 }) => {
-  const navItems: Array<{ id: ActiveTab; label: string; icon: string }> = [
-    { id: 'machine', label: 'Machine', icon: 'settings_input_component' },
-    { id: 'plugboard', label: 'Plugboard', icon: 'settings_ethernet' },
-    { id: 'rotors', label: 'Rotor Settings', icon: 'settings_overscan' },
-    { id: 'codebook', label: 'Codebook', icon: 'menu_book' },
-    { id: 'log', label: 'Log', icon: 'history_edu' }
+  const navItems: Array<{ id: ActiveTab; label: string; icon: string; shortcut: string }> = [
+    { id: 'machine', label: 'Machine', icon: 'settings_input_component', shortcut: 'F1 / ^M' },
+    { id: 'rotors', label: 'Rotor Settings', icon: 'settings_overscan', shortcut: 'F2 / ^R' },
+    { id: 'plugboard', label: 'Plugboard', icon: 'settings_ethernet', shortcut: 'F3 / ^P' },
+    { id: 'codebook', label: 'Codebook', icon: 'menu_book', shortcut: 'F4 / ^B' },
+    { id: 'log', label: 'Log', icon: 'history_edu', shortcut: 'F5 / ^L' }
   ];
 
   return (
@@ -90,7 +90,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   {item.icon}
                 </span>
-                <span className="text-ui-body font-ui-body">{item.label}</span>
+                <span className="text-ui-body font-ui-body flex-1">{item.label}</span>
+                <span className={`text-[10px] font-monospaced-technical px-1.5 py-0.5 rounded border transition-colors ${
+                  isActive ? 'bg-[#ebc238]/20 text-[#ebc238] border-[#ebc238]/40' : 'bg-[#18130b] text-[#8c7e6a] border-[#3b3426]'
+                }`}>
+                  {item.shortcut}
+                </span>
               </button>
             );
           })}

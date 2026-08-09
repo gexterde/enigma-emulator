@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { Footer } from './components/Footer';
@@ -7,7 +7,7 @@ import { MachineView } from './components/MachineView';
 import { PlugboardView } from './components/PlugboardView';
 import { CodebookView } from './components/CodebookView';
 import { LogView } from './components/LogView';
-import { SettingsModal, InfoModal, ShareModal } from './components/Modals';
+import { SettingsModal, InfoModal, ShareModal, ShortcutsModal } from './components/Modals';
 import { ActiveTab, EnigmaConfig, LogEntry } from './types';
 import { DEFAULT_ENIGMA_CONFIG } from './lib/enigmaEngine';
 
@@ -16,17 +16,120 @@ export default function App() {
   const [config, setConfig] = useState<EnigmaConfig>(DEFAULT_ENIGMA_CONFIG);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [compactMode, setCompactMode] = useState<boolean>(false);
 
   // Modals and sidebar state
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth >= 1024;
     }
     return false;
   });
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInputFocused =
+        target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+
+      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+      // F1 or Ctrl+M / Cmd+M -> Machine View
+      if (e.key === 'F1' || (isCtrlOrCmd && e.key.toLowerCase() === 'm')) {
+        e.preventDefault();
+        setActiveTab('machine');
+        return;
+      }
+
+      // Ctrl+C or Cmd+Shift+C / Ctrl+Shift+C -> Toggle Compact Mode
+      if (isCtrlOrCmd && e.key.toLowerCase() === 'c' && !isInputFocused) {
+        const selection = window.getSelection()?.toString();
+        // Only trigger compact mode if no text is currently highlighted
+        if (!selection || selection.length === 0) {
+          e.preventDefault();
+          setCompactMode((prev) => !prev);
+          return;
+        }
+      }
+
+      // F2 or Ctrl+R / Cmd+R -> Rotor Settings View
+      if (e.key === 'F2' || (isCtrlOrCmd && e.key.toLowerCase() === 'r')) {
+        e.preventDefault();
+        setActiveTab('rotors');
+        return;
+      }
+
+      // F3 or Ctrl+P / Cmd+P -> Plugboard View
+      if (e.key === 'F3' || (isCtrlOrCmd && e.key.toLowerCase() === 'p')) {
+        e.preventDefault();
+        setActiveTab('plugboard');
+        return;
+      }
+
+      // F4 or Ctrl+B / Cmd+B -> Codebook View
+      if (e.key === 'F4' || (isCtrlOrCmd && e.key.toLowerCase() === 'b')) {
+        e.preventDefault();
+        setActiveTab('codebook');
+        return;
+      }
+
+      // F5 or Ctrl+L / Cmd+L -> Log / History View
+      if (e.key === 'F5' || (isCtrlOrCmd && e.key.toLowerCase() === 'l')) {
+        e.preventDefault();
+        setActiveTab('log');
+        return;
+      }
+
+      // F6 or Ctrl+S / Cmd+S -> Settings Modal
+      if (e.key === 'F6' || (isCtrlOrCmd && e.key.toLowerCase() === 's' && !e.shiftKey)) {
+        e.preventDefault();
+        setIsSettingsOpen((prev) => !prev);
+        return;
+      }
+
+      // F7 or Ctrl+H / Cmd+H -> Info Modal
+      if (e.key === 'F7' || (isCtrlOrCmd && e.key.toLowerCase() === 'h')) {
+        e.preventDefault();
+        setIsInfoOpen((prev) => !prev);
+        return;
+      }
+
+      // F8 or Ctrl+Shift+S / Cmd+Shift+S -> Share Modal
+      if (e.key === 'F8' || (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 's')) {
+        e.preventDefault();
+        setIsShareOpen((prev) => !prev);
+        return;
+      }
+
+      // F9 or ? or Ctrl+Shift+K -> Shortcuts Modal
+      if (
+        e.key === 'F9' ||
+        (e.key === '?' && !isInputFocused) ||
+        (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 'k')
+      ) {
+        e.preventDefault();
+        setIsShortcutsOpen((prev) => !prev);
+        return;
+      }
+
+      // Escape -> Close any active dialog or mobile menu
+      if (e.key === 'Escape') {
+        setIsSettingsOpen(false);
+        setIsInfoOpen(false);
+        setIsShareOpen(false);
+        setIsShortcutsOpen(false);
+        setIsMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Apply new configuration (from Rotor Settings)
   const handleApplyConfig = (newConfig: EnigmaConfig) => {
@@ -51,6 +154,7 @@ export default function App() {
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenInfo={() => setIsInfoOpen(true)}
         onOpenShare={() => setIsShareOpen(true)}
+        onOpenShortcuts={() => setIsShortcutsOpen(true)}
       />
 
       {/* Body container with Sidebar and Main Content */}
@@ -80,6 +184,8 @@ export default function App() {
               onUpdateConfig={setConfig}
               onAddLog={handleAddLog}
               soundEnabled={soundEnabled}
+              compactMode={compactMode}
+              onToggleCompactMode={() => setCompactMode((prev) => !prev)}
             />
           )}
 
@@ -126,6 +232,11 @@ export default function App() {
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
         config={config}
+      />
+
+      <ShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { EnigmaConfig, LogEntry, StepTrace } from '../types';
+import { EnigmaConfig, LogEntry, StepTrace, RotorType, ReflectorType } from '../types';
 import {
   encryptChar,
   numToChar,
@@ -11,12 +11,404 @@ import {
 } from '../lib/enigmaEngine';
 import { playKeyClickSound, playRotorClickSound } from '../lib/audio';
 import { SignalPathAnimation } from './SignalPathAnimation';
+import { PlugboardPanel } from './PlugboardPanel';
+
+interface RotorQuickModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  config: EnigmaConfig;
+  onUpdateConfig: (newConfig: EnigmaConfig) => void;
+  soundEnabled: boolean;
+  ringFormat: 'number' | 'letter';
+}
+
+const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
+  isOpen,
+  onClose,
+  config,
+  onUpdateConfig,
+  soundEnabled,
+  ringFormat
+}) => {
+  if (!isOpen) return null;
+
+  const rotorOptions: RotorType[] = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+  const reflectorOptions: ReflectorType[] = ['Reflector B', 'Reflector C', 'Reflector A', 'Reflector B Thin', 'Reflector C Thin'];
+
+  const handleUpdateRotorType = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor', type: RotorType) => {
+    playRotorClickSound(soundEnabled);
+    onUpdateConfig({
+      ...config,
+      [rotorKey]: { ...config[rotorKey], type }
+    });
+  };
+
+  const handleAdjustRing = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor', delta: number) => {
+    playRotorClickSound(soundEnabled);
+    const currentVal = config[rotorKey].ring;
+    let nextVal = currentVal + delta;
+    if (nextVal > 26) nextVal = 1;
+    if (nextVal < 1) nextVal = 26;
+    onUpdateConfig({
+      ...config,
+      [rotorKey]: { ...config[rotorKey], ring: nextVal }
+    });
+  };
+
+  const handleAdjustStart = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor', delta: number) => {
+    playRotorClickSound(soundEnabled);
+    const currentVal = config[rotorKey].start;
+    let nextVal = (currentVal + delta + 26) % 26;
+    onUpdateConfig({
+      ...config,
+      [rotorKey]: { ...config[rotorKey], start: nextVal, current: nextVal }
+    });
+  };
+
+  const handleUpdateReflector = (reflector: ReflectorType) => {
+    playRotorClickSound(soundEnabled);
+    onUpdateConfig({ ...config, reflector });
+  };
+
+  const handleResetPositions = () => {
+    playRotorClickSound(soundEnabled);
+    onUpdateConfig({
+      ...config,
+      leftRotor: { ...config.leftRotor, start: 0, current: 0 },
+      middleRotor: { ...config.middleRotor, start: 0, current: 0 },
+      rightRotor: { ...config.rightRotor, start: 0, current: 0 },
+      fourthRotor: { ...config.fourthRotor, start: 0, current: 0 }
+    });
+  };
+
+  const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
+      <div className="bg-[#1a150c] border border-[#ebc238]/40 rounded-xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl texture-metal text-[#d1c4b7] relative my-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#3b3426]">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#ebc238] text-xl">settings_overscan</span>
+            <div>
+              <h2 className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold leading-tight">
+                Rotor & Reflector Quick Settings
+              </h2>
+              <p className="text-[11px] text-[#9e8d78]">Adjust rotor order, ring settings (Ringstellung), and initial positions</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center text-[#8c7e6a] hover:text-[#ebc238] bg-[#221c11] rounded-full border border-[#3b3426] transition-colors cursor-pointer"
+            title="Close"
+          >
+            <span className="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+
+        {/* Reflector & Machine Mode */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 bg-[#120e04] p-3 rounded-lg border border-[#3b3426]">
+          <div>
+            <label className="text-[11px] font-monospaced-technical text-[#ebc238] uppercase font-bold block mb-1">
+              Reflector (Umkehrwalze - UKW)
+            </label>
+            <select
+              value={config.reflector}
+              onChange={(e) => handleUpdateReflector(e.target.value as ReflectorType)}
+              className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2.5 py-1.5 text-xs text-[#ebc238] font-bold focus:outline-none focus:border-[#ebc238] cursor-pointer"
+            >
+              {reflectorOptions.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-monospaced-technical text-[#ebc238] uppercase font-bold block mb-1">
+              4th Rotor Mode (M4 Naval)
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  playRotorClickSound(soundEnabled);
+                  onUpdateConfig({
+                    ...config,
+                    fourthRotor: { ...config.fourthRotor, type: 'Beta' },
+                    reflector: 'Reflector B Thin'
+                  });
+                }}
+                className={`flex-1 py-1 px-2 text-xs rounded border cursor-pointer font-bold transition-all ${
+                  config.fourthRotor.type === 'Beta' ? 'bg-[#ebc238] text-[#201b0f] border-[#ebc238]' : 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426] hover:text-[#ebc238]'
+                }`}
+              >
+                M4 (Beta)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playRotorClickSound(soundEnabled);
+                  onUpdateConfig({
+                    ...config,
+                    fourthRotor: { ...config.fourthRotor, type: 'Gamma' },
+                    reflector: 'Reflector C Thin'
+                  });
+                }}
+                className={`flex-1 py-1 px-2 text-xs rounded border cursor-pointer font-bold transition-all ${
+                  config.fourthRotor.type === 'Gamma' ? 'bg-[#ebc238] text-[#201b0f] border-[#ebc238]' : 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426] hover:text-[#ebc238]'
+                }`}
+              >
+                M4 (Gamma)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Rotors Grid */}
+        <div className={`grid grid-cols-1 ${isM4 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 mb-4`}>
+          {/* M4 4th Rotor if active */}
+          {isM4 && (
+            <div className="bg-[#120e04] p-3 rounded-lg border border-[#ebc238]/30 flex flex-col items-center">
+              <span className="text-[10px] font-monospaced-technical text-[#ebc238] font-bold uppercase mb-1">
+                4th Rotor ({config.fourthRotor.type})
+              </span>
+              <div className="w-full space-y-2 mt-1">
+                <div>
+                  <span className="text-[10px] text-[#9e8d78] block mb-0.5">Ringstellung</span>
+                  <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
+                    <button onClick={() => handleAdjustRing('fourthRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
+                    <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorRing(config.fourthRotor.ring, ringFormat)}</span>
+                    <button onClick={() => handleAdjustRing('fourthRotor', 1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">+</button>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#9e8d78] block mb-0.5">Grundstellung</span>
+                  <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
+                    <button onClick={() => handleAdjustStart('fourthRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
+                    <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorPos(config.fourthRotor.start, ringFormat)}</span>
+                    <button onClick={() => handleAdjustStart('fourthRotor', 1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Left / Slow Rotor */}
+          <div className="bg-[#120e04] p-3 rounded-lg border border-[#3b3426] flex flex-col items-center">
+            <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase mb-1">
+              Slow Rotor (Left)
+            </span>
+            <select
+              value={config.leftRotor.type}
+              onChange={(e) => handleUpdateRotorType('leftRotor', e.target.value as RotorType)}
+              className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2 py-1 text-xs text-[#ebc238] font-bold mb-2 cursor-pointer text-center"
+            >
+              {rotorOptions.map((r) => (
+                <option key={r} value={r}>Rotor {r}</option>
+              ))}
+            </select>
+            <div className="w-full space-y-2">
+              <div>
+                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Ringstellung</span>
+                <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
+                  <button onClick={() => handleAdjustRing('leftRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
+                  <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorRing(config.leftRotor.ring, ringFormat)}</span>
+                  <button onClick={() => handleAdjustRing('leftRotor', 1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">+</button>
+                </div>
+              </div>
+              <div>
+                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Grundstellung</span>
+                <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
+                  <button onClick={() => handleAdjustStart('leftRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
+                  <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorPos(config.leftRotor.start, ringFormat)}</span>
+                  <button onClick={() => handleAdjustStart('leftRotor', 1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Middle Rotor */}
+          <div className="bg-[#120e04] p-3 rounded-lg border border-[#3b3426] flex flex-col items-center">
+            <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase mb-1">
+              Mid Rotor (Center)
+            </span>
+            <select
+              value={config.middleRotor.type}
+              onChange={(e) => handleUpdateRotorType('middleRotor', e.target.value as RotorType)}
+              className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2 py-1 text-xs text-[#ebc238] font-bold mb-2 cursor-pointer text-center"
+            >
+              {rotorOptions.map((r) => (
+                <option key={r} value={r}>Rotor {r}</option>
+              ))}
+            </select>
+            <div className="w-full space-y-2">
+              <div>
+                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Ringstellung</span>
+                <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
+                  <button onClick={() => handleAdjustRing('middleRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
+                  <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorRing(config.middleRotor.ring, ringFormat)}</span>
+                  <button onClick={() => handleAdjustRing('middleRotor', 1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">+</button>
+                </div>
+              </div>
+              <div>
+                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Grundstellung</span>
+                <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
+                  <button onClick={() => handleAdjustStart('middleRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
+                  <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorPos(config.middleRotor.start, ringFormat)}</span>
+                  <button onClick={() => handleAdjustStart('middleRotor', 1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right / Fast Rotor */}
+          <div className="bg-[#120e04] p-3 rounded-lg border border-[#3b3426] flex flex-col items-center">
+            <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase mb-1">
+              Fast Rotor (Right)
+            </span>
+            <select
+              value={config.rightRotor.type}
+              onChange={(e) => handleUpdateRotorType('rightRotor', e.target.value as RotorType)}
+              className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2 py-1 text-xs text-[#ebc238] font-bold mb-2 cursor-pointer text-center"
+            >
+              {rotorOptions.map((r) => (
+                <option key={r} value={r}>Rotor {r}</option>
+              ))}
+            </select>
+            <div className="w-full space-y-2">
+              <div>
+                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Ringstellung</span>
+                <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
+                  <button onClick={() => handleAdjustRing('rightRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
+                  <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorRing(config.rightRotor.ring, ringFormat)}</span>
+                  <button onClick={() => handleAdjustRing('rightRotor', 1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">+</button>
+                </div>
+              </div>
+              <div>
+                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Grundstellung</span>
+                <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
+                  <button onClick={() => handleAdjustStart('rightRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
+                  <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorPos(config.rightRotor.start, ringFormat)}</span>
+                  <button onClick={() => handleAdjustStart('rightRotor', 1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer buttons */}
+        <div className="flex items-center justify-between pt-3 border-t border-[#3b3426]">
+          <button
+            type="button"
+            onClick={handleResetPositions}
+            className="px-3 py-1.5 text-xs text-[#d1c4b7] hover:text-[#ebc238] bg-[#201b0f] hover:bg-[#2c2415] rounded border border-[#3b3426] cursor-pointer transition-colors"
+          >
+            Reset Positions to A (01)
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-1.5 text-xs text-[#201b0f] bg-[#ebc238] hover:bg-[#ffd700] rounded font-bold cursor-pointer transition-colors shadow-md"
+          >
+            Done & Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface PlugboardQuickModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  config: EnigmaConfig;
+  onUpdateConfig: (newConfig: EnigmaConfig) => void;
+  soundEnabled: boolean;
+}
+
+const PlugboardQuickModal: React.FC<PlugboardQuickModalProps> = ({
+  isOpen,
+  onClose,
+  config,
+  onUpdateConfig,
+  soundEnabled
+}) => {
+  if (!isOpen) return null;
+
+  const pairsCount = Object.keys(config.plugboard || {}).length / 2;
+
+  const handleClearAll = () => {
+    onUpdateConfig({ ...config, plugboard: {} });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
+      <div className="bg-[#1a150c] border border-[#ebc238]/40 rounded-xl max-w-3xl w-full p-4 sm:p-6 shadow-2xl texture-metal text-[#d1c4b7] relative my-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#3b3426]">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#ebc238] text-xl">settings_ethernet</span>
+            <div>
+              <h2 className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold leading-tight flex items-center gap-2">
+                Plugboard (Steckerbrett) Quick Settings
+                <span className="text-[10px] font-monospaced-technical bg-[#ebc238]/20 text-[#ebc238] px-2 py-0.5 rounded border border-[#ebc238]/40">
+                  {pairsCount} / 10 Pairs
+                </span>
+              </h2>
+              <p className="text-[11px] text-[#9e8d78]">Connect or disconnect socket pairs directly on the Enigma front panel</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center text-[#8c7e6a] hover:text-[#ebc238] bg-[#221c11] rounded-full border border-[#3b3426] transition-colors cursor-pointer"
+            title="Close"
+          >
+            <span className="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+
+        {/* Plugboard Interactive Panel */}
+        <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-3 sm:p-4 shadow-panel texture-metal mb-4">
+          <PlugboardPanel
+            config={config}
+            onUpdateConfig={onUpdateConfig}
+            soundEnabled={soundEnabled}
+            showTitle={false}
+          />
+        </div>
+
+        {/* Footer Controls */}
+        <div className="flex items-center justify-between pt-3 border-t border-[#3b3426]">
+          <button
+            type="button"
+            onClick={handleClearAll}
+            disabled={pairsCount === 0}
+            className="px-3 py-1.5 text-xs text-[#ff8a80] hover:text-[#ff5252] bg-[#201b0f] hover:bg-[#2c1a1a] rounded border border-[#3b3426] disabled:opacity-40 cursor-pointer transition-colors"
+          >
+            Clear All Plugs
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-1.5 text-xs text-[#201b0f] bg-[#ebc238] hover:bg-[#ffd700] rounded font-bold cursor-pointer transition-colors shadow-md"
+          >
+            Done & Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface MachineViewProps {
   config: EnigmaConfig;
   onUpdateConfig: (newConfig: EnigmaConfig) => void;
   onAddLog: (entry: LogEntry) => void;
   soundEnabled: boolean;
+  compactMode?: boolean;
+  onToggleCompactMode?: () => void;
 }
 
 // Authentic Enigma M3/M4 Lampboard/Keyboard Layout (3 rows: 9, 8, 9 keys)
@@ -57,15 +449,15 @@ const BatterySwitch: React.FC<BatterySwitchProps> = ({ mode, onChangeMode, compa
   return (
     <div
       className={`flex flex-col items-center bg-[#100d07] rounded-xl border border-[#3b3426] shadow-2xl select-none w-full transition-all ${
-        compact ? 'p-1.5 max-w-[165px]' : 'p-2.5 sm:p-3 max-w-[220px]'
+        compact ? 'p-1.5 max-w-[145px]' : 'p-2 max-w-[160px]'
       }`}
     >
-      <div className={`font-monospaced-technical text-[#a89983] uppercase tracking-wider font-bold flex items-center gap-1 ${compact ? 'text-[8px] mb-0.5' : 'text-[10px] mb-1'}`}>
+      <div className={`font-monospaced-technical text-[#a89983] uppercase tracking-wider font-bold flex items-center gap-1 ${compact ? 'text-[8px] mb-0.5' : 'text-[9px] mb-0.5'}`}>
         <span className="material-symbols-outlined text-xs text-[#ebc238]">bolt</span>
         BATTERIESCHALTER
       </div>
 
-      <div className={`relative flex items-center justify-center bg-[#18130b] rounded-lg border border-[#2d2518] p-1 shadow-inner w-full ${compact ? 'h-24 my-0.5' : 'h-32 my-1'}`}>
+      <div className={`relative flex items-center justify-center bg-[#18130b] rounded-lg border border-[#2d2518] p-1 shadow-inner w-full ${compact ? 'h-20 my-0.5' : 'h-24 my-0.5'}`}>
         <svg viewBox="0 0 200 135" className="w-full h-full overflow-visible">
           <defs>
             {/* Wrinkled dark metallic panel texture gradient */}
@@ -255,7 +647,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
   config,
   onUpdateConfig,
   onAddLog,
-  soundEnabled
+  soundEnabled,
+  compactMode,
+  onToggleCompactMode
 }) => {
   const [litLamp, setLitLamp] = useState<string | null>(null);
   const [pressedKey, setPressedKey] = useState<string | null>(null);
@@ -297,10 +691,13 @@ export const MachineView: React.FC<MachineViewProps> = ({
   }, []);
 
   // Visibility toggles requested by user
+  const [showRotorModal, setShowRotorModal] = useState<boolean>(false);
+  const [showPlugModal, setShowPlugModal] = useState<boolean>(false);
   const [showChamber, setShowChamber] = useState<boolean>(true);
   const [showSignalAnimation, setShowSignalAnimation] = useState<boolean>(false);
   const [keyboardBulbsOnly, setKeyboardBulbsOnly] = useState<boolean>(false);
   const [isCompactMode, setIsCompactMode] = useState<boolean>(() => {
+    if (compactMode !== undefined) return compactMode;
     try {
       return localStorage.getItem('enigma_compact_mode') === 'true';
     } catch (e) {
@@ -308,9 +705,18 @@ export const MachineView: React.FC<MachineViewProps> = ({
     }
   });
 
+  useEffect(() => {
+    if (compactMode !== undefined && compactMode !== isCompactMode) {
+      setIsCompactMode(compactMode);
+    }
+  }, [compactMode]);
+
   const handleToggleCompactMode = () => {
     const next = !isCompactMode;
     setIsCompactMode(next);
+    if (onToggleCompactMode) {
+      onToggleCompactMode();
+    }
     try {
       localStorage.setItem('enigma_compact_mode', String(next));
     } catch (e) {
@@ -694,6 +1100,36 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 </div>
               </div>
 
+              {/* Quick Settings Action Bar in front of Rotors */}
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3 bg-[#18130a] px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowRotorModal(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    title="Open Quick Rotor Settings Pop-Up Window"
+                  >
+                    <span className="material-symbols-outlined text-sm">settings_overscan</span>
+                    <span>ROTOR SETTINGS</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPlugModal(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    title="Open Quick Plugboard Settings Pop-Up Window"
+                  >
+                    <span className="material-symbols-outlined text-sm">settings_ethernet</span>
+                    <span>PLUG SETTINGS</span>
+                    <span className="bg-[#ebc238]/20 text-[#ebc238] px-1.5 py-0.2 rounded text-[10px] font-mono">
+                      {Object.keys(config.plugboard || {}).length / 2} pairs
+                    </span>
+                  </button>
+                </div>
+                <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
+                  Reflector: <span className="text-[#ebc238] font-bold">{config.reflector}</span>
+                </div>
+              </div>
+
               <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 py-1">
                 {/* If M4 4th rotor present */}
                 {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
@@ -978,138 +1414,169 @@ export const MachineView: React.FC<MachineViewProps> = ({
           </div>
 
           {showChamber ? (
-            <div className="flex flex-col lg:flex-row items-center justify-center gap-4 max-w-3xl mx-auto pt-2">
-              <div className={`grid grid-cols-2 ${config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-3 flex-1 w-full`}>
-                {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
-                {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
-                  <div className="bg-[#120e04] rounded p-3 border border-[#3b3426] flex flex-col items-center">
-                    <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical mb-1">
-                      FIXED ({config.fourthRotor.type === 'Beta' ? 'β' : 'γ'})
+            <div className="space-y-3 max-w-xl mx-auto pt-1">
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18130a] px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowRotorModal(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    title="Open Quick Rotor Settings Pop-Up Window"
+                  >
+                    <span className="material-symbols-outlined text-sm">settings_overscan</span>
+                    <span>ROTOR SETTINGS</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPlugModal(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    title="Open Quick Plugboard Settings Pop-Up Window"
+                  >
+                    <span className="material-symbols-outlined text-sm">settings_ethernet</span>
+                    <span>PLUG SETTINGS</span>
+                    <span className="bg-[#ebc238]/20 text-[#ebc238] px-1.5 py-0.2 rounded text-[10px] font-mono">
+                      {Object.keys(config.plugboard || {}).length / 2} pairs
                     </span>
-                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-16 h-16 flex items-center justify-center my-1 overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('fourthRotor', 1)}
-                        className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                        title="Rotate Up (manual only)"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">expand_less</span>
-                      </button>
-                      <span key={config.fourthRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
-                        {formatRotorPos(config.fourthRotor.current, ringFormat)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('fourthRotor', -1)}
-                        className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                        title="Rotate Down (manual only)"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">expand_more</span>
-                      </button>
-                    </div>
-                    <span className="text-[8px] text-[#83715d] font-monospaced-technical mt-0.5" title={ROTOR_SPECS[config.fourthRotor.type]?.turnoverAction}>
-                      Fixed Stator
-                    </span>
-                  </div>
-                )}
-
-                {/* Slow Rotor */}
-                <div className="bg-[#120e04] rounded p-3 border border-[#3b3426] flex flex-col items-center">
-                  <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical mb-1">
-                    SLOW ({config.leftRotor.type})
-                  </span>
-                  <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-16 h-16 flex items-center justify-center my-1 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('leftRotor', 1)}
-                      className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                      title="Rotate Up"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">expand_less</span>
-                    </button>
-                    <span key={config.leftRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
-                      {formatRotorPos(config.leftRotor.current, ringFormat)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('leftRotor', -1)}
-                      className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                      title="Rotate Down"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">expand_more</span>
-                    </button>
-                  </div>
-                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.leftRotor.type]?.turnoverAction}>
-                    Notch: {ROTOR_SPECS[config.leftRotor.type]?.notch}
-                  </span>
+                  </button>
                 </div>
-
-                {/* Middle Rotor */}
-                <div className="bg-[#120e04] rounded p-3 border border-[#3b3426] flex flex-col items-center">
-                  <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical mb-1">
-                    MID ({config.middleRotor.type})
-                  </span>
-                  <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-16 h-16 flex items-center justify-center my-1 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('middleRotor', 1)}
-                      className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                      title="Rotate Up"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">expand_less</span>
-                    </button>
-                    <span key={config.middleRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
-                      {formatRotorPos(config.middleRotor.current, ringFormat)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('middleRotor', -1)}
-                      className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                      title="Rotate Down"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">expand_more</span>
-                    </button>
-                  </div>
-                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.middleRotor.type]?.turnoverAction}>
-                    Notch: {ROTOR_SPECS[config.middleRotor.type]?.notch}
-                  </span>
-                </div>
-
-                {/* Fast Rotor */}
-                <div className="bg-[#120e04] rounded p-3 border border-[#3b3426] flex flex-col items-center">
-                  <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical mb-1">
-                    FAST ({config.rightRotor.type})
-                  </span>
-                  <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-16 h-16 flex items-center justify-center my-1 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('rightRotor', 1)}
-                      className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                      title="Rotate Up"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">expand_less</span>
-                    </button>
-                    <span key={config.rightRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
-                      {formatRotorPos(config.rightRotor.current, ringFormat)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('rightRotor', -1)}
-                      className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                      title="Rotate Down"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">expand_more</span>
-                    </button>
-                  </div>
-                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.rightRotor.type]?.turnoverAction}>
-                    Notch: {ROTOR_SPECS[config.rightRotor.type]?.notch}
-                  </span>
+                <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
+                  Reflector: <span className="text-[#ebc238] font-bold">{config.reflector}</span>
                 </div>
               </div>
 
-              {/* Battery Switch */}
-              <div className="flex flex-col items-center pl-0 lg:pl-4 border-t lg:border-t-0 lg:border-l border-[#3b3426] pt-3 lg:pt-0">
-                <BatterySwitch mode={batteryMode} onChangeMode={handleSetBatteryMode} compact={false} />
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2.5 rounded-xl border border-[#3b3426]">
+                <div className={`grid grid-cols-2 ${config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'sm:grid-cols-4 max-w-xs sm:max-w-md' : 'sm:grid-cols-3 max-w-xs sm:max-w-sm'} gap-2 w-full mx-auto`}>
+                  {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
+                  {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+                    <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm">
+                      <span className="text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5">
+                        FIXED ({config.fourthRotor.type === 'Beta' ? 'β' : 'γ'})
+                      </span>
+                      <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => handleManualRotorStep('fourthRotor', 1)}
+                          className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                          title="Rotate Up (manual only)"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">expand_less</span>
+                        </button>
+                        <span key={config.fourthRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
+                          {formatRotorPos(config.fourthRotor.current, ringFormat)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleManualRotorStep('fourthRotor', -1)}
+                          className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                          title="Rotate Down (manual only)"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">expand_more</span>
+                        </button>
+                      </div>
+                      <span className="text-[8px] text-[#83715d] font-monospaced-technical mt-0.5" title={ROTOR_SPECS[config.fourthRotor.type]?.turnoverAction}>
+                        Fixed Stator
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Slow Rotor */}
+                  <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm">
+                    <span className="text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5">
+                      SLOW ({config.leftRotor.type})
+                    </span>
+                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('leftRotor', 1)}
+                        className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                        title="Rotate Up"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">expand_less</span>
+                      </button>
+                      <span key={config.leftRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
+                        {formatRotorPos(config.leftRotor.current, ringFormat)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('leftRotor', -1)}
+                        className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                        title="Rotate Down"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">expand_more</span>
+                      </button>
+                    </div>
+                    <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.leftRotor.type]?.turnoverAction}>
+                      Notch: {ROTOR_SPECS[config.leftRotor.type]?.notch}
+                    </span>
+                  </div>
+
+                  {/* Middle Rotor */}
+                  <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm">
+                    <span className="text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5">
+                      MID ({config.middleRotor.type})
+                    </span>
+                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('middleRotor', 1)}
+                        className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                        title="Rotate Up"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">expand_less</span>
+                      </button>
+                      <span key={config.middleRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
+                        {formatRotorPos(config.middleRotor.current, ringFormat)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('middleRotor', -1)}
+                        className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                        title="Rotate Down"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">expand_more</span>
+                      </button>
+                    </div>
+                    <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.middleRotor.type]?.turnoverAction}>
+                      Notch: {ROTOR_SPECS[config.middleRotor.type]?.notch}
+                    </span>
+                  </div>
+
+                  {/* Fast Rotor */}
+                  <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm">
+                    <span className="text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5">
+                      FAST ({config.rightRotor.type})
+                    </span>
+                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('rightRotor', 1)}
+                        className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                        title="Rotate Up"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">expand_less</span>
+                      </button>
+                      <span key={config.rightRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
+                        {formatRotorPos(config.rightRotor.current, ringFormat)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('rightRotor', -1)}
+                        className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                        title="Rotate Down"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">expand_more</span>
+                      </button>
+                    </div>
+                    <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.rightRotor.type]?.turnoverAction}>
+                      Notch: {ROTOR_SPECS[config.rightRotor.type]?.notch}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Battery Switch */}
+                <div className="flex flex-col items-center justify-center pt-2 sm:pt-0 sm:pl-3 border-t sm:border-t-0 sm:border-l border-[#3b3426]">
+                  <BatterySwitch mode={batteryMode} onChangeMode={handleSetBatteryMode} compact={false} />
+                </div>
               </div>
             </div>
           ) : (
@@ -1346,6 +1813,24 @@ export const MachineView: React.FC<MachineViewProps> = ({
       )}
         </>
       )}
+
+      {/* Pop-up Modals for Rotors & Plugboard Settings */}
+      <RotorQuickModal
+        isOpen={showRotorModal}
+        onClose={() => setShowRotorModal(false)}
+        config={config}
+        onUpdateConfig={onUpdateConfig}
+        soundEnabled={soundEnabled}
+        ringFormat={ringFormat}
+      />
+
+      <PlugboardQuickModal
+        isOpen={showPlugModal}
+        onClose={() => setShowPlugModal(false)}
+        config={config}
+        onUpdateConfig={onUpdateConfig}
+        soundEnabled={soundEnabled}
+      />
     </div>
   );
 };
