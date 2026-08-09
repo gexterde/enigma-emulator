@@ -12,6 +12,7 @@ import {
 import { playKeyClickSound, playRotorClickSound } from '../lib/audio';
 import { SignalPathAnimation } from './SignalPathAnimation';
 import { PlugboardPanel } from './PlugboardPanel';
+import { HISTORICAL_CODEBOOKS, CodebookSheet, CodebookEntry } from './CodebookView';
 
 interface RotorQuickModalProps {
   isOpen: boolean;
@@ -402,6 +403,228 @@ const PlugboardQuickModal: React.FC<PlugboardQuickModalProps> = ({
   );
 };
 
+interface CodebookQuickModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onUpdateConfig: (newConfig: EnigmaConfig) => void;
+  soundEnabled: boolean;
+  ringFormat: 'number' | 'letter';
+}
+
+const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
+  isOpen,
+  onClose,
+  onUpdateConfig,
+  soundEnabled,
+  ringFormat
+}) => {
+  if (!isOpen) return null;
+
+  const [selectedSheetId, setSelectedSheetId] = useState<string>(HISTORICAL_CODEBOOKS[0].id);
+  const [selectedDay, setSelectedDay] = useState<number>(new Date().getDate() || 1);
+  const [appliedMsg, setAppliedMsg] = useState<string | null>(null);
+
+  const currentSheet = HISTORICAL_CODEBOOKS.find(s => s.id === selectedSheetId) || HISTORICAL_CODEBOOKS[0];
+  const currentEntry = currentSheet.entries.find(e => e.day === selectedDay) || currentSheet.entries[0];
+
+  const handleApply = (entry: CodebookEntry) => {
+    playRotorClickSound(soundEnabled);
+    const plugboardRecord: Record<string, string> = {};
+    entry.plugboardPairs.forEach((pair) => {
+      const clean = pair.trim().toUpperCase();
+      if (clean.length === 2) {
+        plugboardRecord[clean[0]] = clean[1];
+        plugboardRecord[clean[1]] = clean[0];
+      }
+    });
+
+    const isM4 = !!entry.fourthRotor;
+
+    const newEnigmaConfig: EnigmaConfig = {
+      leftRotor: {
+        type: entry.rotors[0],
+        ring: entry.rings[0],
+        start: 0,
+        current: 0
+      },
+      middleRotor: {
+        type: entry.rotors[1],
+        ring: entry.rings[1],
+        start: 0,
+        current: 0
+      },
+      rightRotor: {
+        type: entry.rotors[2],
+        ring: entry.rings[2],
+        start: 0,
+        current: 0
+      },
+      fourthRotor: {
+        type: entry.fourthRotor || 'I',
+        ring: entry.fourthRing || 1,
+        start: 0,
+        current: 0
+      },
+      reflector: isM4 ? 'Reflector B Thin' : 'Reflector B',
+      plugboard: plugboardRecord
+    };
+
+    onUpdateConfig(newEnigmaConfig);
+    setAppliedMsg(`Key for Day ${entry.day} (${currentSheet.title}) applied!`);
+    setTimeout(() => setAppliedMsg(null), 3000);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
+      <div className="bg-[#1a150c] border border-[#ebc238]/40 rounded-xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl texture-metal text-[#d1c4b7] relative my-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#3b3426]">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#ebc238] text-xl">menu_book</span>
+            <div>
+              <h2 className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold leading-tight">
+                Codebook & Key Sheet Quick Loader
+              </h2>
+              <p className="text-[11px] text-[#9e8d78]">Load daily historical Enigma key settings directly into your machine</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center text-[#8c7e6a] hover:text-[#ebc238] bg-[#221c11] rounded-full border border-[#3b3426] transition-colors cursor-pointer"
+            title="Close"
+          >
+            <span className="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+
+        {/* Sheet Selector */}
+        <div className="mb-4">
+          <label className="text-[11px] font-monospaced-technical text-[#ebc238] uppercase font-bold block mb-1">
+            Select Key Sheet (Schlüsseltafel)
+          </label>
+          <select
+            value={selectedSheetId}
+            onChange={(e) => {
+              setSelectedSheetId(e.target.value);
+              setAppliedMsg(null);
+            }}
+            className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-3 py-2 text-xs text-[#ebc238] font-bold focus:outline-none focus:border-[#ebc238] cursor-pointer"
+          >
+            {HISTORICAL_CODEBOOKS.map((sheet) => (
+              <option key={sheet.id} value={sheet.id}>
+                {sheet.title} ({sheet.monthYear})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Day Selector & Key Details */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          {/* Day selection list */}
+          <div className="bg-[#120e04] p-2.5 rounded-lg border border-[#3b3426] flex flex-col h-52">
+            <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase font-bold block mb-1">
+              Select Day (Tag)
+            </span>
+            <div className="overflow-y-auto flex-1 space-y-1 pr-1 custom-scrollbar">
+              {currentSheet.entries.map((e) => (
+                <button
+                  key={e.day}
+                  type="button"
+                  onClick={() => {
+                    setSelectedDay(e.day);
+                    setAppliedMsg(null);
+                  }}
+                  className={`w-full text-left px-2.5 py-1 text-xs rounded font-monospaced-technical flex items-center justify-between cursor-pointer transition-colors ${
+                    selectedDay === e.day
+                      ? 'bg-[#ebc238] text-[#1a150c] font-bold'
+                      : 'bg-[#1b160e] text-[#d1c4b7] hover:bg-[#2a2215]'
+                  }`}
+                >
+                  <span>Day {e.day < 10 ? `0${e.day}` : e.day}</span>
+                  <span className="text-[10px] opacity-80">{e.rotors.join('-')}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Current Entry Details */}
+          <div className="sm:col-span-2 bg-[#120e04] p-3 rounded-lg border border-[#3b3426] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between border-b border-[#3b3426] pb-1.5 mb-2">
+                <span className="text-xs font-monospaced-technical text-[#ebc238] font-bold">
+                  Day {currentEntry.day} Key Specs
+                </span>
+                <span className="text-[10px] text-[#9e8d78] font-mono">
+                  {currentSheet.classification}
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between bg-[#1c170d] p-1.5 rounded border border-[#2d2518]">
+                  <span className="text-[11px] text-[#8c7e6a] font-monospaced-technical">Walzenlage (Rotors):</span>
+                  <span className="font-bold text-[#ebc238] font-monospaced-technical">
+                    {currentEntry.fourthRotor ? `${currentEntry.fourthRotor} - ` : ''}
+                    {currentEntry.rotors.join(' - ')}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between bg-[#1c170d] p-1.5 rounded border border-[#2d2518]">
+                  <span className="text-[11px] text-[#8c7e6a] font-monospaced-technical">Ringstellung (Rings):</span>
+                  <span className="font-bold text-[#ebc238] font-monospaced-technical">
+                    {currentEntry.rings.map(r => formatRotorRing(r, ringFormat)).join(' - ')}
+                  </span>
+                </div>
+
+                <div className="bg-[#1c170d] p-1.5 rounded border border-[#2d2518]">
+                  <span className="text-[11px] text-[#8c7e6a] font-monospaced-technical block mb-1">
+                    Steckerverbindungen ({currentEntry.plugboardPairs.length} Pairs):
+                  </span>
+                  <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto custom-scrollbar">
+                    {currentEntry.plugboardPairs.map((pair, idx) => (
+                      <span key={idx} className="bg-[#2a2215] text-[#ebc238] px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border border-[#ebc238]/30">
+                        {pair}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {appliedMsg ? (
+              <div className="bg-[#2e7d32]/30 border border-[#4caf50] text-[#a5d6a7] text-xs px-3 py-1.5 rounded text-center font-bold mt-2 animate-fade-in">
+                ✓ {appliedMsg}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleApply(currentEntry)}
+                className="w-full mt-3 py-2 bg-[#ebc238] hover:bg-[#ffd700] text-[#1a150c] font-bold text-xs rounded transition-colors shadow cursor-pointer font-monospaced-technical uppercase tracking-wider flex items-center justify-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-sm">bolt</span>
+                <span>Apply Day {currentEntry.day} Key Settings</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-[#3b3426]">
+          <span className="text-[10px] text-[#8c7e6a] truncate max-w-[300px]">
+            {currentSheet.subtitle}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-1.5 text-xs text-[#201b0f] bg-[#ebc238] hover:bg-[#ffd700] rounded font-bold cursor-pointer transition-colors shadow-md"
+          >
+            Done & Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface MachineViewProps {
   config: EnigmaConfig;
   onUpdateConfig: (newConfig: EnigmaConfig) => void;
@@ -693,6 +916,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
   // Visibility toggles requested by user
   const [showRotorModal, setShowRotorModal] = useState<boolean>(false);
   const [showPlugModal, setShowPlugModal] = useState<boolean>(false);
+  const [showCodebookModal, setShowCodebookModal] = useState<boolean>(false);
   const [showChamber, setShowChamber] = useState<boolean>(true);
   const [showSignalAnimation, setShowSignalAnimation] = useState<boolean>(false);
   const [keyboardBulbsOnly, setKeyboardBulbsOnly] = useState<boolean>(false);
@@ -1124,6 +1348,15 @@ export const MachineView: React.FC<MachineViewProps> = ({
                       {Object.keys(config.plugboard || {}).length / 2} pairs
                     </span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCodebookModal(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    title="Open Codebook Key Sheets Quick Window"
+                  >
+                    <span className="material-symbols-outlined text-sm">menu_book</span>
+                    <span>CODEBOOK</span>
+                  </button>
                 </div>
                 <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
                   Reflector: <span className="text-[#ebc238] font-bold">{config.reflector}</span>
@@ -1275,7 +1508,16 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 LAMPENFELD (LAMPBOARD)
               </span>
               {batteryMode !== 'aus' && litLamp && (
-                <span className="animate-pulse text-[10px] font-monospaced-technical text-[#ebc238] bg-[#ebc238]/20 px-2 py-0.5 rounded border border-[#ebc238]/40 font-bold">
+                <span className={`animate-pulse text-[10px] font-monospaced-technical px-2 py-0.5 rounded border font-bold ${
+                  batteryMode === 'dkl'
+                    ? 'text-[#d48800] bg-[#d48800]/20 border-[#d48800]/40'
+                    : batteryMode === 'sammler'
+                    ? 'text-[#ffea70] bg-[#ffea70]/25 border-[#ffea70]/70 shadow-[0_0_10px_rgba(255,234,112,0.5)]'
+                    : 'text-[#ebc238] bg-[#ebc238]/20 border-[#ebc238]/40'
+                }`}>
+                  {batteryMode === 'dkl' && 'LAMP LIT (2.5V DIM): '}
+                  {batteryMode === 'sammler' && 'LAMP LIT (4V SAMMLER): '}
+                  {batteryMode === 'hell' && 'LAMP LIT (3.5V): '}
                   {litLamp}
                 </span>
               )}
@@ -1287,19 +1529,29 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   {row.map((char) => {
                     const isPowerOn = batteryMode !== 'aus';
                     const isLit = isPowerOn && litLamp === char;
-                    const isDimLit = isLit && batteryMode === 'dkl';
                     const isDimIdle = isPowerOn && !litLamp && dimIdleLights;
+
+                    let lampClass = '';
+                    if (isLit) {
+                      if (batteryMode === 'dkl') lampClass = 'lamp-on-dkl scale-102';
+                      else if (batteryMode === 'sammler') lampClass = 'lamp-on-sammler scale-110';
+                      else lampClass = 'lamp-on-hell scale-105';
+                    }
+
+                    let idleClass = '';
+                    if (isDimIdle) {
+                      if (batteryMode === 'dkl') idleClass = 'lamp-dim-glow-dkl';
+                      else if (batteryMode === 'sammler') idleClass = 'lamp-dim-glow-sammler';
+                      else idleClass = 'lamp-dim-glow';
+                    }
+
                     return (
                       <div
                         key={char}
-                        className={`lamp-socket w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${
-                          isLit ? 'lamp-on scale-105' : ''
-                        } ${isDimLit ? 'opacity-70' : ''}`}
+                        className={`lamp-socket w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${lampClass}`}
                       >
                         <div
-                          className={`lamp-glass w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-lamp-char text-xs sm:text-sm font-bold ${
-                            isDimIdle ? 'lamp-dim-glow' : ''
-                          }`}
+                          className={`lamp-glass w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-lamp-char text-xs sm:text-sm font-bold ${idleClass}`}
                         >
                           {char}
                         </div>
@@ -1437,6 +1689,15 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     <span className="bg-[#ebc238]/20 text-[#ebc238] px-1.5 py-0.2 rounded text-[10px] font-mono">
                       {Object.keys(config.plugboard || {}).length / 2} pairs
                     </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCodebookModal(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    title="Open Codebook Key Sheets Quick Window"
+                  >
+                    <span className="material-symbols-outlined text-sm">menu_book</span>
+                    <span>CODEBOOK</span>
                   </button>
                 </div>
                 <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
@@ -1648,8 +1909,17 @@ export const MachineView: React.FC<MachineViewProps> = ({
             Lampboard (Glühlampenfeld)
           </span>
           {batteryMode !== 'aus' && litLamp && (
-            <span className="animate-pulse text-xs font-monospaced-technical text-[#ebc238] bg-[#ebc238]/20 px-2 py-0.5 rounded border border-[#ebc238]/40">
-              LAMP LIT: {litLamp}
+            <span className={`animate-pulse text-xs font-monospaced-technical px-2 py-0.5 rounded border font-bold ${
+              batteryMode === 'dkl'
+                ? 'text-[#d48800] bg-[#d48800]/20 border-[#d48800]/40'
+                : batteryMode === 'sammler'
+                ? 'text-[#ffea70] bg-[#ffea70]/25 border-[#ffea70]/70 shadow-[0_0_10px_rgba(255,234,112,0.5)]'
+                : 'text-[#ebc238] bg-[#ebc238]/20 border-[#ebc238]/40'
+            }`}>
+              {batteryMode === 'dkl' && 'LAMP LIT (2.5V DIM): '}
+              {batteryMode === 'sammler' && 'LAMP LIT (4V SAMMLER): '}
+              {batteryMode === 'hell' && 'LAMP LIT (3.5V): '}
+              {litLamp}
             </span>
           )}
         </div>
@@ -1660,20 +1930,32 @@ export const MachineView: React.FC<MachineViewProps> = ({
               {row.map((char) => {
                 const isPowerOn = batteryMode !== 'aus';
                 const isLit = isPowerOn && litLamp === char;
-                const isDimLit = isLit && batteryMode === 'dkl';
                 const isDimIdle = isPowerOn && !litLamp && dimIdleLights;
+
+                let litStyle = 'bg-[#120e04] border-[#3b3426] text-[#83715d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]';
+
+                if (isLit) {
+                  if (batteryMode === 'dkl') {
+                    litStyle = 'bg-[#cba832] border-[#f1e09d] text-[#25190b] shadow-[0_0_12px_#d48800] font-bold scale-102 opacity-80';
+                  } else if (batteryMode === 'sammler') {
+                    litStyle = 'bg-[#ffea70] border-[#ffffff] text-[#1a0f00] shadow-[0_0_25px_#ffff80,0_0_50px_#ffc83b] font-bold scale-110';
+                  } else {
+                    litStyle = 'bg-[#ebc238] border-[#fff5d6] text-[#25190b] shadow-lamp-glow font-bold scale-105';
+                  }
+                } else if (isDimIdle) {
+                  if (batteryMode === 'dkl') {
+                    litStyle = 'lamp-dim-glow-dkl border-[#ebc238]/30';
+                  } else if (batteryMode === 'sammler') {
+                    litStyle = 'lamp-dim-glow-sammler border-[#ffea70]/70';
+                  } else {
+                    litStyle = 'lamp-dim-glow border-[#ebc238]/50';
+                  }
+                }
+
                 return (
                   <div
                     key={char}
-                    className={`w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-100 ${
-                      isLit
-                        ? isDimLit
-                          ? 'bg-[#cba832] border-[#f1e09d] text-[#25190b] shadow-md font-bold scale-105 opacity-80'
-                          : 'bg-[#ebc238] border-[#fff5d6] text-[#25190b] shadow-lamp-glow font-bold scale-105'
-                        : isDimIdle
-                        ? 'lamp-dim-glow border-[#ebc238]/50'
-                        : 'bg-[#120e04] border-[#3b3426] text-[#83715d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]'
-                    }`}
+                    className={`w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-100 ${litStyle}`}
                   >
                     <span className="font-lamp-char text-base sm:text-lg md:text-xl">
                       {char}
@@ -1830,6 +2112,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
         config={config}
         onUpdateConfig={onUpdateConfig}
         soundEnabled={soundEnabled}
+      />
+
+      <CodebookQuickModal
+        isOpen={showCodebookModal}
+        onClose={() => setShowCodebookModal(false)}
+        onUpdateConfig={onUpdateConfig}
+        soundEnabled={soundEnabled}
+        ringFormat={ringFormat}
       />
     </div>
   );
