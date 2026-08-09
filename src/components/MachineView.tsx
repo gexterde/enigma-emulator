@@ -385,36 +385,42 @@ export const MachineView: React.FC<MachineViewProps> = ({
     // Run cryptographic transformation
     const { nextConfig, result } = encryptChar(uppercaseChar, config);
 
-    // Save actual trace result so visualizer matches paper tape exactly
-    setLastTraceResult({
-      inputChar: uppercaseChar,
-      outputChar: result.outputChar,
-      trace: result.trace,
-      configBefore: config,
-      configAfter: nextConfig
-    });
-
+    // Mechanical rotor stepping occurs regardless of electrical power
     onUpdateConfig(nextConfig);
 
-    // Illuminate target lamp
-    setLitLamp(result.outputChar);
+    const isPowerOn = batteryMode !== 'aus';
 
-    // Update paper tape outputs
+    if (isPowerOn) {
+      // Save actual trace result so visualizer matches paper tape exactly
+      setLastTraceResult({
+        inputChar: uppercaseChar,
+        outputChar: result.outputChar,
+        trace: result.trace,
+        configBefore: config,
+        configAfter: nextConfig
+      });
+
+      // Illuminate target lamp
+      setLitLamp(result.outputChar);
+
+      // Update paper tape outputs
+      setCipherTape((prev) => prev + result.outputChar);
+
+      // Record log entry
+      const logEntry: LogEntry = {
+        id: Math.random().toString(36).substring(2, 9),
+        timestamp: new Date().toLocaleTimeString(),
+        inputChar: uppercaseChar,
+        outputChar: result.outputChar,
+        configString: generateConfigString(nextConfig, ringFormat),
+        trace: result.trace
+      };
+      onAddLog(logEntry);
+    }
+
     if (!keyboardBulbsOnly) {
       setInputTape((prev) => prev + uppercaseChar);
     }
-    setCipherTape((prev) => prev + result.outputChar);
-
-    // Record log entry
-    const logEntry: LogEntry = {
-      id: Math.random().toString(36).substring(2, 9),
-      timestamp: new Date().toLocaleTimeString(),
-      inputChar: uppercaseChar,
-      outputChar: result.outputChar,
-      configString: generateConfigString(nextConfig, ringFormat),
-      trace: result.trace
-    };
-    onAddLog(logEntry);
   };
 
   // Handle key press release (stops when key is released)
@@ -446,7 +452,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
       } else if (e.key === ' ' && !e.repeat) {
         e.preventDefault();
         setInputTape((prev) => prev + ' ');
-        setCipherTape((prev) => prev + ' ');
+        if (batteryMode !== 'aus') {
+          setCipherTape((prev) => prev + ' ');
+        }
       }
     };
 
@@ -467,7 +475,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [config, pressedKey, soundEnabled, keyboardBulbsOnly]);
+  }, [config, pressedKey, soundEnabled, keyboardBulbsOnly, batteryMode]);
 
   // Format tape string into 5-letter blocks
   const formatTapeText = (text: string) => {
