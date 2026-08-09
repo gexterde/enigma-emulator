@@ -26,6 +26,231 @@ const ENIGMA_KEYBOARD_ROWS = [
   ['P', 'Y', 'X', 'C', 'V', 'B', 'N', 'M', 'L']
 ];
 
+export type BatterySwitchMode = 'hell' | 'dkl' | 'aus' | 'sammler';
+
+interface BatterySwitchProps {
+  mode: BatterySwitchMode;
+  onChangeMode: (mode: BatterySwitchMode) => void;
+  compact?: boolean;
+}
+
+const BatterySwitch: React.FC<BatterySwitchProps> = ({ mode, onChangeMode, compact = false }) => {
+  const getAngle = (m: BatterySwitchMode) => {
+    switch (m) {
+      case 'hell': return -54;
+      case 'dkl': return -10;
+      case 'aus': return 16;
+      case 'sammler': return 50;
+      default: return -54;
+    }
+  };
+
+  const angle = getAngle(mode);
+
+  const modes: { id: BatterySwitchMode; label: string }[] = [
+    { id: 'hell', label: 'hell' },
+    { id: 'dkl', label: 'dkl' },
+    { id: 'aus', label: 'aus' },
+    { id: 'sammler', label: 'Sammler 4V' }
+  ];
+
+  return (
+    <div
+      className={`flex flex-col items-center bg-[#100d07] rounded-xl border border-[#3b3426] shadow-2xl select-none w-full transition-all ${
+        compact ? 'p-1.5 max-w-[165px]' : 'p-2.5 sm:p-3 max-w-[220px]'
+      }`}
+    >
+      <div className={`font-monospaced-technical text-[#a89983] uppercase tracking-wider font-bold flex items-center gap-1 ${compact ? 'text-[8px] mb-0.5' : 'text-[10px] mb-1'}`}>
+        <span className="material-symbols-outlined text-xs text-[#ebc238]">bolt</span>
+        BATTERIESCHALTER
+      </div>
+
+      <div className={`relative flex items-center justify-center bg-[#18130b] rounded-lg border border-[#2d2518] p-1 shadow-inner w-full ${compact ? 'h-24 my-0.5' : 'h-32 my-1'}`}>
+        <svg viewBox="0 0 200 135" className="w-full h-full overflow-visible">
+          <defs>
+            {/* Wrinkled dark metallic panel texture gradient */}
+            <radialGradient id="panelGrad" cx="50%" cy="50%" r="70%">
+              <stop offset="0%" stopColor="#211b12" />
+              <stop offset="100%" stopColor="#0d0a06" />
+            </radialGradient>
+
+            {/* Brass finish gradient */}
+            <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#f7ea9b" />
+              <stop offset="40%" stopColor="#d8b240" />
+              <stop offset="80%" stopColor="#8f6f1c" />
+              <stop offset="100%" stopColor="#57420e" />
+            </linearGradient>
+
+            {/* Bakelite knob gradient */}
+            <radialGradient id="bakeliteBody" cx="35%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#4a2d1d" />
+              <stop offset="40%" stopColor="#28170e" />
+              <stop offset="85%" stopColor="#140b06" />
+              <stop offset="100%" stopColor="#090402" />
+            </radialGradient>
+
+            {/* Arc plate filter shadow */}
+            <filter id="plateShadow" x="-10%" y="-10%" width="120%" height="120%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.8" />
+            </filter>
+          </defs>
+
+          {/* Background Textured Plate */}
+          <rect x="0" y="0" width="200" height="135" rx="6" fill="url(#panelGrad)" />
+
+          {/* Center Axle Screwhole */}
+          <circle cx="100" cy="92" r="6" fill="#080503" stroke="#2d2215" strokeWidth="1.2" />
+
+          {/* Pure White Porcelain / Enamel Arc Scale Plate */}
+          <path
+            d="M 32,92 A 68,68 0 0,1 168,92"
+            fill="none"
+            stroke="#120e09"
+            strokeWidth="28"
+            strokeLinecap="round"
+            filter="url(#plateShadow)"
+          />
+          <path
+            d="M 32,92 A 68,68 0 0,1 168,92"
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth="25"
+            strokeLinecap="round"
+          />
+
+          {/* Screws on Porcelain Arc Ends */}
+          <g transform="translate(32, 92)">
+            <circle cx="0" cy="0" r="3.2" fill="url(#brassGrad)" stroke="#1a1106" strokeWidth="0.6" />
+            <line x1="-2" y1="-0.8" x2="2" y2="0.8" stroke="#0a0602" strokeWidth="0.8" />
+          </g>
+          <g transform="translate(168, 92)">
+            <circle cx="0" cy="0" r="3.2" fill="url(#brassGrad)" stroke="#1a1106" strokeWidth="0.6" />
+            <line x1="-2" y1="0.8" x2="2" y2="-0.8" stroke="#0a0602" strokeWidth="0.8" />
+          </g>
+
+          {/* HIGH-CONTRAST BLACK GERMAN LABELS DIRECTLY ON WHITE ENAMEL ARC */}
+          {/* Label: hell (-54 deg) */}
+          <g transform="translate(100, 92) rotate(-54)">
+            <text x="0" y="-68" fontSize="9.5" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
+              hell
+            </text>
+            <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
+          </g>
+
+          {/* Label: Batterie (-32 deg) */}
+          <g transform="translate(100, 92) rotate(-32)">
+            <text x="0" y="-68" fontSize="8" fontWeight="800" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
+              Batterie
+            </text>
+          </g>
+
+          {/* Label: dkl (-10 deg) */}
+          <g transform="translate(100, 92) rotate(-10)">
+            <text x="0" y="-68" fontSize="9.5" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
+              dkl
+            </text>
+            <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
+          </g>
+
+          {/* Label: aus (16 deg) */}
+          <g transform="translate(100, 92) rotate(16)">
+            <text x="0" y="-68" fontSize="9.5" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
+              aus
+            </text>
+            <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
+          </g>
+
+          {/* Label: Sammler 4V (50 deg) */}
+          <g transform="translate(100, 92) rotate(50)">
+            <text x="0" y="-68" fontSize="8" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
+              Sammler 4V
+            </text>
+            <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
+          </g>
+
+          {/* Brass Binding Posts (4V Accumulator terminals on far right) */}
+          <g transform="translate(182, 38)">
+            <circle cx="0" cy="0" r="5.5" fill="url(#brassGrad)" stroke="#38290a" strokeWidth="0.8" />
+            <circle cx="0" cy="0" r="2" fill="#fce484" />
+            <line x1="-2.8" y1="0" x2="2.8" y2="0" stroke="#261b05" strokeWidth="0.8" />
+          </g>
+          <g transform="translate(182, 62)">
+            <circle cx="0" cy="0" r="5.5" fill="url(#brassGrad)" stroke="#38290a" strokeWidth="0.8" />
+            <circle cx="0" cy="0" r="2" fill="#fce484" />
+            <line x1="-2.8" y1="0" x2="2.8" y2="0" stroke="#261b05" strokeWidth="0.8" />
+          </g>
+
+          {/* ROTATING BAKELITE KNOB WITH DOUBLE-ENDED BRASS ARROW */}
+          <g
+            transform={`translate(100, 92) rotate(${angle})`}
+            className="transition-transform duration-300 ease-out cursor-pointer"
+            onClick={() => {
+              const order: BatterySwitchMode[] = ['hell', 'dkl', 'aus', 'sammler'];
+              const idx = order.indexOf(mode);
+              onChangeMode(order[(idx + 1) % order.length]);
+            }}
+          >
+            {/* Knob Base Outer Circle */}
+            <circle cx="0" cy="0" r="32" fill="#0a0604" stroke="#281a10" strokeWidth="1.2" />
+            <circle cx="0" cy="0" r="29" fill="url(#bakeliteBody)" stroke="#110a06" strokeWidth="0.8" />
+
+            {/* Raised Teardrop Bakelite Handle Bar */}
+            <path
+              d="M -10,-38 C -10,-44 10,-44 10,-38 L 12,38 C 12,44 -12,44 -12,38 Z"
+              fill="url(#bakeliteBody)"
+              stroke="#050302"
+              strokeWidth="1"
+              filter="url(#plateShadow)"
+            />
+
+            {/* Inner Handle Grip Ridge */}
+            <path
+              d="M -7,-34 L 7,-34 L 8,34 L -8,34 Z"
+              fill="#211209"
+              stroke="#382012"
+              strokeWidth="0.6"
+            />
+
+            {/* Center Brass Hub Screw */}
+            <circle cx="0" cy="0" r="5" fill="url(#brassGrad)" stroke="#2d1f07" strokeWidth="0.8" />
+            <circle cx="0" cy="0" r="1.8" fill="#120c04" />
+
+            {/* DOUBLE-ENDED BRASS ARROW INDICATOR */}
+            <g transform="translate(0, 0)">
+              {/* Top Arrow Pointer (Points directly to white arc scale label) */}
+              <path d="M 0,-28 L -5,-19 L -2,-19 L -2,-5 L 2,-5 L 2,-19 L 5,-19 Z" fill="url(#brassGrad)" stroke="#3d2c08" strokeWidth="0.5" />
+              {/* Bottom Arrow Pointer */}
+              <path d="M 0,28 L -5,19 L -2,19 L -2,5 L 2,5 L 2,19 L 5,19 Z" fill="url(#brassGrad)" stroke="#3d2c08" strokeWidth="0.5" />
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      {/* Quick Select Mode Buttons */}
+      <div className={`flex items-center gap-1 w-full justify-center ${compact ? 'mt-0.5 text-[8px]' : 'mt-1 text-[9px]'} font-monospaced-technical`}>
+        {modes.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => onChangeMode(m.id)}
+            className={`rounded transition-all cursor-pointer font-bold ${compact ? 'px-1 py-0.2' : 'px-1.5 py-0.5'} ${
+              mode === m.id
+                ? m.id === 'aus'
+                  ? 'bg-[#ff3b30] text-white shadow-md'
+                  : 'bg-[#ebc238] text-[#25190b] shadow-md ring-1 ring-[#fff5d6]'
+                : 'bg-[#1b160b] text-[#9e8d78] hover:text-[#e2d7c5] border border-[#2b2416]'
+            }`}
+            title={`Set Power Switch to ${m.label}`}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const MachineView: React.FC<MachineViewProps> = ({
   config,
   onUpdateConfig,
@@ -88,6 +313,46 @@ export const MachineView: React.FC<MachineViewProps> = ({
     setIsCompactMode(next);
     try {
       localStorage.setItem('enigma_compact_mode', String(next));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  // Dim light effect for idle lampboard bulbs
+  const [dimIdleLights, setDimIdleLights] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('enigma_dim_idle_lights') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const handleToggleDimIdleLights = () => {
+    const next = !dimIdleLights;
+    setDimIdleLights(next);
+    try {
+      localStorage.setItem('enigma_dim_idle_lights', String(next));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  // Battery rotary power switch mode ('hell' | 'dkl' | 'aus' | 'sammler')
+  const [batteryMode, setBatteryMode] = useState<BatterySwitchMode>(() => {
+    try {
+      const saved = localStorage.getItem('enigma_battery_mode') as BatterySwitchMode;
+      if (saved === 'hell' || saved === 'dkl' || saved === 'aus' || saved === 'sammler') return saved;
+    } catch (e) {
+      // ignore
+    }
+    return 'hell';
+  });
+
+  const handleSetBatteryMode = (mode: BatterySwitchMode) => {
+    setBatteryMode(mode);
+    playRotorClickSound(soundEnabled);
+    try {
+      localStorage.setItem('enigma_battery_mode', mode);
     } catch (e) {
       // ignore
     }
@@ -270,6 +535,22 @@ export const MachineView: React.FC<MachineViewProps> = ({
             Keys & Bulbs Only
           </button>
 
+          <button
+            type="button"
+            onClick={handleToggleDimIdleLights}
+            className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+              dimIdleLights
+                ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
+                : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+            }`}
+            title="Apply realistic dim glow & flickering effect to idle lampboard bulbs"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {dimIdleLights ? 'flare' : 'wb_twilight'}
+            </span>
+            Dim Idle Bulbs {dimIdleLights ? 'ON' : 'OFF'}
+          </button>
+
           {!keyboardBulbsOnly && !isCompactMode && (
             <>
               <button
@@ -405,7 +686,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex justify-center items-center gap-2 sm:gap-4 py-1">
+              <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 py-1">
                 {/* If M4 4th rotor present */}
                 {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
                   <div className="flex flex-col items-center">
@@ -534,6 +815,10 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     Notch: {ROTOR_SPECS[config.rightRotor.type]?.notch}
                   </span>
                 </div>
+
+                {/* Battery Power Switch */}
+                <div className="hidden sm:block h-16 w-[1px] bg-[#3b3426]/80 mx-1" />
+                <BatterySwitch mode={batteryMode} onChangeMode={handleSetBatteryMode} compact={true} />
               </div>
             </div>
           )}
@@ -545,7 +830,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 <span className="material-symbols-outlined text-xs text-[#ebc238]">lightbulb</span>
                 LAMPENFELD (LAMPBOARD)
               </span>
-              {litLamp && (
+              {batteryMode !== 'aus' && litLamp && (
                 <span className="animate-pulse text-[10px] font-monospaced-technical text-[#ebc238] bg-[#ebc238]/20 px-2 py-0.5 rounded border border-[#ebc238]/40 font-bold">
                   {litLamp}
                 </span>
@@ -556,15 +841,22 @@ export const MachineView: React.FC<MachineViewProps> = ({
               {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
                 <div key={rIdx} className="flex justify-center gap-1.5 sm:gap-2.5">
                   {row.map((char) => {
-                    const isLit = litLamp === char;
+                    const isPowerOn = batteryMode !== 'aus';
+                    const isLit = isPowerOn && litLamp === char;
+                    const isDimLit = isLit && batteryMode === 'dkl';
+                    const isDimIdle = isPowerOn && !litLamp && dimIdleLights;
                     return (
                       <div
                         key={char}
                         className={`lamp-socket w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${
                           isLit ? 'lamp-on scale-105' : ''
-                        }`}
+                        } ${isDimLit ? 'opacity-70' : ''}`}
                       >
-                        <div className="lamp-glass w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-lamp-char text-xs sm:text-sm font-bold">
+                        <div
+                          className={`lamp-glass w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-lamp-char text-xs sm:text-sm font-bold ${
+                            isDimIdle ? 'lamp-dim-glow' : ''
+                          }`}
+                        >
                           {char}
                         </div>
                       </div>
@@ -678,120 +970,138 @@ export const MachineView: React.FC<MachineViewProps> = ({
           </div>
 
           {showChamber ? (
-            <div className={`grid grid-cols-2 ${config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-3 max-w-2xl mx-auto pt-2`}>
-              {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
-              {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+            <div className="flex flex-col lg:flex-row items-center justify-center gap-4 max-w-3xl mx-auto pt-2">
+              <div className={`grid grid-cols-2 ${config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-3 flex-1 w-full`}>
+                {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
+                {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+                  <div className="bg-[#120e04] rounded p-3 border border-[#3b3426] flex flex-col items-center">
+                    <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical mb-1">
+                      FIXED ({config.fourthRotor.type === 'Beta' ? 'β' : 'γ'})
+                    </span>
+                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-16 h-16 flex items-center justify-center my-1 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('fourthRotor', 1)}
+                        className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                        title="Rotate Up (manual only)"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">expand_less</span>
+                      </button>
+                      <span key={config.fourthRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
+                        {formatRotorPos(config.fourthRotor.current, ringFormat)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('fourthRotor', -1)}
+                        className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                        title="Rotate Down (manual only)"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">expand_more</span>
+                      </button>
+                    </div>
+                    <span className="text-[8px] text-[#83715d] font-monospaced-technical mt-0.5" title={ROTOR_SPECS[config.fourthRotor.type]?.turnoverAction}>
+                      Fixed Stator
+                    </span>
+                  </div>
+                )}
+
+                {/* Slow Rotor */}
                 <div className="bg-[#120e04] rounded p-3 border border-[#3b3426] flex flex-col items-center">
                   <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical mb-1">
-                    FIXED ({config.fourthRotor.type === 'Beta' ? 'β' : 'γ'})
+                    SLOW ({config.leftRotor.type})
                   </span>
                   <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-16 h-16 flex items-center justify-center my-1 overflow-hidden">
                     <button
                       type="button"
-                      onClick={() => handleManualRotorStep('fourthRotor', 1)}
+                      onClick={() => handleManualRotorStep('leftRotor', 1)}
                       className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                      title="Rotate Up (manual only)"
+                      title="Rotate Up"
                     >
                       <span className="material-symbols-outlined text-[14px]">expand_less</span>
                     </button>
-                    <span key={config.fourthRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
-                      {formatRotorPos(config.fourthRotor.current, ringFormat)}
+                    <span key={config.leftRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
+                      {formatRotorPos(config.leftRotor.current, ringFormat)}
                     </span>
                     <button
                       type="button"
-                      onClick={() => handleManualRotorStep('fourthRotor', -1)}
+                      onClick={() => handleManualRotorStep('leftRotor', -1)}
                       className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                      title="Rotate Down (manual only)"
+                      title="Rotate Down"
                     >
                       <span className="material-symbols-outlined text-[14px]">expand_more</span>
                     </button>
                   </div>
-                  <span className="text-[8px] text-[#83715d] font-monospaced-technical mt-1">Does not step</span>
-                </div>
-              )}
-
-              {/* Slow Rotor */}
-              <div className="bg-[#120e04] rounded p-3 border border-[#3b3426] flex flex-col items-center">
-                <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical mb-1">
-                  SLOW ({config.leftRotor.type})
-                </span>
-                <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-16 h-16 flex items-center justify-center my-1 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('leftRotor', 1)}
-                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                    title="Rotate Up"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">expand_less</span>
-                  </button>
-                  <span key={config.leftRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
-                    {formatRotorPos(config.leftRotor.current, ringFormat)}
+                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.leftRotor.type]?.turnoverAction}>
+                    Notch: {ROTOR_SPECS[config.leftRotor.type]?.notch}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('leftRotor', -1)}
-                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                    title="Rotate Down"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">expand_more</span>
-                  </button>
+                </div>
+
+                {/* Middle Rotor */}
+                <div className="bg-[#120e04] rounded p-3 border border-[#3b3426] flex flex-col items-center">
+                  <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical mb-1">
+                    MID ({config.middleRotor.type})
+                  </span>
+                  <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-16 h-16 flex items-center justify-center my-1 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => handleManualRotorStep('middleRotor', 1)}
+                      className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                      title="Rotate Up"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">expand_less</span>
+                    </button>
+                    <span key={config.middleRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
+                      {formatRotorPos(config.middleRotor.current, ringFormat)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleManualRotorStep('middleRotor', -1)}
+                      className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                      title="Rotate Down"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">expand_more</span>
+                    </button>
+                  </div>
+                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.middleRotor.type]?.turnoverAction}>
+                    Notch: {ROTOR_SPECS[config.middleRotor.type]?.notch}
+                  </span>
+                </div>
+
+                {/* Fast Rotor */}
+                <div className="bg-[#120e04] rounded p-3 border border-[#3b3426] flex flex-col items-center">
+                  <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical mb-1">
+                    FAST ({config.rightRotor.type})
+                  </span>
+                  <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-16 h-16 flex items-center justify-center my-1 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => handleManualRotorStep('rightRotor', 1)}
+                      className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                      title="Rotate Up"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">expand_less</span>
+                    </button>
+                    <span key={config.rightRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
+                      {formatRotorPos(config.rightRotor.current, ringFormat)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleManualRotorStep('rightRotor', -1)}
+                      className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                      title="Rotate Down"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">expand_more</span>
+                    </button>
+                  </div>
+                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.rightRotor.type]?.turnoverAction}>
+                    Notch: {ROTOR_SPECS[config.rightRotor.type]?.notch}
+                  </span>
                 </div>
               </div>
 
-              {/* Middle Rotor */}
-              <div className="bg-[#120e04] rounded p-3 border border-[#3b3426] flex flex-col items-center">
-                <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical mb-1">
-                  MID ({config.middleRotor.type})
-                </span>
-                <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-16 h-16 flex items-center justify-center my-1 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('middleRotor', 1)}
-                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                    title="Rotate Up"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">expand_less</span>
-                  </button>
-                  <span key={config.middleRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
-                    {formatRotorPos(config.middleRotor.current, ringFormat)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('middleRotor', -1)}
-                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                    title="Rotate Down"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">expand_more</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Fast Rotor */}
-              <div className="bg-[#120e04] rounded p-3 border border-[#3b3426] flex flex-col items-center">
-                <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical mb-1">
-                  FAST ({config.rightRotor.type})
-                </span>
-                <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-16 h-16 flex items-center justify-center my-1 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('rightRotor', 1)}
-                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                    title="Rotate Up"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">expand_less</span>
-                  </button>
-                  <span key={config.rightRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-2xl font-bold select-none animate-rotor-step">
-                    {formatRotorPos(config.rightRotor.current, ringFormat)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleManualRotorStep('rightRotor', -1)}
-                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                    title="Rotate Down"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">expand_more</span>
-                  </button>
-                </div>
+              {/* Battery Switch */}
+              <div className="flex flex-col items-center pl-0 lg:pl-4 border-t lg:border-t-0 lg:border-l border-[#3b3426] pt-3 lg:pt-0">
+                <BatterySwitch mode={batteryMode} onChangeMode={handleSetBatteryMode} compact={false} />
               </div>
             </div>
           ) : (
@@ -862,7 +1172,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
             <span className="material-symbols-outlined text-sm text-[#ebc238]">lightbulb</span>
             Lampboard (Glühlampenfeld)
           </span>
-          {litLamp && (
+          {batteryMode !== 'aus' && litLamp && (
             <span className="animate-pulse text-xs font-monospaced-technical text-[#ebc238] bg-[#ebc238]/20 px-2 py-0.5 rounded border border-[#ebc238]/40">
               LAMP LIT: {litLamp}
             </span>
@@ -873,13 +1183,20 @@ export const MachineView: React.FC<MachineViewProps> = ({
           {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
             <div key={rIdx} className="flex justify-center gap-2 md:gap-4">
               {row.map((char) => {
-                const isLit = litLamp === char;
+                const isPowerOn = batteryMode !== 'aus';
+                const isLit = isPowerOn && litLamp === char;
+                const isDimLit = isLit && batteryMode === 'dkl';
+                const isDimIdle = isPowerOn && !litLamp && dimIdleLights;
                 return (
                   <div
                     key={char}
                     className={`w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-100 ${
                       isLit
-                        ? 'bg-[#ebc238] border-[#fff5d6] text-[#25190b] shadow-lamp-glow font-bold scale-105'
+                        ? isDimLit
+                          ? 'bg-[#cba832] border-[#f1e09d] text-[#25190b] shadow-md font-bold scale-105 opacity-80'
+                          : 'bg-[#ebc238] border-[#fff5d6] text-[#25190b] shadow-lamp-glow font-bold scale-105'
+                        : isDimIdle
+                        ? 'lamp-dim-glow border-[#ebc238]/50'
                         : 'bg-[#120e04] border-[#3b3426] text-[#83715d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]'
                     }`}
                   >
