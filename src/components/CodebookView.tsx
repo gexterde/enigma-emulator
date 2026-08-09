@@ -368,6 +368,8 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
       }
     });
 
+    const isM4 = !!entry.fourthRotor;
+
     const newEnigmaConfig: EnigmaConfig = {
       leftRotor: {
         type: entry.rotors[0],
@@ -393,7 +395,12 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
         start: 0,
         current: 0
       },
-      reflector: 'Reflector B' as ReflectorType,
+      reflector: {
+        type: (entry as any).reflectorType || (isM4 ? 'Reflector B Thin' : 'Reflector B'),
+        ring: (entry as any).reflectorRing || 1,
+        start: 0,
+        current: 0
+      },
       plugboard: plugboardRecord
     };
 

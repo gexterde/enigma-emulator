@@ -258,7 +258,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
         </div>
         <div
           ref={containerRef}
-          className="relative bg-[#3b2a1a] rounded-xl p-3 sm:p-6 border-[6px] border-[#2f291c] shadow-[inset_0_0_40px_rgba(0,0,0,0.8),0_10px_30px_rgba(0,0,0,0.8)] min-w-[580px] sm:min-w-0"
+          className="relative bg-[#3b2a1a] rounded-xl p-3 sm:p-6 border-[6px] border-[#2f291c] shadow-[inset_0_0_40px_rgba(0,0,0,0.8),0_10px_30px_rgba(0,0,0,0.8)] min-w-[620px]"
         >
           {/* SVG Cable Overlay Canvas */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
