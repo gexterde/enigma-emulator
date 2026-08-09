@@ -90,7 +90,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
       ...prev,
       reflector: {
         type,
-        // Megtartja a korábbi értékeket, vagy ha még nem léteztek, inicializálja őket (Ring: 1, Start: 0)
+        // Retains previous values, or if they did not exist yet, initializes them (Ring: 1, Start: 0)
         ring: prev.reflector?.ring || 1,
         start: prev.reflector?.start || 0,
         current: prev.reflector?.current || 0
@@ -485,7 +485,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
             </div>
           </div>
         )}
-        {/* ─── DINAMIKUS REFLEKTOR JAVÍTOTT INTERFÉSZ PANEL ─── */}
+        {/* ─── DYNAMIC REFLECTOR IMPROVED INTERFACE PANEL ─── */}
         {draftConfig.reflector.type === 'UKW-Dual-Dynamic' && (
           <div className="bg-[#201b0f] rounded-lg p-4 md:p-5 border border-[#4e453b] shadow-panel texture-metal relative overflow-hidden group mt-6">
             <div className="absolute top-0 right-0 w-16 h-16 bg-[#e3c193]/5 rounded-bl-full -z-10 group-hover:bg-[#e3c193]/10 transition-colors" />
@@ -495,7 +495,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
             </h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
-              {/* Reflektor Gyűrűállítás */}
+              {/* Reflector Ring Adjustment */}
               <div>
                 <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7] mb-2">
                   Reflector Ring ({ringFormat === 'number' ? '01-26' : 'A-Z'})
@@ -523,7 +523,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                 </div>
               </div>
 
-              {/* Reflektor Kezdőpozíció állítás */}
+              {/* Reflector Start Position Adjustment */}
               <div>
                 <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7] mb-2">
                   Reflector Start ({ringFormat === 'number' ? '00-25' : 'A-Z'})
@@ -552,7 +552,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
               </div>
             </div>
 
-            {/* Alternatív Történelmi Infó panel */}
+            {/* Alternative History Info Panel */}
             <div className="bg-[#120e04]/80 p-2.5 rounded border border-[#3b3426] text-xs mt-4">
               <div className="flex items-center justify-between text-[#ebc238] font-monospaced-technical font-bold text-[11px] mb-1">
                 <span className="flex items-center gap-1">
@@ -562,7 +562,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                 <span className="text-[#8c7e6a] text-[10px]">Asymmetric 1943</span>
               </div>
               <p className="text-[#a89985] text-[10px] leading-snug">
-                Az önkódolást gátló mechanizmus kikapcsolva. A reflektor minden alkalommal egyet fordul, amikor a bal oldali (Slow) rotor tesz egy teljes kört.
+                Self-encoding prevention mechanism disabled. The reflector rotates once every time the left (Slow) rotor completes a full turn.
               </p>
             </div>
           </div>
@@ -849,8 +849,8 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                 <option value="UKW-Rocket">UKW German Railway / Rocket (7 Feb 1941)</option>
                 <option value="UKW-K">UKW-K Swiss K (Feb 1939)</option>
               </optgroup>
-              <optgroup label="Alternatív Történelem (Feltörhetetlen)">
-                <option value="UKW-Dual-Dynamic">UKW-Dual-Dynamic (Kombinált Önkódoló)</option>
+              <optgroup label="Alternative History (Unbreakable)">
+                <option value="UKW-Dual-Dynamic">UKW-Dual-Dynamic (Combined Self-Coder)</option>
               </optgroup>
             </select>
           </div>

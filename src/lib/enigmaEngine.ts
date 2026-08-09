@@ -53,7 +53,7 @@ export const REFLECTOR_SPECS: Record<ReflectorType, { wiring: string; modelName:
   // Aliases for backward compatibility
   'UKW-B': { wiring: 'YRUHQSLDPXNGOKMIEBFZCWVJAT', modelName: 'Reflector B (UKW-B)' },
   'UKW-C': { wiring: 'FVPJIAOYEDRZXWGCTKUQSBNMHL', modelName: 'Reflector C (UKW-C)' },
-  'UKW-Dual-Dynamic': { wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ',  modelName: 'Kombinált Önkódoló (Dinamikus)',  year: 'Alternatív 1943'  }
+  'UKW-Dual-Dynamic': { wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ',  modelName: 'Combined Self-Coder (Dynamic)',  year: 'Alternative 1943'  }
 };
 
 export const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -316,26 +316,26 @@ export function encryptChar(char: string, config: EnigmaConfig): { nextConfig: E
   let refNote = `Signal reflected back using ${reflectorState.type}`;
 
   if (reflectorState.type === 'UKW-Dual-Dynamic') {
-    // Dinamikus eltolások számítása (Rotor módra)
+    // Dynamic offsets calculation (Rotor-style)
     const shift = (reflectorState.current - (reflectorState.ring - 1) + 26) % 26;
     const indexWithShift = (currentNum + shift) % 26;
 
-    // Aszimmetrikus huzalozáson áthaladás
+    // Pass through asymmetric wiring
     const forwardChar = reflectorWiring[indexWithShift];
     const forwardNum = charToNum(forwardChar);
 
-    // Vissza-eltolás a csúszógyűrű miatt
+    // Reverse offset due to slip ring
     const postRefNum = (forwardNum - shift + 26) % 26;
     refOutChar = numToChar(postRefNum);
 
-    // Különleges log az önkódoláshoz
+    // Special log for self-coding
     if (postRefNum === currentNum) {
-      refNote = `Kritikus Önkódolás! ${refInChar} ➔ ${refOutChar} (Turing-Bombe hurok megszakadt)`;
+      refNote = `Critical Self-Coding! ${refInChar} ➔ ${refOutChar} (Turing-Welchman Bombe loop broken)`;
     } else {
-      refNote = `Dinamikus aszimmetrikus visszaverés`;
+      refNote = `Dynamic asymmetric reflection`;
     }
   } else {
-    // Klasszikus, fix szimmetrikus visszaverés
+    // Classic, fixed symmetric reflection
     refOutChar = reflectorWiring[currentNum];
   }
   currentNum = charToNum(refOutChar);

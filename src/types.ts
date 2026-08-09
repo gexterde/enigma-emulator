@@ -38,14 +38,14 @@ export type ReflectorType =
   // Backward compatibility aliases
   | 'UKW-B'
   | 'UKW-C'
-    // ─── ÚJ KETTŐS REFLEKTOR TÍPUS ───
+    // ─── NEW DUAL REFLECTOR TYPE ───
   | 'UKW-Dual-Dynamic';
 
 export interface ReflectorState {
   type: ReflectorType;
-  ring: number;    // 1 to 26 (Gyűrűbeállítás)
-  start: number;   // 0 to 25 (Kezdőpozíció: 0 = A, 1 = B, ...)
-  current: number; // 0 to 25 (Aktuális pozíció elfordulás közben)
+  ring: number;    // 1 to 26 (Ring Settings)
+  start: number;   // 0 to 25 (Start Position: 0 = A, 1 = B, ...)
+  current: number; // 0 to 25 (Current Position during turnover)
 }
 
 export interface RotorState {
