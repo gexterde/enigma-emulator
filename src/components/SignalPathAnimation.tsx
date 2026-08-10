@@ -743,4 +743,3 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
     </div>
   );
 };
-;

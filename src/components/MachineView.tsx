@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { EnigmaConfig, LogEntry, StepTrace, RotorType, ReflectorType } from '../types';
 import {
   encryptChar,
@@ -19,6 +19,41 @@ import { RotorQuickModal } from './RotorQuickModal';
 import { PlugboardQuickModal } from './PlugboardQuickModal';
 import { CodebookQuickModal } from './CodebookQuickModal';
 import { BroadcastModal } from './BroadcastModal';
+import { MessageHeaderPanel } from './MessageHeaderPanel';
+import { LampboardPanel } from './LampboardPanel';
+import { KeyboardPanel } from './KeyboardPanel';
+
+function useLocalStorage<T>(key: string, initial: T): [T, (val: T) => void] {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved === null) return initial;
+      if (typeof initial === 'boolean') {
+        return (saved === 'true') as unknown as T;
+      }
+      if (typeof initial === 'number') {
+        return Number(saved) as unknown as T;
+      }
+      if (typeof initial === 'string') {
+        return saved as unknown as T;
+      }
+      return JSON.parse(saved) as T;
+    } catch {
+      return initial;
+    }
+  });
+
+  const setStored = (val: T) => {
+    setValue(val);
+    try {
+      localStorage.setItem(key, typeof val === 'string' ? val : String(val));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  return [value, setStored];
+}
 
 
 
@@ -60,8 +95,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
   const [pressedKey, setPressedKey] = useState<string | null>(null);
   const [activeGroupSize, setActiveGroupSize] = useState<number>(0);
 
-  const isM4Active = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-  const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
+  const isM4Active = useMemo(() => 
+    config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma',
+    [config.fourthRotor.type]
+  );
+  const isUKWDual = useMemo(() => 
+    config.reflector.type === 'UKW-Dual-Dynamic',
+    [config.reflector.type]
+  );
 
   const handleStepAllForward = () => {
     const isInputEmpty = inputTape === '';
@@ -101,37 +142,24 @@ export const MachineView: React.FC<MachineViewProps> = ({
   };
 
   // Ringstellung / Rotor position format: 'number' (01-26) or 'letter' (A-Z)
-  const [ringFormat, setRingFormat] = useState<'number' | 'letter'>(() => {
-    try {
-      const saved = localStorage.getItem('enigma_ring_format');
-      if (saved === 'letter' || saved === 'number') return saved;
-    } catch (e) {
-      // ignore
-    }
-    return 'number';
-  });
+  const [ringFormat, setRingFormat] = useLocalStorage<'number' | 'letter'>('enigma_ring_format', 'number');
 
   const handleSetRingFormat = (fmt: 'number' | 'letter') => {
     setRingFormat(fmt);
-    try {
-      localStorage.setItem('enigma_ring_format', fmt);
-    } catch (e) {
-      // ignore
-    }
   };
 
   useEffect(() => {
     const handleStorage = () => {
       try {
         const saved = localStorage.getItem('enigma_ring_format');
-        if (saved === 'letter' || saved === 'number') setRingFormat(saved);
+        if (saved === 'letter' || saved === 'number') setRingFormat(saved as 'letter' | 'number');
       } catch (e) {
         // ignore
       }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
-  }, []);
+  }, [setRingFormat]);
 
   // Visibility toggles requested by user
   const [showRotorModal, setShowRotorModal] = useState<boolean>(false);
@@ -145,14 +173,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
   const [tapeCollapsed, setTapeCollapsed] = useState<boolean>(false);
   const [showSignalAnimation, setShowSignalAnimation] = useState<boolean>(false);
   const [keyboardBulbsOnly, setKeyboardBulbsOnly] = useState<boolean>(false);
-  const [showBatterySwitch, setShowBatterySwitch] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('enigma_show_battery_switch');
-      return saved !== 'false';
-    } catch (e) {
-      return true;
-    }
-  });
+  const [showBatterySwitch, setShowBatterySwitch] = useLocalStorage<boolean>('enigma_show_battery_switch', true);
 
   // Message Header / Funktelegramm States
   const [senderCallSign, setSenderCallSign] = useState<string>('DFS');
@@ -167,26 +188,32 @@ export const MachineView: React.FC<MachineViewProps> = ({
   const [headerCopied, setHeaderCopied] = useState<boolean>(false);
   const [fullMessageCopied, setFullMessageCopied] = useState<boolean>(false);
 
-  const getGrundstellungString = (): string => {
-    const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-    const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
+  const grundstellungString = useMemo((): string => {
     const r1 = numToChar(config.rightRotor.start);
     const r2 = numToChar(config.middleRotor.start);
     const r3 = numToChar(config.leftRotor.start);
     const u = isUKWDual ? numToChar(config.reflector?.start || 0) : '';
-    if (isM4) {
+    if (isM4Active) {
       const r4 = numToChar(config.fourthRotor.start);
       return `${u}${r4}${r3}${r2}${r1}`;
     }
     return `${u}${r3}${r2}${r1}`;
-  };
+  }, [
+    isM4Active,
+    isUKWDual,
+    config.rightRotor.start,
+    config.middleRotor.start,
+    config.leftRotor.start,
+    config.fourthRotor.start,
+    config.reflector?.start
+  ]);
 
   const getHeaderString = (): string => {
     const lettersCount = inputTape.replace(/[^A-Z]/ig, '').length;
     const callSign = senderCallSign || '???';
     const time = transmissionTime || '????';
     const kg = kenngruppe || '???';
-    const gs = getGrundstellungString() || '???';
+    const gs = grundstellungString || '???';
     return `${callSign} ${time} ${lettersCount} ${kg} ${gs}`;
   };
 
@@ -315,8 +342,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
     playRotorClickSound(soundEnabled);
   };
 
-  const getActiveCodebookKenngruppe = (): string => {
-    const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+  const activeCodebookKenngruppe = useMemo((): string => {
     let allSheets = HISTORICAL_CODEBOOKS;
     try {
       const saved = localStorage.getItem('enigma_custom_codebooks_v1');
@@ -334,33 +360,37 @@ export const MachineView: React.FC<MachineViewProps> = ({
         if (entry.fourthRotor) {
           matchFourth = entry.fourthRotor === config.fourthRotor.type && entry.fourthRing === config.fourthRotor.ring;
         } else {
-          matchFourth = !isM4;
+          matchFourth = !isM4Active;
         }
         if (matchLeft && matchMiddle && matchRight && matchFourth) {
           if (entry.kenngruppen && entry.kenngruppen.length > 0) {
-            const randIdx = Math.floor(Math.random() * entry.kenngruppen.length);
-            return entry.kenngruppen[randIdx].toUpperCase();
+            return entry.kenngruppen[0].toUpperCase();
           }
           return 'UIO';
         }
       }
     }
     return 'UIO';
-  };
+  }, [
+    isM4Active,
+    config.leftRotor.type,
+    config.leftRotor.ring,
+    config.middleRotor.type,
+    config.middleRotor.ring,
+    config.rightRotor.type,
+    config.rightRotor.ring,
+    config.fourthRotor.type,
+    config.fourthRotor.ring
+  ]);
 
   // Sync Kenngruppe on key loaded
   useEffect(() => {
-    setKenngruppe(getActiveCodebookKenngruppe());
-  }, [
-    config.leftRotor.type, config.leftRotor.ring,
-    config.middleRotor.type, config.middleRotor.ring,
-    config.rightRotor.type, config.rightRotor.ring,
-    config.fourthRotor.type, config.fourthRotor.ring
-  ]);
+    setKenngruppe(activeCodebookKenngruppe);
+  }, [activeCodebookKenngruppe]);
 
   // Sync Grundstellung local state with machine start position
   useEffect(() => {
-    setLocalGrundstellung(getGrundstellungString());
+    setLocalGrundstellung(grundstellungString);
   }, [
     config.leftRotor.start,
     config.middleRotor.start,
@@ -393,20 +423,6 @@ export const MachineView: React.FC<MachineViewProps> = ({
       }
     }
   }, [inputTape, config, onUpdateConfig]);
-
-  const handleManualReflectorStep = (delta: number) => {
-    playRotorClickSound(soundEnabled);
-    const nextVal = (config.reflector.current + delta + 26) % 26;
-    const isInputEmpty = inputTape === '';
-    onUpdateConfig({
-      ...config,
-      reflector: {
-        ...config.reflector,
-        current: nextVal,
-        start: isInputEmpty ? nextVal : config.reflector.start
-      }
-    });
-  };
 
   const handleGrundstellungChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
@@ -444,20 +460,13 @@ export const MachineView: React.FC<MachineViewProps> = ({
       playRotorClickSound(soundEnabled);
     }
   };
-  const [isCompactMode, setIsCompactMode] = useState<boolean>(() => {
-    if (compactMode !== undefined) return compactMode;
-    try {
-      return localStorage.getItem('enigma_compact_mode') === 'true';
-    } catch (e) {
-      return false;
-    }
-  });
+  const [isCompactMode, setIsCompactMode] = useLocalStorage<boolean>('enigma_compact_mode', false);
 
   useEffect(() => {
     if (compactMode !== undefined && compactMode !== isCompactMode) {
       setIsCompactMode(compactMode);
     }
-  }, [compactMode]);
+  }, [compactMode, isCompactMode, setIsCompactMode]);
 
   const handleToggleCompactMode = () => {
     const next = !isCompactMode;
@@ -465,51 +474,21 @@ export const MachineView: React.FC<MachineViewProps> = ({
     if (onToggleCompactMode) {
       onToggleCompactMode();
     }
-    try {
-      localStorage.setItem('enigma_compact_mode', String(next));
-    } catch (e) {
-      // ignore
-    }
   };
 
   // Dim light effect for idle lampboard bulbs
-  const [dimIdleLights, setDimIdleLights] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('enigma_dim_idle_lights') === 'true';
-    } catch (e) {
-      return false;
-    }
-  });
+  const [dimIdleLights, setDimIdleLights] = useLocalStorage<boolean>('enigma_dim_idle_lights', false);
 
   const handleToggleDimIdleLights = () => {
-    const next = !dimIdleLights;
-    setDimIdleLights(next);
-    try {
-      localStorage.setItem('enigma_dim_idle_lights', String(next));
-    } catch (e) {
-      // ignore
-    }
+    setDimIdleLights(!dimIdleLights);
   };
 
   // Battery rotary power switch mode ('hell' | 'dkl' | 'aus' | 'sammler')
-  const [batteryMode, setBatteryMode] = useState<BatterySwitchMode>(() => {
-    try {
-      const saved = localStorage.getItem('enigma_battery_mode') as BatterySwitchMode;
-      if (saved === 'hell' || saved === 'dkl' || saved === 'aus' || saved === 'sammler') return saved;
-    } catch (e) {
-      // ignore
-    }
-    return 'hell';
-  });
+  const [batteryMode, setBatteryMode] = useLocalStorage<BatterySwitchMode>('enigma_battery_mode', 'hell');
 
   const handleSetBatteryMode = (mode: BatterySwitchMode) => {
     setBatteryMode(mode);
     playRotorClickSound(soundEnabled);
-    try {
-      localStorage.setItem('enigma_battery_mode', mode);
-    } catch (e) {
-      // ignore
-    }
   };
 
   // Active signal path key
@@ -1020,251 +999,36 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
           {/* Message Header (Funktelegramm-Kopf) in Compact Mode */}
           {!keyboardBulbsOnly && showTape && !tapeCollapsed && (
-            <div className="bg-[#1b1710]/90 p-3.5 rounded-xl border border-[#3d3526] shadow-lg space-y-3 animate-fade-in">
-              <div className="flex items-center justify-between border-b border-[#3b3426] pb-1.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[15px] text-[#ebc238]">fact_check</span>
-                  <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase tracking-wider font-bold">
-                    Funktelegramm Header (Message Header)
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] text-[#8c7e6a] font-mono uppercase tracking-widest hidden xs:inline">
-                    M3 / M4 Procedure
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setHeaderCollapsed(!headerCollapsed)}
-                    className="text-[10px] sm:text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-0.5 cursor-pointer border border-[#3b3426] px-1.5 py-0.5 rounded bg-[#120e04]"
-                    title={headerCollapsed ? 'Show Message Header' : 'Close Message Header'}
-                  >
-                    <span className="material-symbols-outlined text-sm">
-                      {headerCollapsed ? 'expand_more' : 'expand_less'}
-                    </span>
-                    <span>{headerCollapsed ? 'Show' : 'Close'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {!headerCollapsed && (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* 1. Preamble */}
-                    <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                          1. Preamble (Präambel)
-                        </span>
-                        <span className="text-[9px] text-[#8c7e6a] font-mono">Cleartext</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1">
-                        <div>
-                          <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Sender Call Sign">
-                            Sender
-                          </label>
-                          <input
-                            type="text"
-                            value={senderCallSign}
-                            onChange={(e) => setSenderCallSign(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5))}
-                            placeholder="DFS"
-                            className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                            title="Sender identification call sign (Clear text)"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5 flex justify-between items-center" title="Time of Transmission">
-                            <span>Time</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const d = new Date();
-                                const hours = String(d.getHours()).padStart(2, '0');
-                                const mins = String(d.getMinutes()).padStart(2, '0');
-                                setTransmissionTime(`${hours}${mins}`);
-                                playRotorClickSound(soundEnabled);
-                              }}
-                              className="text-[8px] text-[#ebc238] hover:underline cursor-pointer font-bold"
-                              title="Set to Current Time"
-                            >
-                              Now
-                            </button>
-                          </label>
-                          <input
-                            type="text"
-                            value={transmissionTime}
-                            onChange={(e) => setTransmissionTime(e.target.value.replace(/[^0-9]/g, '').substring(0, 4))}
-                            placeholder="1200"
-                            className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                            title="Time of transmission (HHMM clear text)"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Total Letter Count">
-                            Letters
-                          </label>
-                          <div className="w-full bg-[#120e04] text-[#ede1cd] border border-[#3b3426] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center h-[23px] flex items-center justify-center" title="Total processed character count (letters only)">
-                            {inputTape.replace(/[^A-Z]/ig, '').length}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
-                        Formatted: <span className="text-[#ede1cd] font-semibold">{senderCallSign || '???'}</span> <span className="text-[#ede1cd] font-semibold">{transmissionTime || '????'}</span> <span className="text-[#ede1cd] font-semibold">{inputTape.replace(/[^A-Z]/ig, '').length}</span>
-                      </div>
-                    </div>
-
-                    {/* 2. Kenngruppe */}
-                    <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                          2. Kenngruppe (Key ID)
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setKenngruppe(getActiveCodebookKenngruppe());
-                              playRotorClickSound(soundEnabled);
-                            }}
-                            className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
-                            title="Randomly select indicator group from currently active daily key"
-                          >
-                            🎲 Random Key
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex-1 flex flex-col justify-center">
-                        <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
-                          Indicator Group
-                        </label>
-                        <input
-                          type="text"
-                          value={kenngruppe}
-                          onChange={(e) => setKenngruppe(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4))}
-                          placeholder="UIO"
-                          className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-0.5 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                          title="Code group showing which daily key sheet to use"
-                        />
-                      </div>
-                      <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
-                        Identifies key day: <span className="text-[#ebc238] font-bold font-monospaced-technical">{kenngruppe || '—'}</span>
-                      </div>
-                    </div>
-
-                    {/* 3. Grundstellung */}
-                    <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                          3. Grundstellung
-                        </span>
-                        <span className="text-[9px] text-[#8c7e6a] font-mono">Position</span>
-                      </div>
-                      <div className="flex-1 flex flex-col justify-center">
-                        <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
-                          Rotor Indicator
-                        </label>
-                        <div className="flex gap-1 items-center">
-                          <input
-                            type="text"
-                            value={localGrundstellung}
-                            onChange={handleGrundstellungChange}
-                            onBlur={() => setLocalGrundstellung(getGrundstellungString())}
-                            className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-0.5 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors uppercase"
-                            maxLength={
-                              (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3) +
-                              (config.reflector.type === 'UKW-Dual-Dynamic' ? 1 : 0)
-                            }
-                            title={
-                              config.reflector.type === 'UKW-Dual-Dynamic'
-                                ? "Type letters (e.g. UHER or UAHER) to reposition reflector and rotors"
-                                : "Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
-                            }
-                          />
-                          <div className="flex flex-col gap-0.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={handleStepAllForward}
-                              className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer font-bold"
-                              title="Step all rotors and reflector forward"
-                            >
-                              +1 ALL
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleResetAllToA}
-                              className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer"
-                              title="Reset all rotors and reflector to A"
-                            >
-                              RESET
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
-                        Start position: <span className="text-[#ebc238] font-bold font-monospaced-technical">{localGrundstellung || '—'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-[#3b3426]/60 justify-end">
-                    <button
-                      type="button"
-                      onClick={handleCopyHeader}
-                      className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
-                        headerCopied
-                          ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                          : 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]'
-                      }`}
-                      title="Copy the Funktelegramm header/preamble to clipboard"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">
-                        {headerCopied ? 'done' : 'content_copy'}
-                      </span>
-                      {headerCopied ? 'Header Copied!' : 'Copy Header'}
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={handleCopyFullMessage}
-                      disabled={!cipherTape}
-                      className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
-                        !cipherTape
-                          ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
-                          : fullMessageCopied
-                          ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                          : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
-                      }`}
-                      title="Copy full transmission (Header + Ciphertext) to clipboard"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">
-                        {fullMessageCopied ? 'done' : 'forward_to_inbox'}
-                      </span>
-                      {fullMessageCopied ? 'Message Copied!' : 'Copy Full Message'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowImportModal(true)}
-                      className="text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]"
-                      title="Import transmission or message and optional header"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">file_upload</span>
-                      Import Message
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowBroadcastModal(true)}
-                      className="text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]"
-                      title="Broadcast message via Morse code audio and visual signal"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">rss_feed</span>
-                      Broadcast Message
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            <MessageHeaderPanel
+              isCompact={true}
+              senderCallSign={senderCallSign}
+              setSenderCallSign={setSenderCallSign}
+              transmissionTime={transmissionTime}
+              setTransmissionTime={setTransmissionTime}
+              kenngruppe={kenngruppe}
+              setKenngruppe={setKenngruppe}
+              localGrundstellung={localGrundstellung}
+              handleGrundstellungChange={handleGrundstellungChange}
+              onGrundstellungBlur={() => setLocalGrundstellung(grundstellungString)}
+              onRandomKey={() => {
+                setKenngruppe(activeCodebookKenngruppe);
+                playRotorClickSound(soundEnabled);
+              }}
+              soundEnabled={soundEnabled}
+              config={config}
+              inputTape={inputTape}
+              cipherTape={cipherTape}
+              headerCollapsed={headerCollapsed}
+              setHeaderCollapsed={setHeaderCollapsed}
+              handleStepAllForward={handleStepAllForward}
+              handleResetAllToA={handleResetAllToA}
+              headerCopied={headerCopied}
+              handleCopyHeader={handleCopyHeader}
+              fullMessageCopied={fullMessageCopied}
+              handleCopyFullMessage={handleCopyFullMessage}
+              setShowImportModal={setShowImportModal}
+              setShowBroadcastModal={setShowBroadcastModal}
+            />
           )}
 
           {/* Rotor Bay (Walzenlage) */}
@@ -1360,7 +1124,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     <div className="relative bg-[#1a0e05] border border-[#733c19] rounded shadow-inner w-12 sm:w-14 h-16 sm:h-18 flex items-center justify-center my-0.5 overflow-hidden">
                       <button
                         type="button"
-                        onClick={() => handleManualReflectorStep(1)}
+                        onClick={() => handleManualRotorStep('reflector', 1)}
                         className="absolute top-0 w-full h-5 flex items-center justify-center text-[#e06c3a] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
                         title="Rotate Reflector Up"
                       >
@@ -1371,7 +1135,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                       </span>
                       <button
                         type="button"
-                        onClick={() => handleManualReflectorStep(-1)}
+                        onClick={() => handleManualRotorStep('reflector', -1)}
                         className="absolute bottom-0 w-full h-5 flex items-center justify-center text-[#e06c3a] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
                         title="Rotate Reflector Down"
                       >
@@ -1581,106 +1345,20 @@ export const MachineView: React.FC<MachineViewProps> = ({
           )}
 
           {/* Lampboard (Lampenfeld) */}
-          <div className="metal-plate p-3 sm:p-4 rounded-xl shadow-md flex flex-col items-center">
-            <div className="w-full flex justify-between items-center mb-3 pb-1 border-b border-[#3d3526]/60 px-1">
-              <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] tracking-widest uppercase flex items-center gap-1.5 font-bold">
-                <span className="material-symbols-outlined text-xs text-[#ebc238]">lightbulb</span>
-                LAMPENFELD (LAMPBOARD)
-              </span>
-              {batteryMode !== 'aus' && litLamp && (
-                <span className={`animate-pulse text-[10px] font-monospaced-technical px-2 py-0.5 rounded border font-bold ${
-                  batteryMode === 'dkl'
-                    ? 'text-[#d48800] bg-[#d48800]/20 border-[#d48800]/40'
-                    : batteryMode === 'sammler'
-                    ? 'text-[#ffea70] bg-[#ffea70]/25 border-[#ffea70]/70 shadow-[0_0_10px_rgba(255,234,112,0.5)]'
-                    : 'text-[#ebc238] bg-[#ebc238]/20 border-[#ebc238]/40'
-                }`}>
-                  {batteryMode === 'dkl' && 'LAMP LIT (2.5V DIM): '}
-                  {batteryMode === 'sammler' && 'LAMP LIT (4V SAMMLER): '}
-                  {batteryMode === 'hell' && 'LAMP LIT (3.5V): '}
-                  {litLamp}
-                </span>
-              )}
-            </div>
-
-            <div className="space-y-2 sm:space-y-2.5 w-full max-w-lg">
-              {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
-                <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2.5">
-                  {row.map((char) => {
-                    const isPowerOn = batteryMode !== 'aus';
-                    const isLit = isPowerOn && litLamp === char;
-                    const isDimIdle = isPowerOn && !litLamp && dimIdleLights;
-
-                    let lampClass = '';
-                    if (isLit) {
-                      if (batteryMode === 'dkl') lampClass = 'lamp-on-dkl scale-102';
-                      else if (batteryMode === 'sammler') lampClass = 'lamp-on-sammler scale-110';
-                      else lampClass = 'lamp-on-hell scale-105';
-                    }
-
-                    let idleClass = '';
-                    if (isDimIdle) {
-                      if (batteryMode === 'dkl') idleClass = 'lamp-dim-glow-dkl';
-                      else if (batteryMode === 'sammler') idleClass = 'lamp-dim-glow-sammler';
-                      else idleClass = 'lamp-dim-glow';
-                    }
-
-                    return (
-                      <div
-                        key={char}
-                        className={`lamp-socket w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${lampClass}`}
-                      >
-                        <div
-                          className={`lamp-glass w-6 h-6 xs:w-7 xs:h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-lamp-char text-[11px] xs:text-xs sm:text-sm font-bold ${idleClass}`}
-                        >
-                          {char}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
+          <LampboardPanel
+            isCompact={true}
+            batteryMode={batteryMode}
+            litLamp={litLamp}
+            dimIdleLights={dimIdleLights}
+          />
 
           {/* Bakelite Keyboard (Tastatur) */}
-          <div className="metal-plate p-3 sm:p-4 rounded-xl shadow-md flex flex-col items-center">
-            <div className="w-full flex justify-between items-center mb-3 pb-1 border-b border-[#3d3526]/60 px-1">
-              <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] tracking-widest uppercase flex items-center gap-1.5 font-bold">
-                <span className="material-symbols-outlined text-xs text-[#8c7e6a]">keyboard</span>
-                TASTATUR (KEYBOARD)
-              </span>
-              <span className="text-[9px] font-monospaced-technical text-[#83715d]">
-                PRESS OR CLICK KEYS
-              </span>
-            </div>
-
-            <div className="space-y-2 sm:space-y-2.5 w-full max-w-lg">
-              {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
-                <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2.5">
-                  {row.map((char) => {
-                    const isPressed = pressedKey === char;
-                    return (
-                      <button
-                        key={char}
-                        type="button"
-                        onMouseDown={(e) => { e.preventDefault(); handleKeyPressStart(char); }}
-                        onMouseUp={(e) => { e.preventDefault(); handleKeyPressEnd(char); }}
-                        onMouseLeave={() => handleKeyPressEnd(char)}
-                        onTouchStart={(e) => { e.preventDefault(); handleKeyPressStart(char); }}
-                        onTouchEnd={(e) => { e.preventDefault(); handleKeyPressEnd(char); }}
-                        className={`bakelite-key w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-10 sm:h-10 rounded-full text-[#e3c193] font-rotor-label font-bold text-[11px] xs:text-xs sm:text-sm flex items-center justify-center cursor-pointer select-none ${
-                          isPressed ? 'key-pressed' : ''
-                        }`}
-                      >
-                        {char}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
+          <KeyboardPanel
+            isCompact={true}
+            pressedKey={pressedKey}
+            handleKeyPressStart={handleKeyPressStart}
+            handleKeyPressEnd={handleKeyPressEnd}
+          />
         </div>
       ) : (
         <>
@@ -1920,114 +1598,20 @@ export const MachineView: React.FC<MachineViewProps> = ({
       )} */}
 
       {/* Middle Section: Lampboard (Glühlampenfeld) */}
-      <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 md:p-6 shadow-panel texture-metal flex flex-col items-center">
-        <div className="w-full flex justify-between items-center mb-4 pb-2 border-b border-[#3b3426]">
-          <span className="text-ui-header font-ui-header text-[#ede1cd] text-xs uppercase tracking-widest flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm text-[#ebc238]">lightbulb</span>
-            Lampboard (Glühlampenfeld)
-          </span>
-          {batteryMode !== 'aus' && litLamp && (
-            <span className={`animate-pulse text-xs font-monospaced-technical px-2 py-0.5 rounded border font-bold ${
-              batteryMode === 'dkl'
-                ? 'text-[#d48800] bg-[#d48800]/20 border-[#d48800]/40'
-                : batteryMode === 'sammler'
-                ? 'text-[#ffea70] bg-[#ffea70]/25 border-[#ffea70]/70 shadow-[0_0_10px_rgba(255,234,112,0.5)]'
-                : 'text-[#ebc238] bg-[#ebc238]/20 border-[#ebc238]/40'
-            }`}>
-              {batteryMode === 'dkl' && 'LAMP LIT (2.5V DIM): '}
-              {batteryMode === 'sammler' && 'LAMP LIT (4V SAMMLER): '}
-              {batteryMode === 'hell' && 'LAMP LIT (3.5V): '}
-              {litLamp}
-            </span>
-          )}
-        </div>
-
-        <div className="space-y-2 sm:space-y-3 md:space-y-4 max-w-2xl w-full">
-          {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
-            <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2 md:gap-4">
-              {row.map((char) => {
-                const isPowerOn = batteryMode !== 'aus';
-                const isLit = isPowerOn && litLamp === char;
-                const isDimIdle = isPowerOn && !litLamp && dimIdleLights;
-
-                let litStyle = 'bg-[#120e04] border-[#3b3426] text-[#83715d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]';
-
-                if (isLit) {
-                  if (batteryMode === 'dkl') {
-                    litStyle = 'bg-[#cba832] border-[#f1e09d] text-[#25190b] shadow-[0_0_12px_#d48800] font-bold scale-102 opacity-80';
-                  } else if (batteryMode === 'sammler') {
-                    litStyle = 'bg-[#ffea70] border-[#ffffff] text-[#1a0f00] shadow-[0_0_25px_#ffff80,0_0_50px_#ffc83b] font-bold scale-110';
-                  } else {
-                    litStyle = 'bg-[#ebc238] border-[#fff5d6] text-[#25190b] shadow-lamp-glow font-bold scale-105';
-                  }
-                } else if (isDimIdle) {
-                  if (batteryMode === 'dkl') {
-                    litStyle = 'lamp-dim-glow-dkl border-[#ebc238]/30';
-                  } else if (batteryMode === 'sammler') {
-                    litStyle = 'lamp-dim-glow-sammler border-[#ffea70]/70';
-                  } else {
-                    litStyle = 'lamp-dim-glow border-[#ebc238]/50';
-                  }
-                }
-
-                return (
-                  <div
-                    key={char}
-                    className={`w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-100 ${litStyle}`}
-                  >
-                    <span className="font-lamp-char text-xs xs:text-sm sm:text-lg md:text-xl font-bold">
-                      {char}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
+      <LampboardPanel
+        isCompact={false}
+        batteryMode={batteryMode}
+        litLamp={litLamp}
+        dimIdleLights={dimIdleLights}
+      />
 
       {/* Bottom Section: Physical Bakelite Keyboard (Tastatur) */}
-      <div className="bg-[#181307] border border-[#4e453b] rounded-lg p-4 md:p-6 shadow-panel texture-wood flex flex-col items-center">
-        <div className="w-full flex justify-between items-center mb-4 pb-2 border-b border-[#3b3426]">
-          <span className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-widest flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm text-[#8b6f47]">keyboard</span>
-            Bakelite Keyboard (Tastatur)
-          </span>
-          <span className="text-[10px] text-[#d1c4b7] font-monospaced-technical">
-            CLICK OR PRESS ANY KEY
-          </span>
-        </div>
-
-        <div className="space-y-2 sm:space-y-3 md:space-y-4 max-w-2xl w-full">
-          {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
-            <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2 md:gap-4">
-              {row.map((char) => {
-                const isPressed = pressedKey === char;
-                return (
-                  <button
-                    key={char}
-                    type="button"
-                    onMouseDown={(e) => { e.preventDefault(); handleKeyPressStart(char); }}
-                    onMouseUp={(e) => { e.preventDefault(); handleKeyPressEnd(char); }}
-                    onMouseLeave={() => handleKeyPressEnd(char)}
-                    onTouchStart={(e) => { e.preventDefault(); handleKeyPressStart(char); }}
-                    onTouchEnd={(e) => { e.preventDefault(); handleKeyPressEnd(char); }}
-                    className={`w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 text-[#ede1cd] flex items-center justify-center transition-all cursor-pointer select-none ${
-                      isPressed
-                        ? 'translate-y-1 bg-[#ebc238] text-[#25190b] border-white font-bold ring-4 ring-[#ebc238]/40 scale-105 shadow-[0_0_15px_#ebc238]'
-                        : 'border-[#83715d] bg-[#3b3426] shadow-key-base hover:border-[#e3c193] hover:bg-[#4e453b]'
-                    }`}
-                  >
-                    <span className="font-rotor-label font-bold text-xs xs:text-sm sm:text-base md:text-lg">
-                      {char}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
+      <KeyboardPanel
+        isCompact={false}
+        pressedKey={pressedKey}
+        handleKeyPressStart={handleKeyPressStart}
+        handleKeyPressEnd={handleKeyPressEnd}
+      />
 
       {/* Paper Tape Strip Display */}
       {!keyboardBulbsOnly && showTape && (
@@ -2083,251 +1667,36 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
           {/* Message Header (Funktelegramm-Kopf) */}
           {showTape && !tapeCollapsed && (
-            <div className="bg-[#17130b] border border-[#3b3426] p-3.5 rounded-lg space-y-3.5 animate-fade-in">
-              <div className="flex items-center justify-between border-b border-[#3b3426] pb-1.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[15px] text-[#ebc238]">fact_check</span>
-                  <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase tracking-wider font-bold">
-                    Funktelegramm Header (Message Header)
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] text-[#8c7e6a] font-mono uppercase tracking-widest hidden sm:inline">
-                    M3 / M4 Procedure
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setHeaderCollapsed(!headerCollapsed)}
-                    className="text-[10px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-0.5 cursor-pointer border border-[#3b3426] px-1.5 py-0.5 rounded bg-[#120e04]"
-                    title={headerCollapsed ? 'Show Message Header' : 'Close Message Header'}
-                  >
-                    <span className="material-symbols-outlined text-sm">
-                      {headerCollapsed ? 'expand_more' : 'expand_less'}
-                    </span>
-                    <span>{headerCollapsed ? 'Show' : 'Close'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {!headerCollapsed && (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {/* 1. Preamble */}
-                  <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                        1. Preamble (Präambel)
-                      </span>
-                      <span className="text-[9px] text-[#8c7e6a] font-mono">Cleartext</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      <div>
-                        <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Sender Call Sign">
-                          Sender
-                        </label>
-                        <input
-                          type="text"
-                          value={senderCallSign}
-                          onChange={(e) => setSenderCallSign(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5))}
-                          placeholder="DFS"
-                          className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                          title="Sender identification call sign (Clear text)"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5 flex justify-between items-center" title="Time of Transmission">
-                          <span>Time</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const d = new Date();
-                              const hours = String(d.getHours()).padStart(2, '0');
-                              const mins = String(d.getMinutes()).padStart(2, '0');
-                              setTransmissionTime(`${hours}${mins}`);
-                              playRotorClickSound(soundEnabled);
-                            }}
-                            className="text-[8px] text-[#ebc238] hover:underline cursor-pointer font-bold"
-                            title="Set to Current Time"
-                          >
-                            Now
-                          </button>
-                        </label>
-                        <input
-                          type="text"
-                          value={transmissionTime}
-                          onChange={(e) => setTransmissionTime(e.target.value.replace(/[^0-9]/g, '').substring(0, 4))}
-                          placeholder="1200"
-                          className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                          title="Time of transmission (HHMM clear text)"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Total Letter Count">
-                          Letters
-                        </label>
-                        <div className="w-full bg-[#120e04] text-[#ede1cd] border border-[#3b3426] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center h-[26px] flex items-center justify-center" title="Total processed character count (letters only)">
-                          {inputTape.replace(/[^A-Z]/ig, '').length}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
-                      Formatted: <span className="text-[#ede1cd] font-semibold">{senderCallSign || '???'}</span> <span className="text-[#ede1cd] font-semibold">{transmissionTime || '????'}</span> <span className="text-[#ede1cd] font-semibold">{inputTape.replace(/[^A-Z]/ig, '').length}</span>
-                    </div>
-                  </div>
-
-                  {/* 2. Kenngruppe */}
-                  <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                        2. Kenngruppe (Key ID)
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setKenngruppe(getActiveCodebookKenngruppe());
-                            playRotorClickSound(soundEnabled);
-                          }}
-                          className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
-                          title="Randomly select indicator group from currently active daily key"
-                        >
-                          🎲 Random Key
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex-1 flex flex-col justify-center">
-                      <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
-                        Indicator Group
-                      </label>
-                      <input
-                        type="text"
-                        value={kenngruppe}
-                        onChange={(e) => setKenngruppe(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4))}
-                        placeholder="UIO"
-                        className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-2 py-1 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                        title="Code group showing which daily key sheet to use"
-                      />
-                    </div>
-                    <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
-                      Identifies key settings sheet day: <span className="text-[#ebc238] font-bold font-monospaced-technical">{kenngruppe || '—'}</span>
-                    </div>
-                  </div>
-
-                  {/* 3. Grundstellung */}
-                  <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                        3. Grundstellung
-                      </span>
-                      <span className="text-[9px] text-[#8c7e6a] font-mono">Position</span>
-                    </div>
-                    <div className="flex-1 flex flex-col justify-center">
-                      <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
-                        Rotor Indicator
-                      </label>
-                      <div className="flex gap-1.5 items-center">
-                        <input
-                          type="text"
-                          value={localGrundstellung}
-                          onChange={handleGrundstellungChange}
-                          onBlur={() => setLocalGrundstellung(getGrundstellungString())}
-                          className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-2 py-1 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors uppercase"
-                          maxLength={
-                            (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3) +
-                            (config.reflector.type === 'UKW-Dual-Dynamic' ? 1 : 0)
-                          }
-                          title={
-                            config.reflector.type === 'UKW-Dual-Dynamic'
-                              ? "Type letters (e.g. UHER or UAHER) to reposition reflector and rotors"
-                              : "Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
-                          }
-                        />
-                        <div className="flex flex-col gap-0.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={handleStepAllForward}
-                            className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer font-bold"
-                            title="Step all rotors and reflector forward"
-                          >
-                            +1 ALL
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleResetAllToA}
-                            className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer"
-                            title="Reset all rotors and reflector to A"
-                          >
-                            RESET
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
-                      Initial starting positions: <span className="text-[#ebc238] font-bold font-monospaced-technical">{localGrundstellung || '—'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="flex flex-wrap gap-2 pt-2.5 border-t border-[#3b3426]/60 justify-end">
-                  <button
-                    type="button"
-                    onClick={handleCopyHeader}
-                    className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
-                      headerCopied
-                        ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                        : 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]'
-                    }`}
-                    title="Copy the Funktelegramm header/preamble to clipboard"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">
-                      {headerCopied ? 'done' : 'content_copy'}
-                    </span>
-                    {headerCopied ? 'Header Copied!' : 'Copy Header'}
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={handleCopyFullMessage}
-                    disabled={!cipherTape}
-                    className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
-                      !cipherTape
-                        ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
-                        : fullMessageCopied
-                        ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                        : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
-                    }`}
-                    title="Copy full transmission (Header + Ciphertext) to clipboard"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">
-                      {fullMessageCopied ? 'done' : 'forward_to_inbox'}
-                    </span>
-                    {fullMessageCopied ? 'Message Copied!' : 'Copy Full Message'}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowImportModal(true)}
-                    className="text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]"
-                    title="Import transmission or message and optional header"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">file_upload</span>
-                    Import Message
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowBroadcastModal(true)}
-                    className="text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]"
-                    title="Broadcast message via Morse code audio and visual signal"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">rss_feed</span>
-                    Broadcast Message
-                  </button>
-                </div>
-                </>
-              )}
-            </div>
+            <MessageHeaderPanel
+              isCompact={false}
+              senderCallSign={senderCallSign}
+              setSenderCallSign={setSenderCallSign}
+              transmissionTime={transmissionTime}
+              setTransmissionTime={setTransmissionTime}
+              kenngruppe={kenngruppe}
+              setKenngruppe={setKenngruppe}
+              localGrundstellung={localGrundstellung}
+              handleGrundstellungChange={handleGrundstellungChange}
+              onGrundstellungBlur={() => setLocalGrundstellung(grundstellungString)}
+              onRandomKey={() => {
+                setKenngruppe(activeCodebookKenngruppe);
+                playRotorClickSound(soundEnabled);
+              }}
+              soundEnabled={soundEnabled}
+              config={config}
+              inputTape={inputTape}
+              cipherTape={cipherTape}
+              headerCollapsed={headerCollapsed}
+              setHeaderCollapsed={setHeaderCollapsed}
+              handleStepAllForward={handleStepAllForward}
+              handleResetAllToA={handleResetAllToA}
+              headerCopied={headerCopied}
+              handleCopyHeader={handleCopyHeader}
+              fullMessageCopied={fullMessageCopied}
+              handleCopyFullMessage={handleCopyFullMessage}
+              setShowImportModal={setShowImportModal}
+              setShowBroadcastModal={setShowBroadcastModal}
+            />
           )}
 
           {!tapeCollapsed && (

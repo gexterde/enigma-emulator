@@ -12,20 +12,23 @@ import { SettingsModal, InfoModal, ShareModal, ShortcutsModal } from './componen
 import { ActiveTab, EnigmaConfig, LogEntry } from './types';
 import { DEFAULT_ENIGMA_CONFIG } from './lib/enigmaEngine';
 
-function isValidRotorState(obj: any): boolean {
-  return !!(obj && typeof obj.type === 'string' && typeof obj.ring === 'number' && typeof obj.start === 'number' && typeof obj.current === 'number');
+function isValidRotorState(obj: unknown): boolean {
+  if (!obj || typeof obj !== 'object') return false;
+  const r = obj as Record<string, unknown>;
+  return typeof r.type === 'string' && typeof r.ring === 'number' && typeof r.start === 'number' && typeof r.current === 'number';
 }
 
-function isValidEnigmaConfig(obj: any): boolean {
-  if (!obj) return false;
-  return !!(
-    isValidRotorState(obj.leftRotor) &&
-    isValidRotorState(obj.middleRotor) &&
-    isValidRotorState(obj.rightRotor) &&
-    isValidRotorState(obj.fourthRotor) &&
-    isValidRotorState(obj.reflector) &&
-    typeof obj.plugboard === 'object' &&
-    obj.plugboard !== null
+function isValidEnigmaConfig(obj: unknown): boolean {
+  if (!obj || typeof obj !== 'object') return false;
+  const c = obj as Record<string, unknown>;
+  return (
+    isValidRotorState(c.leftRotor) &&
+    isValidRotorState(c.middleRotor) &&
+    isValidRotorState(c.rightRotor) &&
+    isValidRotorState(c.fourthRotor) &&
+    isValidRotorState(c.reflector) &&
+    typeof c.plugboard === 'object' &&
+    c.plugboard !== null
   );
 }
 
