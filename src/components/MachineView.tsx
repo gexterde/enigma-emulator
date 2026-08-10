@@ -17,6 +17,7 @@ import { BatterySwitch, BatterySwitchMode } from './BatterySwitch';
 import { RotorQuickModal } from './RotorQuickModal';
 import { PlugboardQuickModal } from './PlugboardQuickModal';
 import { CodebookQuickModal } from './CodebookQuickModal';
+import { BroadcastModal } from './BroadcastModal';
 
 
 
@@ -159,6 +160,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
   };
 
   const [showImportModal, setShowImportModal] = useState<boolean>(false);
+  const [showBroadcastModal, setShowBroadcastModal] = useState<boolean>(false);
   const [importText, setImportText] = useState<string>('');
   const [importIncludeHeader, setImportIncludeHeader] = useState<boolean>(true);
 
@@ -1221,6 +1223,16 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     >
                       <span className="material-symbols-outlined text-[14px]">file_upload</span>
                       Import Message
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowBroadcastModal(true)}
+                      className="text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]"
+                      title="Broadcast message via Morse code audio and visual signal"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">rss_feed</span>
+                      Broadcast Message
                     </button>
                   </div>
                 </>
@@ -2285,6 +2297,16 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     <span className="material-symbols-outlined text-[14px]">file_upload</span>
                     Import Message
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowBroadcastModal(true)}
+                    className="text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]"
+                    title="Broadcast message via Morse code audio and visual signal"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">rss_feed</span>
+                    Broadcast Message
+                  </button>
                 </div>
                 </>
               )}
@@ -2365,6 +2387,16 @@ export const MachineView: React.FC<MachineViewProps> = ({
         onUpdateConfig={onUpdateConfig}
         soundEnabled={soundEnabled}
         ringFormat={ringFormat}
+      />
+
+      {/* Broadcast Message Modal */}
+      <BroadcastModal
+        isOpen={showBroadcastModal}
+        onClose={() => setShowBroadcastModal(false)}
+        plaintext={inputTape}
+        ciphertext={formatTapeText(cipherTape) || ''}
+        headerString={getHeaderString()}
+        soundEnabled={soundEnabled}
       />
 
       {/* Import Message Modal */}
