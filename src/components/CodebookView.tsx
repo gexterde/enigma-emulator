@@ -278,6 +278,97 @@ function generateRandom31DayEntries(): CodebookEntry[] {
 
 const LOCAL_STORAGE_KEY = 'enigma_custom_codebooks_v1';
 
+// Helpers for Share & Import Codebooks
+function encodeCodebookToShareCode(sheet: CodebookSheet): string {
+  try {
+    const json = JSON.stringify(sheet);
+    const utf8Bytes = new TextEncoder().encode(json);
+    let binary = '';
+    for (let i = 0; i < utf8Bytes.length; i++) {
+      binary += String.fromCharCode(utf8Bytes[i]);
+    }
+    return btoa(binary);
+  } catch (e) {
+    console.error('Failed to encode codebook:', e);
+    return '';
+  }
+}
+
+function isValidSheetStructure(obj: any): boolean {
+  if (!obj || typeof obj !== 'object') return false;
+  if (typeof obj.title !== 'string' || !obj.title) return false;
+  if (!Array.isArray(obj.entries)) return false;
+  if (obj.entries.length > 0) {
+    const first = obj.entries[0];
+    if (typeof first.day !== 'number') return false;
+    if (!Array.isArray(first.rotors) || first.rotors.length < 3) return false;
+    if (!Array.isArray(first.rings) || first.rings.length < 3) return false;
+    if (!Array.isArray(first.plugboardPairs)) return false;
+  }
+  return true;
+}
+
+function decodeShareCodeToCodebook(inputRaw: string): {
+  valid: boolean;
+  sheet?: CodebookSheet;
+  sheets?: CodebookSheet[];
+  error?: string;
+} {
+  if (!inputRaw || !inputRaw.trim()) {
+    return { valid: false, error: 'Input is empty.' };
+  }
+
+  let cleanInput = inputRaw.trim();
+
+  // Extract parameter from URL if full link is pasted
+  if (cleanInput.includes('import-codebook=')) {
+    const parts = cleanInput.split('import-codebook=');
+    if (parts.length > 1) {
+      cleanInput = decodeURIComponent(parts[1].split('&')[0]);
+    }
+  } else if (cleanInput.includes('codebook=')) {
+    const parts = cleanInput.split('codebook=');
+    if (parts.length > 1) {
+      cleanInput = decodeURIComponent(parts[1].split('&')[0]);
+    }
+  }
+
+  let parsed: any = null;
+
+  // 1. Try direct JSON parse
+  try {
+    parsed = JSON.parse(cleanInput);
+  } catch (e) {
+    // 2. Try Base64 decode
+    try {
+      const binary = atob(cleanInput);
+      const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+      const decodedJson = new TextDecoder().decode(bytes);
+      parsed = JSON.parse(decodedJson);
+    } catch (err) {
+      return { valid: false, error: 'Could not parse as valid JSON or Base64 share code.' };
+    }
+  }
+
+  if (!parsed) {
+    return { valid: false, error: 'Data content is invalid or empty.' };
+  }
+
+  if (Array.isArray(parsed)) {
+    const validSheets = parsed.filter(isValidSheetStructure);
+    if (validSheets.length > 0) {
+      return { valid: true, sheets: validSheets };
+    }
+    return { valid: false, error: 'Array does not contain valid codebook objects.' };
+  }
+
+  if (isValidSheetStructure(parsed)) {
+    return { valid: true, sheet: parsed };
+  }
+
+  return { valid: false, error: 'Object is missing required fields (title or entries array).' };
+}
+
 export const CodebookView: React.FC<CodebookViewProps> = ({
   onApplyConfig,
   onNavigateToMachine
@@ -301,6 +392,40 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
   const [selectedBookId, setSelectedBookId] = useState<string>('luftwaffe_2744');
   const [appliedDayKey, setAppliedDayKey] = useState<string | null>(null);
   const [filterDay, setFilterDay] = useState<string>('');
+
+  // Share & Import Modal States
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
+
+  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [importInputText, setImportInputText] = useState<string>('');
+  const [importSourceTab, setImportSourceTab] = useState<'file' | 'text'>('file');
+  const [importValidationResult, setImportValidationResult] = useState<{
+    valid: boolean;
+    sheet?: CodebookSheet;
+    sheets?: CodebookSheet[];
+    error?: string;
+  } | null>(null);
+  const [importToast, setImportToast] = useState<string | null>(null);
+
+  // Auto-detect URL parameter or hash on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      const search = window.location.search;
+      const targetUrl = hash || search;
+
+      if (targetUrl.includes('import-codebook=') || targetUrl.includes('codebook=')) {
+        const res = decodeShareCodeToCodebook(targetUrl);
+        if (res.valid) {
+          setIsImportModalOpen(true);
+          setImportSourceTab('text');
+          setImportInputText(targetUrl);
+          setImportValidationResult(res);
+        }
+      }
+    }
+  }, []);
   
   // Ringstellung display format: 'number' (01-26) or 'letter' (A-Z)
   const [ringFormat, setRingFormat] = useState<'number' | 'letter'>(() => {
@@ -539,6 +664,119 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
     window.print();
   };
 
+  // Share Handlers
+  const handleDownloadCodebookJson = () => {
+    const jsonStr = JSON.stringify(currentSheet, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const filename = `codebook_${currentSheet.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.json`;
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setShareToast('✓ JSON File Downloaded!');
+    setTimeout(() => setShareToast(null), 3000);
+  };
+
+  const handleCopyShareCode = () => {
+    const code = encodeCodebookToShareCode(currentSheet);
+    if (code) {
+      navigator.clipboard.writeText(code);
+      setShareToast('✓ Base64 Share Code copied to clipboard!');
+      setTimeout(() => setShareToast(null), 3000);
+    }
+  };
+
+  const handleCopyShareLink = () => {
+    const code = encodeCodebookToShareCode(currentSheet);
+    if (code) {
+      const shareUrl = `${window.location.origin}${window.location.pathname}#import-codebook=${encodeURIComponent(code)}`;
+      navigator.clipboard.writeText(shareUrl);
+      setShareToast('✓ Share Link copied to clipboard!');
+      setTimeout(() => setShareToast(null), 3000);
+    }
+  };
+
+  const handleCopyJsonText = () => {
+    const jsonStr = JSON.stringify(currentSheet, null, 2);
+    navigator.clipboard.writeText(jsonStr);
+    setShareToast('✓ Formatted JSON copied to clipboard!');
+    setTimeout(() => setShareToast(null), 3000);
+  };
+
+  // Import Handlers
+  const handleImportTextChange = (text: string) => {
+    setImportInputText(text);
+    if (!text.trim()) {
+      setImportValidationResult(null);
+      return;
+    }
+    const res = decodeShareCodeToCodebook(text);
+    setImportValidationResult(res);
+  };
+
+  const handleImportFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        setImportInputText(content);
+        const res = decodeShareCodeToCodebook(content);
+        setImportValidationResult(res);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleConfirmImport = () => {
+    if (!importValidationResult || !importValidationResult.valid) return;
+
+    const sheetsToImport: CodebookSheet[] = [];
+    if (importValidationResult.sheet) {
+      sheetsToImport.push(importValidationResult.sheet);
+    } else if (importValidationResult.sheets) {
+      sheetsToImport.push(...importValidationResult.sheets);
+    }
+
+    if (sheetsToImport.length === 0) return;
+
+    let newFirstId = '';
+
+    const processedSheets = sheetsToImport.map((s, idx) => {
+      const newId = `imported_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`;
+      if (idx === 0) newFirstId = newId;
+      return {
+        ...s,
+        id: newId,
+        isHistorical: false // Allow imported codebooks to be custom editable/deletable
+      };
+    });
+
+    setCustomSheets((prev) => [...processedSheets, ...prev]);
+
+    if (newFirstId) {
+      setSelectedBookId(newFirstId);
+    }
+
+    setImportToast(`✓ Successfully imported ${processedSheets.length} codebook(s)!`);
+    setTimeout(() => {
+      setIsImportModalOpen(false);
+      setImportToast(null);
+      setImportInputText('');
+      setImportValidationResult(null);
+      if (window.location.hash.includes('import-codebook=')) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    }, 1200);
+  };
+
   // Create new custom codebook
   const handleCreateCodebookSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -697,6 +935,32 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
 
         {activeViewMode === 'view' && (
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                setIsShareModalOpen(true);
+                setShareToast(null);
+              }}
+              className="text-xs font-ui-header bg-[#2a2215] hover:bg-[#3b301e] text-[#ebc238] border border-[#8b6f47] px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow"
+              title="Share or export the selected codebook sheet"
+            >
+              <span className="material-symbols-outlined text-sm">share</span>
+              Share Codebook
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsImportModalOpen(true);
+                setImportToast(null);
+              }}
+              className="text-xs font-ui-header bg-[#2b6121] hover:bg-[#387a2c] text-[#e3f0db] border border-[#4d8f3e] px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow"
+              title="Import a codebook sheet from JSON file, Share Code, or URL Link"
+            >
+              <span className="material-symbols-outlined text-sm">file_download</span>
+              Import Codebook
+            </button>
+
             <button
               type="button"
               onClick={handlePrint}
@@ -1712,6 +1976,296 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* SHARE CODEBOOK MODAL */}
+      {isShareModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#1c170d] border border-[#8b6f47] text-[#ede1cd] rounded-xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-start border-b border-[#3b3426] pb-3">
+              <div>
+                <h3 className="text-lg font-ui-header font-bold text-[#ebc238] uppercase flex items-center gap-2">
+                  <span className="material-symbols-outlined text-xl">share</span>
+                  Share Codebook / Schlüsseltafel
+                </h3>
+                <p className="text-xs text-[#9e8d78] mt-0.5">
+                  Export or share key sheet <strong className="text-[#e3c193]">"{currentSheet.title}"</strong> ({currentSheet.entries.length} Days)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsShareModalOpen(false)}
+                className="text-[#9e8d78] hover:text-[#ebc238] cursor-pointer p-1"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Codebook Information Preview Badge */}
+            <div className="bg-[#120e04] border border-[#3b3426] rounded-lg p-3.5 space-y-1 text-xs">
+              <div className="flex justify-between items-center text-[#ebc238] font-bold">
+                <span>{currentSheet.title}</span>
+                <span className="text-[10px] bg-[#801818] text-white px-2 py-0.5 rounded font-mono uppercase">
+                  {currentSheet.classification}
+                </span>
+              </div>
+              <div className="text-[#9e8d78] flex gap-4 text-[11px]">
+                <span>Monat: <strong className="text-[#d1c4b7]">{currentSheet.monthYear}</strong></span>
+                <span>Prüfnummer: <strong className="text-[#d1c4b7]">{currentSheet.pruefnummer}</strong></span>
+              </div>
+            </div>
+
+            {shareToast && (
+              <div className="bg-[#1f3a18] border border-[#3f7a30] text-[#a1f092] text-xs px-3 py-2 rounded flex items-center gap-2 font-mono">
+                <span className="material-symbols-outlined text-sm">check_circle</span>
+                <span>{shareToast}</span>
+              </div>
+            )}
+
+            <div className="space-y-3 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Option 1: Direct Share Link */}
+                <button
+                  type="button"
+                  onClick={handleCopyShareLink}
+                  className="p-3.5 bg-[#251f12] hover:bg-[#332b1a] border border-[#5c4a30] rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div className="flex items-center gap-2 text-[#ebc238] font-bold text-xs uppercase mb-1">
+                    <span className="material-symbols-outlined text-base">link</span>
+                    Copy Direct Share Link
+                  </div>
+                  <p className="text-[11px] text-[#9e8d78] group-hover:text-[#d1c4b7]">
+                    Generates a URL with encoded codebook hash for 1-click web import.
+                  </p>
+                </button>
+
+                {/* Option 2: Download .JSON File */}
+                <button
+                  type="button"
+                  onClick={handleDownloadCodebookJson}
+                  className="p-3.5 bg-[#251f12] hover:bg-[#332b1a] border border-[#5c4a30] rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div className="flex items-center gap-2 text-[#ebc238] font-bold text-xs uppercase mb-1">
+                    <span className="material-symbols-outlined text-base">download</span>
+                    Download .JSON File
+                  </div>
+                  <p className="text-[11px] text-[#9e8d78] group-hover:text-[#d1c4b7]">
+                    Saves full codebook structure as a standard JSON file.
+                  </p>
+                </button>
+
+                {/* Option 3: Copy Base64 Share Code */}
+                <button
+                  type="button"
+                  onClick={handleCopyShareCode}
+                  className="p-3.5 bg-[#251f12] hover:bg-[#332b1a] border border-[#5c4a30] rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div className="flex items-center gap-2 text-[#ebc238] font-bold text-xs uppercase mb-1">
+                    <span className="material-symbols-outlined text-base">content_copy</span>
+                    Copy Base64 Share Code
+                  </div>
+                  <p className="text-[11px] text-[#9e8d78] group-hover:text-[#d1c4b7]">
+                    Compact encoded string ideal for messaging or email distribution.
+                  </p>
+                </button>
+
+                {/* Option 4: Copy Formatted JSON */}
+                <button
+                  type="button"
+                  onClick={handleCopyJsonText}
+                  className="p-3.5 bg-[#251f12] hover:bg-[#332b1a] border border-[#5c4a30] rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div className="flex items-center gap-2 text-[#ebc238] font-bold text-xs uppercase mb-1">
+                    <span className="material-symbols-outlined text-base">code</span>
+                    Copy Formatted JSON
+                  </div>
+                  <p className="text-[11px] text-[#9e8d78] group-hover:text-[#d1c4b7]">
+                    Raw uncompressed JSON payload for developer tools or archives.
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[#3b3426] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsShareModalOpen(false)}
+                className="px-4 py-2 rounded bg-[#3b3426] text-[#d1c4b7] hover:bg-[#4e453b] text-xs font-bold uppercase cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IMPORT CODEBOOK MODAL */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#1c170d] border border-[#8b6f47] text-[#ede1cd] rounded-xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start border-b border-[#3b3426] pb-3">
+              <div>
+                <h3 className="text-lg font-ui-header font-bold text-[#ebc238] uppercase flex items-center gap-2">
+                  <span className="material-symbols-outlined text-xl">file_download</span>
+                  Import Codebook / Schlüsseltafel
+                </h3>
+                <p className="text-xs text-[#9e8d78] mt-0.5">
+                  Import custom or shared Enigma key sheets into your workspace.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(false)}
+                className="text-[#9e8d78] hover:text-[#ebc238] cursor-pointer p-1"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Source Tab Selector */}
+            <div className="flex border-b border-[#3b3426] gap-2">
+              <button
+                type="button"
+                onClick={() => setImportSourceTab('file')}
+                className={`pb-2 px-3 text-xs font-bold uppercase flex items-center gap-1.5 transition-colors cursor-pointer border-b-2 ${
+                  importSourceTab === 'file'
+                    ? 'border-[#ebc238] text-[#ebc238]'
+                    : 'border-transparent text-[#9e8d78] hover:text-[#d1c4b7]'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">upload_file</span>
+                Upload .JSON File
+              </button>
+              <button
+                type="button"
+                onClick={() => setImportSourceTab('text')}
+                className={`pb-2 px-3 text-xs font-bold uppercase flex items-center gap-1.5 transition-colors cursor-pointer border-b-2 ${
+                  importSourceTab === 'text'
+                    ? 'border-[#ebc238] text-[#ebc238]'
+                    : 'border-transparent text-[#9e8d78] hover:text-[#d1c4b7]'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">content_paste</span>
+                Paste Code / Link / JSON
+              </button>
+            </div>
+
+            {importToast && (
+              <div className="bg-[#1f3a18] border border-[#3f7a30] text-[#a1f092] text-xs px-3 py-2 rounded flex items-center gap-2 font-mono">
+                <span className="material-symbols-outlined text-sm">check_circle</span>
+                <span>{importToast}</span>
+              </div>
+            )}
+
+            {/* Tab 1: File Upload */}
+            {importSourceTab === 'file' && (
+              <div className="space-y-3">
+                <label className="block border-2 border-dashed border-[#5c4a30] hover:border-[#ebc238] bg-[#120e04] rounded-xl p-6 text-center cursor-pointer transition-all group">
+                  <span className="material-symbols-outlined text-3xl text-[#8b6f47] group-hover:text-[#ebc238] mb-2 block">
+                    folder_open
+                  </span>
+                  <span className="text-xs font-bold text-[#ebc238] uppercase block">
+                    Click to select .JSON Codebook File
+                  </span>
+                  <span className="text-[11px] text-[#9e8d78] mt-1 block">
+                    Select a previously exported codebook file from your computer
+                  </span>
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    onChange={handleImportFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            )}
+
+            {/* Tab 2: Paste Share Code / URL / JSON */}
+            {importSourceTab === 'text' && (
+              <div className="space-y-2">
+                <label className="block text-xs text-[#d1c4b7] font-bold">
+                  Paste Share Link, Base64 Share Code, or JSON Payload:
+                </label>
+                <textarea
+                  rows={5}
+                  value={importInputText}
+                  onChange={(e) => handleImportTextChange(e.target.value)}
+                  placeholder="Paste URL (e.g. #import-codebook=...), Base64 share code, or raw JSON object here..."
+                  className="w-full bg-[#120e04] border border-[#4e453b] text-[#ebc238] font-mono text-xs rounded-lg p-3 focus:outline-none focus:border-[#ebc238]"
+                />
+              </div>
+            )}
+
+            {/* Live Validation Feedback Card */}
+            {importValidationResult && (
+              <div className="space-y-2 pt-1">
+                {importValidationResult.valid ? (
+                  <div className="bg-[#121c0e] border border-[#2e5e22] rounded-lg p-3.5 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between text-[#81d86d] font-bold">
+                      <span className="flex items-center gap-1.5 uppercase">
+                        <span className="material-symbols-outlined text-base">verified</span>
+                        Valid Codebook Payload
+                      </span>
+                      <span className="text-[10px] bg-[#224419] text-[#a1f092] px-2 py-0.5 rounded font-mono">
+                        {importValidationResult.sheet ? '1 Codebook' : `${importValidationResult.sheets?.length} Codebooks`}
+                      </span>
+                    </div>
+
+                    {importValidationResult.sheet && (
+                      <div className="bg-[#0b1209] p-2.5 rounded border border-[#224419] space-y-1 text-[#d1c4b7]">
+                        <div className="text-[#ebc238] font-bold">{importValidationResult.sheet.title}</div>
+                        <div className="text-[11px] text-[#8a9e84] flex justify-between">
+                          <span>{importValidationResult.sheet.subtitle}</span>
+                          <span>{importValidationResult.sheet.entries?.length || 0} Days</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {importValidationResult.sheets && (
+                      <div className="space-y-1 max-h-28 overflow-y-auto">
+                        {importValidationResult.sheets.map((s, idx) => (
+                          <div key={idx} className="bg-[#0b1209] p-2 rounded border border-[#224419] text-[11px] text-[#d1c4b7] flex justify-between">
+                            <span className="font-bold text-[#ebc238]">{s.title}</span>
+                            <span>{s.entries?.length || 0} Days</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-[#241010] border border-[#6b2222] text-[#f29191] text-xs p-3 rounded-lg flex items-center gap-2">
+                    <span className="material-symbols-outlined text-base text-[#e05252]">error</span>
+                    <span>{importValidationResult.error || 'Invalid codebook format.'}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="pt-3 border-t border-[#3b3426] flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(false)}
+                className="px-4 py-2 rounded bg-[#3b3426] text-[#d1c4b7] hover:bg-[#4e453b] text-xs font-bold uppercase cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!importValidationResult || !importValidationResult.valid}
+                onClick={handleConfirmImport}
+                className={`px-5 py-2 rounded text-xs font-bold uppercase flex items-center gap-1.5 shadow transition-all ${
+                  importValidationResult && importValidationResult.valid
+                    ? 'bg-[#ebc238] text-[#25190b] hover:bg-[#d4ad2d] cursor-pointer'
+                    : 'bg-[#3b3426] text-[#73685a] cursor-not-allowed'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">check_circle</span>
+                Confirm Import
+              </button>
+            </div>
           </div>
         </div>
       )}
