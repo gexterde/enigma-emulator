@@ -11,6 +11,7 @@ interface BroadcastModalProps {
 }
 
 type BroadcastSource = 'ciphertext' | 'plaintext' | 'full';
+type NoiseType = 'static' | 'atmospheric' | 'crackle';
 
 export const BroadcastModal: React.FC<BroadcastModalProps> = ({
   isOpen,
@@ -24,6 +25,10 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
   const [wpm, setWpm] = useState<number>(15); // Words per minute
   const [frequency, setFrequency] = useState<number>(700); // Hz
   const [localSound, setLocalSound] = useState<boolean>(initialSoundEnabled);
+  
+  // Background Noise Settings
+  const [noiseVolume, setNoiseVolume] = useState<number>(30); // 0 to 100
+  const [noiseType, setNoiseType] = useState<NoiseType>('atmospheric');
   
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
@@ -39,12 +44,26 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const oscillatorRef = useRef<OscillatorNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+
+  // Noise audio refs
+  const noiseSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const noiseGainRef = useRef<GainNode | null>(null);
+  const noiseFilterRef = useRef<BiquadFilterNode | null>(null);
+
   const timeoutRef = useRef<number | null>(null);
 
   // Sync props
   useEffect(() => {
     setLocalSound(initialSoundEnabled);
   }, [initialSoundEnabled]);
+
+  // Update noise gain dynamically when noiseVolume changes
+  useEffect(() => {
+    if (noiseGainRef.current && audioCtxRef.current) {
+      const targetGain = (noiseVolume / 100) * 0.15;
+      noiseGainRef.current.gain.setTargetAtTime(targetGain, audioCtxRef.current.currentTime, 0.05);
+    }
+  }, [noiseVolume]);
 
   const getActiveText = (): string => {
     switch (source) {
@@ -76,6 +95,89 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
       audioCtxRef.current.resume();
     }
     return audioCtxRef.current;
+  };
+
+  // Start Background Noise Generator
+  const startBackgroundNoise = () => {
+    if (!localSound || noiseVolume === 0) return;
+    try {
+      const ctx = getAudioContext();
+      if (noiseSourceRef.current) return; // Already running
+
+      // Create 5 seconds of white/pink noise buffer
+      const bufferSize = ctx.sampleRate * 5;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+
+      // Generate noise based on type
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        if (noiseType === 'atmospheric') {
+          // Pink noise approximation (Paul Kellet's method)
+          b0 = 0.99886 * b0 + white * 0.0555179;
+          b1 = 0.99332 * b1 + white * 0.0750759;
+          b2 = 0.96900 * b2 + white * 0.1538520;
+          b3 = 0.86650 * b3 + white * 0.3104856;
+          b4 = 0.55000 * b4 + white * 0.5329522;
+          b5 = -0.7616 * b5 - white * 0.0168980;
+          output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+          output[i] *= 0.11;
+          b6 = white * 0.115926;
+        } else if (noiseType === 'crackle') {
+          // Static with occasional atmospheric clicks/pops
+          output[i] = (Math.random() > 0.9985 ? (Math.random() * 4 - 2) : (white * 0.3));
+        } else {
+          // Standard white noise static
+          output[i] = white * 0.2;
+        }
+      }
+
+      const whiteNoise = ctx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+      whiteNoise.loop = true;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = noiseType === 'atmospheric' ? 'bandpass' : 'lowpass';
+      filter.frequency.setValueAtTime(noiseType === 'atmospheric' ? 1200 : 2500, ctx.currentTime);
+      filter.Q.setValueAtTime(noiseType === 'atmospheric' ? 1.5 : 0.8, ctx.currentTime);
+
+      const gain = ctx.createGain();
+      const initialGain = (noiseVolume / 100) * 0.15;
+      gain.gain.setValueAtTime(initialGain, ctx.currentTime);
+
+      whiteNoise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      whiteNoise.start(0);
+
+      noiseSourceRef.current = whiteNoise;
+      noiseGainRef.current = gain;
+      noiseFilterRef.current = filter;
+    } catch (e) {
+      console.debug('Noise generator error:', e);
+    }
+  };
+
+  const stopBackgroundNoise = () => {
+    try {
+      if (noiseSourceRef.current) {
+        noiseSourceRef.current.stop();
+        noiseSourceRef.current.disconnect();
+        noiseSourceRef.current = null;
+      }
+      if (noiseGainRef.current) {
+        noiseGainRef.current.disconnect();
+        noiseGainRef.current = null;
+      }
+      if (noiseFilterRef.current) {
+        noiseFilterRef.current.disconnect();
+        noiseFilterRef.current = null;
+      }
+    } catch (e) {
+      console.debug('Noise stop error:', e);
+    }
   };
 
   const startTone = () => {
@@ -133,6 +235,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
       timeoutRef.current = null;
     }
     stopTone();
+    stopBackgroundNoise();
     isPlayingRef.current = false;
     isPausedRef.current = false;
     setIsPlaying(false);
@@ -148,6 +251,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
       timeoutRef.current = null;
     }
     stopTone();
+    stopBackgroundNoise();
     isPlayingRef.current = false;
     isPausedRef.current = true;
     setIsPlaying(false);
@@ -160,6 +264,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
     isPausedRef.current = false;
     setIsPlaying(true);
     setIsPaused(false);
+    startBackgroundNoise();
     playSequence(currentIndexRef.current);
   };
 
@@ -184,6 +289,8 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
     setCurrentIndex(0);
     currentIndexRef.current = 0;
     setCurrentSymbolIndex(-1);
+    
+    startBackgroundNoise();
     playSequence(0);
   };
 
@@ -242,7 +349,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
     }, duration);
   };
 
-  // Cleanup on close
+  // Cleanup on close or unmount
   useEffect(() => {
     if (!isOpen) {
       stopPlayback();
@@ -252,14 +359,22 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
     };
   }, [isOpen]);
 
+  // Restart noise if type changes while playing
+  useEffect(() => {
+    if (isPlaying && localSound) {
+      stopBackgroundNoise();
+      startBackgroundNoise();
+    }
+  }, [noiseType]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-      <div className="bg-[#18130a] border-2 border-[#ebc238]/70 rounded-lg shadow-2xl w-full max-w-2xl p-6 text-[#ede1cd] flex flex-col gap-5">
+      <div className="bg-[#18130a] border-2 border-[#ebc238]/70 rounded-lg shadow-2xl w-full max-w-2xl p-6 text-[#ede1cd] flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#3b3426] pb-4">
+        <div className="flex items-center justify-between border-b border-[#3b3426] pb-3">
           <div className="flex items-center gap-3">
             <div className={`w-3.5 h-3.5 rounded-full border transition-all ${isToneActive ? 'bg-[#ebc238] border-[#ffe066] shadow-[0_0_12px_#ebc238]' : 'bg-[#2a2214] border-[#4e453b]'}`} />
             <div>
@@ -293,7 +408,12 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
             </span>
             <button
               type="button"
-              onClick={() => setLocalSound(!localSound)}
+              onClick={() => {
+                const newSound = !localSound;
+                setLocalSound(newSound);
+                if (!newSound) stopBackgroundNoise();
+                else if (isPlaying) startBackgroundNoise();
+              }}
               className={`text-[10px] font-monospaced-technical font-bold uppercase px-2.5 py-1 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
                 localSound
                   ? 'bg-[#1b5e20]/40 text-[#e8f5e9] border-[#2e7d32]'
@@ -357,13 +477,13 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
         </div>
 
         {/* Display Active Text & Morse Ticker */}
-        <div className="bg-[#120e04] border border-[#4e453b] rounded-lg p-4 flex flex-col gap-3 min-h-[130px] shadow-inner">
-          <div className="flex items-center justify-between text-[10px] text-[#8c7e6a] uppercase font-monospaced-technical border-b border-[#3b3426] pb-2">
+        <div className="bg-[#120e04] border border-[#4e453b] rounded-lg p-3 flex flex-col gap-2.5 min-h-[110px] shadow-inner">
+          <div className="flex items-center justify-between text-[10px] text-[#8c7e6a] uppercase font-monospaced-technical border-b border-[#3b3426] pb-1.5">
             <span>Transmission Content Preview</span>
             <span>Character {Math.min(currentIndex + 1, tokens.length)} of {tokens.length}</span>
           </div>
 
-          <div className="font-monospaced-technical text-sm sm:text-base tracking-widest leading-relaxed break-all max-h-[90px] overflow-y-auto px-1">
+          <div className="font-monospaced-technical text-sm sm:text-base tracking-widest leading-relaxed break-all max-h-[80px] overflow-y-auto px-1">
             {tokens.map((t, idx) => {
               const isCurrent = idx === currentIndex && (isPlaying || isPaused);
               return (
@@ -385,7 +505,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
 
           {/* Current Morse symbol indicator */}
           {isPlaying && tokens[currentIndex] && (
-            <div className="flex items-center gap-2 pt-2 border-t border-[#3b3426]/50">
+            <div className="flex items-center gap-2 pt-1.5 border-t border-[#3b3426]/50">
               <span className="text-[10px] text-[#8c7e6a] uppercase font-mono">Current Morse:</span>
               <span className="text-xs font-mono font-bold text-[#ebc238] tracking-widest bg-[#221c11] px-2 py-0.5 rounded border border-[#4e453b]">
                 {tokens[currentIndex].morse.split('').map((sym, sIdx) => (
@@ -402,7 +522,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
         </div>
 
         {/* Controls & Sliders */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#141007] p-4 rounded-lg border border-[#3b3426]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#141007] p-3.5 rounded-lg border border-[#3b3426]">
           <div className="flex flex-col gap-1.5">
             <div className="flex justify-between text-xs font-monospaced-technical">
               <span className="text-[#8c7e6a] uppercase">Speed (WPM):</span>
@@ -436,10 +556,52 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
           </div>
         </div>
 
+        {/* Background Radio Noise Settings */}
+        <div className="bg-[#141007] p-3.5 rounded-lg border border-[#3b3426] flex flex-col gap-3">
+          <div className="flex items-center justify-between text-xs font-monospaced-technical border-b border-[#3b3426] pb-2">
+            <span className="text-[#ebc238] uppercase font-bold flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[16px]">waves</span>
+              Radio Static & Atmospheric Noise
+            </span>
+            <div className="flex items-center gap-1.5">
+              {(['atmospheric', 'static', 'crackle'] as NoiseType[]).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setNoiseType(type)}
+                  className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded border transition-all cursor-pointer ${
+                    noiseType === type
+                      ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]'
+                      : 'bg-[#1b160e] text-[#8c7e6a] border-[#4e453b] hover:text-[#ede1cd]'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-between text-xs font-monospaced-technical">
+              <span className="text-[#8c7e6a] uppercase">Static Volume:</span>
+              <span className="text-[#ebc238] font-bold">{noiseVolume}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              value={noiseVolume}
+              onChange={(e) => setNoiseVolume(Number(e.target.value))}
+              className="accent-[#ebc238] cursor-pointer"
+            />
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex items-center justify-between pt-2 border-t border-[#3b3426]">
           <div className="text-[10px] text-[#8c7e6a] font-mono italic">
-            {!localSound ? '⚠️ Audio output is muted' : '🔊 Wireless morse audio transmitter active'}
+            {!localSound ? '⚠️ Audio output is muted' : isPlaying ? '🔊 Broadcasting with radio static active' : '🔊 Ready to broadcast'}
           </div>
 
           <div className="flex items-center gap-2">
