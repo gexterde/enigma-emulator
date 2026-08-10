@@ -175,48 +175,61 @@ export const MachineView: React.FC<MachineViewProps> = ({
         if (tokens.length >= 1 && /^[A-Z0-9]{2,6}$/.test(tokens[0])) {
           setSenderCallSign(tokens[0]);
         }
-        if (tokens.length >= 2 && /^\d{4}$/.test(tokens[1])) {
-          setTransmissionTime(tokens[1]);
+        
+        const timeToken = tokens.find(t => /^\d{4}$/.test(t));
+        if (timeToken) setTransmissionTime(timeToken);
+
+        // Filter out sender (tokens[0]), time tokens (/^\d{4}$/), and pure digit count tokens (/^\d+$/)
+        const nonMetaTokens = tokens.filter((t, i) => {
+          if (i === 0) return false; // sender
+          if (/^\d{4}$/.test(t)) return false; // time
+          if (/^\d+$/.test(t)) return false; // count
+          return true;
+        });
+
+        // Extract alpha tokens from nonMetaTokens
+        const alphaTokens = nonMetaTokens.filter(t => /^[A-Z]{3,5}$/i.test(t));
+
+        if (alphaTokens.length >= 1) {
+          setKenngruppe(alphaTokens[0].toUpperCase());
         }
-        if (tokens.length >= 4) {
-          for (const token of tokens) {
-            if (/^[A-Z]{3}$/.test(token)) {
-              setKenngruppe(token);
-              break;
-            }
-          }
-        }
-        for (const token of tokens) {
-          const cleanToken = token.toUpperCase().replace(/[^A-Z]/g, '');
+
+        if (alphaTokens.length >= 2) {
+          const gsCandidate = alphaTokens[1].toUpperCase();
+          setLocalGrundstellung(gsCandidate);
+
           const isM4 = currentConfig.fourthRotor.type === 'Beta' || currentConfig.fourthRotor.type === 'Gamma';
           const isUKWDual = currentConfig.reflector.type === 'UKW-Dual-Dynamic';
-          let targetLen = 3;
-          if (isM4 && isUKWDual) targetLen = 5;
-          else if (isM4 || isUKWDual) targetLen = 4;
 
-          if (cleanToken.length === targetLen) {
-            setLocalGrundstellung(cleanToken);
-            const charToNum = (char: string) => {
-              const code = char.charCodeAt(0) - 65;
-              return isNaN(code) || code < 0 || code > 25 ? 0 : code;
-            };
-            let idx = 0;
-            if (isUKWDual) {
-              const u = charToNum(cleanToken[idx++]);
-              currentConfig.reflector = { ...currentConfig.reflector, start: u, current: u };
+          const charToNum = (char: string) => {
+            const code = char.charCodeAt(0) - 65;
+            return isNaN(code) || code < 0 || code > 25 ? 0 : code;
+          };
+          let idx = 0;
+          if (isUKWDual) {
+            const u = charToNum(gsCandidate[idx++]);
+            currentConfig.reflector = { ...currentConfig.reflector, start: u, current: u };
+          }
+          if (isM4) {
+            const c4 = charToNum(gsCandidate[idx++]);
+            currentConfig.fourthRotor = { ...currentConfig.fourthRotor, start: c4, current: c4 };
+          }
+          if (idx < gsCandidate.length) {
+            const c3 = charToNum(gsCandidate[idx++]);
+            if (idx < gsCandidate.length) {
+              const c2 = charToNum(gsCandidate[idx++]);
+              if (idx < gsCandidate.length) {
+                const c1 = charToNum(gsCandidate[idx++]);
+                currentConfig.leftRotor = { ...currentConfig.leftRotor, start: c3, current: c3 };
+                currentConfig.middleRotor = { ...currentConfig.middleRotor, start: c2, current: c2 };
+                currentConfig.rightRotor = { ...currentConfig.rightRotor, start: c1, current: c1 };
+              } else {
+                currentConfig.middleRotor = { ...currentConfig.middleRotor, start: c3, current: c3 };
+                currentConfig.rightRotor = { ...currentConfig.rightRotor, start: c2, current: c2 };
+              }
+            } else {
+              currentConfig.rightRotor = { ...currentConfig.rightRotor, start: c3, current: c3 };
             }
-            if (isM4) {
-              const c4 = charToNum(cleanToken[idx++]);
-              currentConfig.fourthRotor = { ...currentConfig.fourthRotor, start: c4, current: c4 };
-            }
-            const c3 = charToNum(cleanToken[idx++]);
-            const c2 = charToNum(cleanToken[idx++]);
-            const c1 = charToNum(cleanToken[idx++]);
-
-            currentConfig.leftRotor = { ...currentConfig.leftRotor, start: c3, current: c3 };
-            currentConfig.middleRotor = { ...currentConfig.middleRotor, start: c2, current: c2 };
-            currentConfig.rightRotor = { ...currentConfig.rightRotor, start: c1, current: c1 };
-            break;
           }
         }
 
