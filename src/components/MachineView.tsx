@@ -276,11 +276,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
           const gsCandidate = alphaTokens[1].toUpperCase();
           setLocalGrundstellung(gsCandidate);
 
-          const isM4 = currentConfig.fourthRotor.type === 'Beta' || currentConfig.fourthRotor.type === 'Gamma';
-          const isUKWDual = currentConfig.reflector.type === 'UKW-Dual-Dynamic';
+          const isM4 = isM4Active;
+          const isUKWDualLocal = isUKWDual;
 
           let idx = 0;
-          if (isUKWDual) {
+          if (isUKWDualLocal) {
             const u = charToNum(gsCandidate[idx++]);
             currentConfig.reflector = { ...currentConfig.reflector, start: u, current: u };
           }
@@ -391,15 +391,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
   // Sync Grundstellung local state with machine start position
   useEffect(() => {
     setLocalGrundstellung(grundstellungString);
-  }, [
-    config.leftRotor.start,
-    config.middleRotor.start,
-    config.rightRotor.start,
-    config.fourthRotor.start,
-    config.fourthRotor.type,
-    config.reflector.start,
-    config.reflector.type
-  ]);
+  }, [grundstellungString]);
 
   // Reset current rotor positions to their initial start positions when inputTape is empty/cleared
   useEffect(() => {
@@ -426,12 +418,10 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
   const handleGrundstellungChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-    const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-    const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
     
     let maxLen = 3;
-    if (isM4 && isUKWDual) maxLen = 5;
-    else if (isM4 || isUKWDual) maxLen = 4;
+    if (isM4Active && isUKWDual) maxLen = 5;
+    else if (isM4Active || isUKWDual) maxLen = 4;
 
     const truncated = val.substring(0, maxLen);
     
@@ -444,7 +434,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
         const u = charToNum(truncated[idx++]);
         newConfig.reflector = { ...newConfig.reflector, start: u, current: u };
       }
-      if (isM4) {
+      if (isM4Active) {
         const c4 = charToNum(truncated[idx++]);
         newConfig.fourthRotor = { ...newConfig.fourthRotor, start: c4, current: c4 };
       }
@@ -808,13 +798,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
               <button
                 type="button"
-                onClick={() => {
-                  const next = !showBatterySwitch;
-                  setShowBatterySwitch(next);
-                  try {
-                    localStorage.setItem('enigma_show_battery_switch', String(next));
-                  } catch (e) {}
-                }}
+                onClick={() => setShowBatterySwitch(!showBatterySwitch)}
                 className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                   showBatterySwitch
                     ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
@@ -1104,7 +1088,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 </div>
                 <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
                   Reflector: <span className="text-[#ebc238] font-bold">{config.reflector.type}</span>
-                  {config.reflector.type === 'UKW-Dual-Dynamic' && (
+                  {isUKWDual && (
                     <span className="text-[#e06c3a] font-bold ml-1">
                       (Pos: {formatRotorPos(config.reflector.current, ringFormat)})
                     </span>
@@ -1115,12 +1099,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
               <div className="space-y-3 max-w-xl mx-auto pt-1">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2 sm:p-2.5 rounded-xl border border-[#3b3426]">
                   <div className={`grid ${
-                    config.reflector.type === 'UKW-Dual-Dynamic'
-                      ? (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-5 sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md')
-                      : (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md' : 'grid-cols-3 sm:grid-cols-3 max-w-xs sm:max-w-sm')
+                    isUKWDual
+                      ? (isM4Active ? 'grid-cols-5 sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md')
+                      : (isM4Active ? 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md' : 'grid-cols-3 sm:grid-cols-3 max-w-xs sm:max-w-sm')
                   } gap-1 sm:gap-2 w-full mx-auto`}>
                     {/* ─── UKW-Dual-Dynamic─── */}
-                    {config.reflector.type === 'UKW-Dual-Dynamic' && (
+                    {isUKWDual && (
                       <div className="bg-[#18130b] rounded-lg p-1.5 sm:p-2 border border-[#3b3426] flex flex-col items-center max-w-[76px] sm:max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
                         <span className="text-[7.5px] sm:text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider whitespace-nowrap">
                           UKW-ROTOR
@@ -1166,7 +1150,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     {/* ────────────────────────────────────────────────────── */}
 
                     {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
-                    {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+                    {isM4Active && (
                       renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
                     )}
 
@@ -1191,12 +1175,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 mode={batteryMode}
                 onChangeMode={handleSetBatteryMode}
                 isPanel={true}
-                onClose={() => {
-                  setShowBatterySwitch(false);
-                  try {
-                    localStorage.setItem('enigma_show_battery_switch', 'false');
-                  } catch (e) {}
-                }}
+                onClose={() => setShowBatterySwitch(false)}
               />
             </div>
           )}
@@ -1322,12 +1301,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2 sm:p-2.5 rounded-xl border border-[#3b3426]">
                   <div className={`grid ${
-                    config.reflector.type === 'UKW-Dual-Dynamic'
-                      ? (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-5 sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md')
-                      : (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md' : 'grid-cols-3 sm:grid-cols-3 max-w-xs sm:max-w-sm')
+                    isUKWDual
+                      ? (isM4Active ? 'grid-cols-5 sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md')
+                      : (isM4Active ? 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md' : 'grid-cols-3 sm:grid-cols-3 max-w-xs sm:max-w-sm')
                   } gap-1 sm:gap-2 w-full mx-auto`}>
                     {/* ─── UKW-Dual-Dynamic─── */}
-                    {config.reflector.type === 'UKW-Dual-Dynamic' && (
+                    {isUKWDual && (
                       <div className="bg-[#18130b] rounded-lg p-1.5 sm:p-2 border border-[#3b3426] flex flex-col items-center max-w-[76px] sm:max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
                         <span className="text-[7.5px] sm:text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider whitespace-nowrap">
                           UKW-ROTOR
@@ -1373,7 +1352,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     {/* ────────────────────────────────────────────────────── */}
 
                     {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
-                    {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+                    {isM4Active && (
                       renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
                     )}
 
@@ -1397,61 +1376,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 mode={batteryMode}
                 onChangeMode={handleSetBatteryMode}
                 isPanel={true}
-                onClose={() => {
-                  setShowBatterySwitch(false);
-                  try {
-                    localStorage.setItem('enigma_show_battery_switch', 'false');
-                  } catch (e) {}
-                }}
+                onClose={() => setShowBatterySwitch(false)}
               />
             </div>
           )}
         </div>
       )}
-
-      {/* Plugboard Settings Section (Steckerbrett) */}
-      {/* {!keyboardBulbsOnly && (
-        <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal transition-all">
-          <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#3b3426]">
-            <h2 className="text-ui-header font-ui-header text-[#ede1cd] text-xs uppercase tracking-wider flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm text-[#ebc238]">settings_ethernet</span>
-              Plugboard Settings (Steckerbrett)
-            </h2>
-            <button
-              type="button"
-              onClick={() => setShowPlugboard(!showPlugboard)}
-              className="text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-1 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-sm">
-                {showPlugboard ? 'expand_less' : 'expand_more'}
-              </span>
-              {showPlugboard ? 'Hide Plugboard' : 'Show Plugboard'}
-            </button>
-          </div>
-
-          {showPlugboard ? (
-            <PlugboardPanel
-              config={config}
-              onUpdateConfig={onUpdateConfig}
-              soundEnabled={soundEnabled}
-              showTitle={false}
-            />
-          ) : (
-            <div className="bg-[#120e04] border border-[#3b3426] rounded p-3 text-center text-xs text-[#d1c4b7] font-monospaced-technical flex items-center justify-between">
-              <span>
-                Plugboard Hidden • Active Connections: {plugboardPairsCount} / 10 pairs
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowPlugboard(true)}
-                className="text-[#ebc238] hover:underline font-ui-header ml-2"
-              >
-                Show
-              </button>
-            </div>
-          )}
-        </div>
-      )} */}
 
       {/* Middle Section: Lampboard (Glühlampenfeld) */}
       <LampboardPanel

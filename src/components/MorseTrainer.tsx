@@ -498,9 +498,8 @@ export const MorseTrainer: React.FC = () => {
                 <textarea
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value.toUpperCase())}
-                  disabled={isPlaying}
-                  placeholder={isPlaying ? "Listen carefully..." : "Type what you heard..."}
-                  className="w-full h-32 bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 text-[#e3c193] font-mono text-lg focus:border-[#ebc238] focus:outline-none resize-none disabled:opacity-50"
+                  placeholder="Type what you hear..."
+                  className="w-full h-32 bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 text-[#e3c193] font-mono text-lg focus:border-[#ebc238] focus:outline-none resize-none"
                   spellCheck="false"
                 />
               </div>
