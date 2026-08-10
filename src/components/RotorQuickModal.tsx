@@ -279,6 +279,92 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                 </option>
               ))}
             </select>
+
+            {config.reflector.type === 'UKW-Dual-Dynamic' && (
+              <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-[#3b3426]">
+                <div>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-[#9e8d78]">UKW Ring</span>
+                    <button
+                      type="button"
+                      onClick={handleRandomizeReflectorRing}
+                      className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                      title="Randomize Reflector Ring"
+                    >
+                      <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
+                    <button
+                      onClick={() => {
+                        const cur = config.reflector.ring || 1;
+                        const next = cur === 1 ? 26 : cur - 1;
+                        onUpdateConfig({ ...config, reflector: { ...config.reflector, ring: next } });
+                        playRotorClickSound(soundEnabled);
+                      }}
+                      className="w-5 h-5 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">
+                      {formatRotorRing(config.reflector.ring || 1, ringFormat)}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const cur = config.reflector.ring || 1;
+                        const next = cur === 26 ? 1 : cur + 1;
+                        onUpdateConfig({ ...config, reflector: { ...config.reflector, ring: next } });
+                        playRotorClickSound(soundEnabled);
+                      }}
+                      className="w-5 h-5 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-[#9e8d78]">UKW Start</span>
+                    <button
+                      type="button"
+                      onClick={handleRandomizeReflectorStart}
+                      className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                      title="Randomize Reflector Start Position"
+                    >
+                      <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
+                    <button
+                      onClick={() => {
+                        const cur = config.reflector.start || 0;
+                        const next = (cur - 1 + 26) % 26;
+                        onUpdateConfig({ ...config, reflector: { ...config.reflector, start: next, current: next } });
+                        playRotorClickSound(soundEnabled);
+                      }}
+                      className="w-5 h-5 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">
+                      {formatRotorPos(config.reflector.start || 0, ringFormat)}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const cur = config.reflector.start || 0;
+                        const next = (cur + 1) % 26;
+                        onUpdateConfig({ ...config, reflector: { ...config.reflector, start: next, current: next } });
+                        playRotorClickSound(soundEnabled);
+                      }}
+                      className="w-5 h-5 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

@@ -119,14 +119,16 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
   const getGrundstellungString = (): string => {
     const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+    const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
     const r1 = numToChar(config.rightRotor.start);
     const r2 = numToChar(config.middleRotor.start);
     const r3 = numToChar(config.leftRotor.start);
+    const u = isUKWDual ? numToChar(config.reflector?.start || 0) : '';
     if (isM4) {
       const r4 = numToChar(config.fourthRotor.start);
-      return `${r4}${r3}${r2}${r1}`;
+      return `${u}${r4}${r3}${r2}${r1}`;
     }
-    return `${r3}${r2}${r1}`;
+    return `${u}${r3}${r2}${r1}`;
   };
 
   const getHeaderString = (): string => {
@@ -195,7 +197,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
     config.middleRotor.start,
     config.rightRotor.start,
     config.fourthRotor.start,
-    config.fourthRotor.type
+    config.fourthRotor.type,
+    config.reflector.start,
+    config.reflector.type
   ]);
 
   // Reset current rotor positions to their initial start positions when inputTape is empty/cleared
@@ -205,7 +209,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
         config.leftRotor.current !== config.leftRotor.start ||
         config.middleRotor.current !== config.middleRotor.start ||
         config.rightRotor.current !== config.rightRotor.start ||
-        config.fourthRotor.current !== config.fourthRotor.start;
+        config.fourthRotor.current !== config.fourthRotor.start ||
+        config.reflector.current !== config.reflector.start;
 
       if (hasDifference) {
         onUpdateConfig({
@@ -213,16 +218,36 @@ export const MachineView: React.FC<MachineViewProps> = ({
           leftRotor: { ...config.leftRotor, current: config.leftRotor.start },
           middleRotor: { ...config.middleRotor, current: config.middleRotor.start },
           rightRotor: { ...config.rightRotor, current: config.rightRotor.start },
-          fourthRotor: { ...config.fourthRotor, current: config.fourthRotor.start }
+          fourthRotor: { ...config.fourthRotor, current: config.fourthRotor.start },
+          reflector: { ...config.reflector, current: config.reflector.start }
         });
       }
     }
   }, [inputTape, config, onUpdateConfig]);
 
+  const handleManualReflectorStep = (delta: number) => {
+    playRotorClickSound(soundEnabled);
+    const nextVal = (config.reflector.current + delta + 26) % 26;
+    const isInputEmpty = inputTape === '';
+    onUpdateConfig({
+      ...config,
+      reflector: {
+        ...config.reflector,
+        current: nextVal,
+        start: isInputEmpty ? nextVal : config.reflector.start
+      }
+    });
+  };
+
   const handleGrundstellungChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
     const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-    const maxLen = isM4 ? 4 : 3;
+    const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
+    
+    let maxLen = 3;
+    if (isM4 && isUKWDual) maxLen = 5;
+    else if (isM4 || isUKWDual) maxLen = 4;
+
     const truncated = val.substring(0, maxLen);
     
     setLocalGrundstellung(truncated);
@@ -234,23 +259,23 @@ export const MachineView: React.FC<MachineViewProps> = ({
       };
       
       const newConfig = { ...config };
-      if (isM4) {
-        const c4 = charToNum(truncated[0]);
-        const c3 = charToNum(truncated[1]);
-        const c2 = charToNum(truncated[2]);
-        const c1 = charToNum(truncated[3]);
-        newConfig.fourthRotor = { ...newConfig.fourthRotor, start: c4, current: c4 };
-        newConfig.leftRotor = { ...newConfig.leftRotor, start: c3, current: c3 };
-        newConfig.middleRotor = { ...newConfig.middleRotor, start: c2, current: c2 };
-        newConfig.rightRotor = { ...newConfig.rightRotor, start: c1, current: c1 };
-      } else {
-        const c3 = charToNum(truncated[0]);
-        const c2 = charToNum(truncated[1]);
-        const c1 = charToNum(truncated[2]);
-        newConfig.leftRotor = { ...newConfig.leftRotor, start: c3, current: c3 };
-        newConfig.middleRotor = { ...newConfig.middleRotor, start: c2, current: c2 };
-        newConfig.rightRotor = { ...newConfig.rightRotor, start: c1, current: c1 };
+      let idx = 0;
+      if (isUKWDual) {
+        const u = charToNum(truncated[idx++]);
+        newConfig.reflector = { ...newConfig.reflector, start: u, current: u };
       }
+      if (isM4) {
+        const c4 = charToNum(truncated[idx++]);
+        newConfig.fourthRotor = { ...newConfig.fourthRotor, start: c4, current: c4 };
+      }
+      const c3 = charToNum(truncated[idx++]);
+      const c2 = charToNum(truncated[idx++]);
+      const c1 = charToNum(truncated[idx++]);
+      
+      newConfig.leftRotor = { ...newConfig.leftRotor, start: c3, current: c3 };
+      newConfig.middleRotor = { ...newConfig.middleRotor, start: c2, current: c2 };
+      newConfig.rightRotor = { ...newConfig.rightRotor, start: c1, current: c1 };
+      
       onUpdateConfig(newConfig);
       playRotorClickSound(soundEnabled);
     }
@@ -597,7 +622,13 @@ export const MachineView: React.FC<MachineViewProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setHeaderCollapsed(!headerCollapsed);
+                  if (headerCollapsed || tapeCollapsed || !showTape) {
+                    setShowTape(true);
+                    setTapeCollapsed(false);
+                    setHeaderCollapsed(false);
+                  } else {
+                    setHeaderCollapsed(true);
+                  }
                 }}
                 className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                   showTape && !tapeCollapsed && !headerCollapsed
@@ -615,17 +646,17 @@ export const MachineView: React.FC<MachineViewProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setTapeCollapsed(!tapeCollapsed);
+                  setShowTape(!showTape);
                 }}
                 className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
-                  showTape && !tapeCollapsed
+                  showTape
                     ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
                     : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
                 }`}
                 title="Toggle Paper Tape Visibility"
               >
                 <span className="material-symbols-outlined text-sm">
-                  {showTape && !tapeCollapsed ? 'visibility' : 'visibility_off'}
+                  {showTape ? 'visibility' : 'visibility_off'}
                 </span>
                 Tape
               </button>
@@ -906,14 +937,22 @@ export const MachineView: React.FC<MachineViewProps> = ({
                             onChange={handleGrundstellungChange}
                             onBlur={() => setLocalGrundstellung(getGrundstellungString())}
                             className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-0.5 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors uppercase"
-                            maxLength={config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3}
-                            title="Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
+                            maxLength={
+                              (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3) +
+                              (config.reflector.type === 'UKW-Dual-Dynamic' ? 1 : 0)
+                            }
+                            title={
+                              config.reflector.type === 'UKW-Dual-Dynamic'
+                                ? "Type letters (e.g. UHER or UAHER) to reposition reflector and rotors"
+                                : "Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
+                            }
                           />
                           <div className="flex flex-col gap-0.5 shrink-0">
                             <button
                               type="button"
                               onClick={() => {
                                 const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                                const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
                                 const isInputEmpty = inputTape === '';
                                 const nextConfig = { ...config };
                                 const nextRight = (nextConfig.rightRotor.current + 1) % 26;
@@ -926,11 +965,15 @@ export const MachineView: React.FC<MachineViewProps> = ({
                                   const nextFourth = (nextConfig.fourthRotor.current + 1) % 26;
                                   nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: nextFourth, start: isInputEmpty ? nextFourth : nextConfig.fourthRotor.start };
                                 }
+                                if (isUKWDual) {
+                                  const nextRef = (nextConfig.reflector.current + 1) % 26;
+                                  nextConfig.reflector = { ...nextConfig.reflector, current: nextRef, start: isInputEmpty ? nextRef : nextConfig.reflector.start };
+                                }
                                 onUpdateConfig(nextConfig);
                                 playRotorClickSound(soundEnabled);
                               }}
                               className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer font-bold"
-                              title="Step all rotors forward"
+                              title="Step all rotors and reflector forward"
                             >
                               +1 ALL
                             </button>
@@ -938,6 +981,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                               type="button"
                               onClick={() => {
                                 const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                                const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
                                 const isInputEmpty = inputTape === '';
                                 const nextConfig = { ...config };
                                 nextConfig.rightRotor = { ...nextConfig.rightRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.rightRotor.start };
@@ -946,11 +990,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
                                 if (isM4) {
                                   nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.fourthRotor.start };
                                 }
+                                if (isUKWDual) {
+                                  nextConfig.reflector = { ...nextConfig.reflector, current: 0, start: isInputEmpty ? 0 : nextConfig.reflector.start };
+                                }
                                 onUpdateConfig(nextConfig);
                                 playRotorClickSound(soundEnabled);
                               }}
                               className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer"
-                              title="Reset all rotors to A / AAAA"
+                              title="Reset all rotors and reflector to A"
                             >
                               RESET
                             </button>
@@ -1082,10 +1129,45 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 </div>
                 <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
                   Reflector: <span className="text-[#ebc238] font-bold">{config.reflector.type}</span>
+                  {config.reflector.type === 'UKW-Dual-Dynamic' && (
+                    <span className="text-[#e06c3a] font-bold ml-1">
+                      (Pos: {formatRotorPos(config.reflector.current, ringFormat)})
+                    </span>
+                  )}
                 </div>
               </div>
 
               <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 py-1">
+                {/* Dynamic Reflector Wheel if UKW-Dual-Dynamic active */}
+                {config.reflector.type === 'UKW-Dual-Dynamic' && (
+                  <div className="flex flex-col items-center border-r border-[#3d3526]/80 pr-2 mr-1">
+                    <span className="text-[9px] font-monospaced-technical text-[#e06c3a] mb-1 font-bold">DYNAMIC</span>
+                    <div className="relative bg-[#1a0e05] border border-[#733c19] rounded shadow-inner w-12 sm:w-14 h-16 sm:h-18 flex items-center justify-center my-0.5 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => handleManualReflectorStep(1)}
+                        className="absolute top-0 w-full h-5 flex items-center justify-center text-[#e06c3a] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
+                        title="Rotate Reflector Up"
+                      >
+                        <span className="material-symbols-outlined text-[14px] leading-none">expand_less</span>
+                      </button>
+                      <span key={config.reflector.current} className="font-rotor-label text-[#e06c3a] text-base sm:text-lg font-bold select-none leading-none animate-rotor-step">
+                        {formatRotorPos(config.reflector.current, ringFormat)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleManualReflectorStep(-1)}
+                        className="absolute bottom-0 w-full h-5 flex items-center justify-center text-[#e06c3a] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
+                        title="Rotate Reflector Down"
+                      >
+                        <span className="material-symbols-outlined text-[14px] leading-none">expand_more</span>
+                      </button>
+                    </div>
+                    <span className="text-[10px] font-monospaced-technical text-[#e06c3a] mt-1.5 font-bold tracking-wider">
+                      UKW-Dual
+                    </span>
+                  </div>
+                )}
                 {/* If M4 4th rotor present */}
                 {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
                   <div className="flex flex-col items-center">
@@ -1850,14 +1932,22 @@ export const MachineView: React.FC<MachineViewProps> = ({
                           onChange={handleGrundstellungChange}
                           onBlur={() => setLocalGrundstellung(getGrundstellungString())}
                           className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-2 py-1 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors uppercase"
-                          maxLength={config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3}
-                          title="Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
+                          maxLength={
+                            (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3) +
+                            (config.reflector.type === 'UKW-Dual-Dynamic' ? 1 : 0)
+                          }
+                          title={
+                            config.reflector.type === 'UKW-Dual-Dynamic'
+                              ? "Type letters (e.g. UHER or UAHER) to reposition reflector and rotors"
+                              : "Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
+                          }
                         />
                         <div className="flex flex-col gap-0.5 shrink-0">
                           <button
                             type="button"
                             onClick={() => {
                               const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                              const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
                               const isInputEmpty = inputTape === '';
                               const nextConfig = { ...config };
                               const nextRight = (nextConfig.rightRotor.current + 1) % 26;
@@ -1870,11 +1960,15 @@ export const MachineView: React.FC<MachineViewProps> = ({
                                 const nextFourth = (nextConfig.fourthRotor.current + 1) % 26;
                                 nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: nextFourth, start: isInputEmpty ? nextFourth : nextConfig.fourthRotor.start };
                               }
+                              if (isUKWDual) {
+                                const nextRef = (nextConfig.reflector.current + 1) % 26;
+                                nextConfig.reflector = { ...nextConfig.reflector, current: nextRef, start: isInputEmpty ? nextRef : nextConfig.reflector.start };
+                              }
                               onUpdateConfig(nextConfig);
                               playRotorClickSound(soundEnabled);
                             }}
                             className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer font-bold"
-                            title="Step all rotors forward"
+                            title="Step all rotors and reflector forward"
                           >
                             +1 ALL
                           </button>
@@ -1882,6 +1976,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                             type="button"
                             onClick={() => {
                               const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                              const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
                               const isInputEmpty = inputTape === '';
                               const nextConfig = { ...config };
                               nextConfig.rightRotor = { ...nextConfig.rightRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.rightRotor.start };
@@ -1890,11 +1985,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
                               if (isM4) {
                                 nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.fourthRotor.start };
                               }
+                              if (isUKWDual) {
+                                nextConfig.reflector = { ...nextConfig.reflector, current: 0, start: isInputEmpty ? 0 : nextConfig.reflector.start };
+                              }
                               onUpdateConfig(nextConfig);
                               playRotorClickSound(soundEnabled);
                             }}
                             className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer"
-                            title="Reset all rotors to A / AAAA"
+                            title="Reset all rotors and reflector to A"
                           >
                             RESET
                           </button>

@@ -91,13 +91,40 @@ export function getRotorNotchPos(type: RotorType): number {
 
 // Formats string preview like: "UKW-B | I-II-III | 01-01-01 | 01-01-01" or "UKW-B | I-II-III-β | 01-01-01-01 | 01-01-01-01"
 export function generateConfigString(config: EnigmaConfig, ringFormat: 'number' | 'letter' = 'number'): string {
- const reflectorName = typeof config.reflector === 'object' && config.reflector !== null
+  const reflectorName = typeof config.reflector === 'object' && config.reflector !== null
     ? config.reflector.type 
     : (config.reflector as unknown as string || 'UKW-B'); 
-  const fourthLabel = config.fourthRotor.type === 'Beta' ? 'β' : config.fourthRotor.type === 'Gamma' ? 'γ' : config.fourthRotor.type;
-  const rotors = `${config.leftRotor.type}-${config.middleRotor.type}-${config.rightRotor.type}-${fourthLabel}`;
-  const starts = `${formatRotorPos(config.leftRotor.current, ringFormat)}-${formatRotorPos(config.middleRotor.current, ringFormat)}-${formatRotorPos(config.rightRotor.current, ringFormat)}-${formatRotorPos(config.fourthRotor.current, ringFormat)}`;
-  const rings = `${formatRotorRing(config.leftRotor.ring, ringFormat)}-${formatRotorRing(config.middleRotor.ring, ringFormat)}-${formatRotorRing(config.rightRotor.ring, ringFormat)}-${formatRotorRing(config.fourthRotor.ring, ringFormat)}`;
+
+  const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+  const isUKWDual = reflectorName === 'UKW-Dual-Dynamic';
+
+  let rotors = `${config.leftRotor.type}-${config.middleRotor.type}-${config.rightRotor.type}`;
+  if (isM4) {
+    const fourthLabel = config.fourthRotor.type === 'Beta' ? 'β' : 'γ';
+    rotors += `-${fourthLabel}`;
+  }
+  if (isUKWDual) {
+    rotors = `UKW-Dual-${rotors}`;
+  }
+
+  let starts = `${formatRotorPos(config.leftRotor.current, ringFormat)}-${formatRotorPos(config.middleRotor.current, ringFormat)}-${formatRotorPos(config.rightRotor.current, ringFormat)}`;
+  if (isM4) {
+    starts += `-${formatRotorPos(config.fourthRotor.current, ringFormat)}`;
+  }
+  if (isUKWDual) {
+    const refPos = typeof config.reflector === 'object' && config.reflector !== null ? config.reflector.current : 0;
+    starts = `${formatRotorPos(refPos, ringFormat)}-${starts}`;
+  }
+
+  let rings = `${formatRotorRing(config.leftRotor.ring, ringFormat)}-${formatRotorRing(config.middleRotor.ring, ringFormat)}-${formatRotorRing(config.rightRotor.ring, ringFormat)}`;
+  if (isM4) {
+    rings += `-${formatRotorRing(config.fourthRotor.ring, ringFormat)}`;
+  }
+  if (isUKWDual) {
+    const refRing = typeof config.reflector === 'object' && config.reflector !== null ? config.reflector.ring : 1;
+    rings = `${formatRotorRing(refRing, ringFormat)}-${rings}`;
+  }
+
   return `${reflectorName} | ${rotors} | ${starts} | ${rings}`;
 }
 

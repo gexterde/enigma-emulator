@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { EnigmaConfig, ReflectorType, RotorType } from '../types';
 import { formatRotorRing } from '../lib/enigmaEngine';
+import {
+  generateUniversalEnigmaCodebook,
+  EnigmaGeneratorConfig,
+  UniversalCodebookEntry
+} from '../lib/codebookGenerator';
 
 interface CodebookViewProps {
   currentConfig: EnigmaConfig;
@@ -16,6 +21,9 @@ export interface CodebookEntry {
   kenngruppen: string[]; // Trigrams or identifiers
   fourthRotor?: RotorType; // M4 Naval fixed stator (Beta/Gamma) — optional, defaults to 'I' (pass-through)
   fourthRing?: number; // 1-26, defaults to 1
+  reflectorType?: ReflectorType; // e.g. 'UKW-Dual-Dynamic'
+  reflectorRing?: number; // 1-26 ring setting for reflector
+  reflectorStart?: number; // 1-26 start setting for reflector
 }
 
 export interface CodebookSheet {
@@ -321,6 +329,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
   const currentSheet = allSheets.find((c) => c.id === selectedBookId) || HISTORICAL_CODEBOOKS[0];
   const isCurrentHistorical = !!currentSheet.isHistorical;
   const hasFourthRotor = currentSheet.entries.some((e: CodebookEntry) => e.fourthRotor);
+  const hasDualReflector = currentSheet.entries.some((e: CodebookEntry) => e.reflectorType !== undefined);
 
   // Save custom sheets to localStorage
   useEffect(() => {
@@ -339,6 +348,116 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
   const [builderPruefnummer, setBuilderPruefnummer] = useState<string>('9901 / OKW');
   const [builderGenerateAllDays, setBuilderGenerateAllDays] = useState<boolean>(true);
 
+  // Universal Enigma Generator Parameters (EnigmaGeneratorConfig)
+  const [builderDaysInMonth, setBuilderDaysInMonth] = useState<number>(31);
+  const [builderRotorsPool, setBuilderRotorsPool] = useState<string[]>(['I', 'II', 'III', 'IV', 'V']);
+  const [builderUseTwoDayRule, setBuilderUseTwoDayRule] = useState<boolean>(false);
+  const [builderPlugboardPairsCount, setBuilderPlugboardPairsCount] = useState<number>(10);
+  const [builderKenngruppenCount, setBuilderKenngruppenCount] = useState<number>(4);
+  const [builderKenngruppenLength, setBuilderKenngruppenLength] = useState<number>(3);
+  const [builderIsM4, setBuilderIsM4] = useState<boolean>(false);
+  const [builderFourthRotorsPool, setBuilderFourthRotorsPool] = useState<string[]>(['Beta', 'Gamma']);
+  const [builderUseFixedFourthRing, setBuilderUseFixedFourthRing] = useState<boolean>(true);
+  const [builderFixedFourthRing, setBuilderFixedFourthRing] = useState<number>(1);
+
+  // UKW Dual Dynamic Reflector Parameters
+  const [builderUseDualReflector, setBuilderUseDualReflector] = useState<boolean>(false);
+  const [builderUseFixedReflectorRing, setBuilderUseFixedReflectorRing] = useState<boolean>(false);
+  const [builderFixedReflectorRing, setBuilderFixedReflectorRing] = useState<number>(1);
+  const [builderUseFixedReflectorStart, setBuilderUseFixedReflectorStart] = useState<boolean>(false);
+  const [builderFixedReflectorStart, setBuilderFixedReflectorStart] = useState<number>(1);
+
+  const toggleRotorInPool = (rotor: string) => {
+    setBuilderRotorsPool((prev) => {
+      if (prev.includes(rotor)) {
+        if (prev.length <= 3) return prev; // At least 3 rotors required
+        return prev.filter((r) => r !== rotor);
+      } else {
+        return [...prev, rotor];
+      }
+    });
+  };
+
+  const toggleFourthRotorInPool = (rotor: string) => {
+    setBuilderFourthRotorsPool((prev) => {
+      if (prev.includes(rotor)) {
+        if (prev.length <= 1) return prev; // At least 1 fourth rotor required
+        return prev.filter((r) => r !== rotor);
+      } else {
+        return [...prev, rotor];
+      }
+    });
+  };
+
+  const applyGeneratorPreset = (preset: 'luftwaffe' | 'heer' | 'm3' | 'm4' | 'ukw_dual') => {
+    if (preset === 'luftwaffe') {
+      setBuilderTitle('Luftwaffen-Maschinen-Schlüssel Nr. 2744');
+      setBuilderSubtitle('Oberkommando der Luftwaffe (Air Force Secret Key Sheet)');
+      setBuilderClassification('GEHEIME KOMMANDOSACHE!');
+      setBuilderDaysInMonth(31);
+      setBuilderRotorsPool(['I', 'II', 'III', 'IV', 'V']);
+      setBuilderUseTwoDayRule(false);
+      setBuilderPlugboardPairsCount(10);
+      setBuilderKenngruppenCount(4);
+      setBuilderKenngruppenLength(3);
+      setBuilderIsM4(false);
+      setBuilderUseDualReflector(false);
+    } else if (preset === 'heer') {
+      setBuilderTitle('Heer/Wehrmacht Tagesschlüssel Nr. 512');
+      setBuilderSubtitle('Oberkommando des Heeres (Army Ground Signals Key Table)');
+      setBuilderClassification('GEHEIME KOMMANDOSACHE!');
+      setBuilderDaysInMonth(30);
+      setBuilderRotorsPool(['I', 'II', 'III', 'IV', 'V']);
+      setBuilderUseTwoDayRule(false);
+      setBuilderPlugboardPairsCount(10);
+      setBuilderKenngruppenCount(4);
+      setBuilderKenngruppenLength(3);
+      setBuilderIsM4(false);
+      setBuilderUseDualReflector(false);
+    } else if (preset === 'm3') {
+      setBuilderTitle('Kriegsmarine Schlüsseltafel M3');
+      setBuilderSubtitle('Oberkommando der Marine (Navy M3 Enigma Key Sheet)');
+      setBuilderClassification('GEHEIM!');
+      setBuilderDaysInMonth(31);
+      setBuilderRotorsPool(['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII']);
+      setBuilderUseTwoDayRule(true);
+      setBuilderPlugboardPairsCount(10);
+      setBuilderKenngruppenCount(3);
+      setBuilderKenngruppenLength(3);
+      setBuilderIsM4(false);
+      setBuilderUseDualReflector(false);
+    } else if (preset === 'm4') {
+      setBuilderTitle('Kriegsmarine M4 Schlüsseltafel (Shark)');
+      setBuilderSubtitle('Oberkommando der Marine (4-Rotor M4 Navy Key Sheet)');
+      setBuilderClassification('GEHEIM!');
+      setBuilderDaysInMonth(31);
+      setBuilderRotorsPool(['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII']);
+      setBuilderUseTwoDayRule(true);
+      setBuilderPlugboardPairsCount(10);
+      setBuilderKenngruppenCount(3);
+      setBuilderKenngruppenLength(3);
+      setBuilderIsM4(true);
+      setBuilderFourthRotorsPool(['Beta', 'Gamma']);
+      setBuilderUseFixedFourthRing(true);
+      setBuilderFixedFourthRing(1);
+      setBuilderUseDualReflector(false);
+    } else if (preset === 'ukw_dual') {
+      setBuilderTitle('Sonder-Schlüsseltafel UKW-Dual (What-If Speculative)');
+      setBuilderSubtitle('Oberkommando der Wehrmacht — Experimental Dynamic Reflector Table');
+      setBuilderClassification('GEHEIME KOMMANDOSACHE!');
+      setBuilderDaysInMonth(31);
+      setBuilderRotorsPool(['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII']);
+      setBuilderUseTwoDayRule(false);
+      setBuilderPlugboardPairsCount(10);
+      setBuilderKenngruppenCount(4);
+      setBuilderKenngruppenLength(3);
+      setBuilderIsM4(false);
+      setBuilderUseDualReflector(true);
+      setBuilderUseFixedReflectorRing(false);
+      setBuilderUseFixedReflectorStart(false);
+    }
+  };
+
   // Form states for adding a day entry to a custom codebook
   const [isAddDayModalOpen, setIsAddDayModalOpen] = useState<boolean>(false);
   const [addDayNum, setAddDayNum] = useState<number>(1);
@@ -350,6 +469,9 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
   const [addRingRight, setAddRingRight] = useState<number>(1);
   const [addPlugString, setAddPlugString] = useState<string>('AF BL CX DI EJ GQ HY KN OR PZ');
   const [addKenngruppen, setAddKenngruppen] = useState<string>('kxl zqm ewj');
+  const [addReflectorType, setAddReflectorType] = useState<ReflectorType>('Reflector B');
+  const [addReflectorRing, setAddReflectorRing] = useState<number>(1);
+  const [addReflectorStart, setAddReflectorStart] = useState<number>(1);
 
   const pad2 = (n: number) => n.toString().padStart(2, '0');
 
@@ -396,10 +518,10 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
         current: 0
       },
       reflector: {
-        type: (entry as any).reflectorType || (isM4 ? 'Reflector B Thin' : 'Reflector B'),
-        ring: (entry as any).reflectorRing || 1,
-        start: 0,
-        current: 0
+        type: entry.reflectorType || (isM4 ? 'Reflector B Thin' : 'Reflector B'),
+        ring: entry.reflectorRing || 1,
+        start: entry.reflectorStart ? entry.reflectorStart - 1 : 0,
+        current: entry.reflectorStart ? entry.reflectorStart - 1 : 0
       },
       plugboard: plugboardRecord
     };
@@ -422,7 +544,37 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
     e.preventDefault();
 
     const newId = `custom_${Date.now()}`;
-    const generatedEntries = builderGenerateAllDays ? generateRandom31DayEntries() : [];
+    let generatedEntries: CodebookEntry[] = [];
+
+    if (builderGenerateAllDays) {
+      const config: EnigmaGeneratorConfig = {
+        daysInMonth: Math.max(1, Math.min(31, builderDaysInMonth || 31)),
+        rotorsPool: builderRotorsPool.length >= 3 ? builderRotorsPool : ['I', 'II', 'III'],
+        useTwoDayRule: builderUseTwoDayRule,
+        plugboardPairsCount: Math.max(0, Math.min(13, builderPlugboardPairsCount ?? 10)),
+        kenngruppenCount: Math.max(1, Math.min(6, builderKenngruppenCount ?? 4)),
+        kenngruppenLength: Math.max(2, Math.min(5, builderKenngruppenLength ?? 3)),
+        fourthRotorsPool: builderIsM4 ? (builderFourthRotorsPool.length > 0 ? builderFourthRotorsPool : ['Beta']) : undefined,
+        fixedFourthRing: (builderIsM4 && builderUseFixedFourthRing) ? builderFixedFourthRing : undefined,
+        useDualDynamicReflector: builderUseDualReflector,
+        fixedReflectorRing: (builderUseDualReflector && builderUseFixedReflectorRing) ? builderFixedReflectorRing : undefined,
+        fixedReflectorStart: (builderUseDualReflector && builderUseFixedReflectorStart) ? builderFixedReflectorStart : undefined
+      };
+
+      const universalEntries = generateUniversalEnigmaCodebook(config);
+      generatedEntries = universalEntries.map((e) => ({
+        day: e.day,
+        rotors: [e.rotors[0] as RotorType, e.rotors[1] as RotorType, e.rotors[2] as RotorType],
+        rings: [e.rings[0], e.rings[1], e.rings[2]],
+        plugboardPairs: e.plugboardPairs,
+        kenngruppen: e.kenngruppen,
+        fourthRotor: e.fourthRotor as RotorType | undefined,
+        fourthRing: e.fourthRing,
+        reflectorType: e.reflectorType as ReflectorType | undefined,
+        reflectorRing: e.reflectorRing,
+        reflectorStart: e.reflectorStart
+      }));
+    }
 
     const newSheet: CodebookSheet = {
       id: newId,
@@ -460,7 +612,10 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
       rotors: [addRotorLeft, addRotorMid, addRotorRight],
       rings: [addRingLeft, addRingMid, addRingRight],
       plugboardPairs: pairs,
-      kenngruppen: kgList.length > 0 ? kgList : ['cst', 'key', 'grp']
+      kenngruppen: kgList.length > 0 ? kgList : ['cst', 'key', 'grp'],
+      reflectorType: addReflectorType,
+      reflectorRing: addReflectorRing,
+      reflectorStart: addReflectorStart
     };
 
     setCustomSheets((prev) =>
@@ -577,7 +732,56 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleCreateCodebookSubmit} className="space-y-5 text-sm">
+          <form onSubmit={handleCreateCodebookSubmit} className="space-y-6 text-sm">
+            {/* Historical Presets Banner */}
+            <div className="bg-[#120e04] border border-[#3b3426] rounded-lg p-3.5 space-y-2">
+              <span className="text-xs font-bold text-[#ebc238] uppercase tracking-wider block">
+                Quick Branch Presets (Gyors történeti sablonok):
+              </span>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => applyGeneratorPreset('luftwaffe')}
+                  className="px-2.5 py-1 text-xs font-ui-header bg-[#2a2418] hover:bg-[#3b3426] text-[#e3c193] border border-[#4e453b] rounded flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <span className="material-symbols-outlined text-xs">flight</span>
+                  Luftwaffe (31d, I-V, 4 KG)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyGeneratorPreset('heer')}
+                  className="px-2.5 py-1 text-xs font-ui-header bg-[#2a2418] hover:bg-[#3b3426] text-[#e3c193] border border-[#4e453b] rounded flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <span className="material-symbols-outlined text-xs">military_tech</span>
+                  Heer / Army (30d, I-V, 4 KG)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyGeneratorPreset('m3')}
+                  className="px-2.5 py-1 text-xs font-ui-header bg-[#2a2418] hover:bg-[#3b3426] text-[#e3c193] border border-[#4e453b] rounded flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <span className="material-symbols-outlined text-xs">sailing</span>
+                  Kriegsmarine M3 (31d, I-VIII, 2-Day Rule, 3 KG)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyGeneratorPreset('m4')}
+                  className="px-2.5 py-1 text-xs font-ui-header bg-[#2a2418] hover:bg-[#3b3426] text-[#e3c193] border border-[#4e453b] rounded flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <span className="material-symbols-outlined text-xs">phishing</span>
+                  Kriegsmarine M4 (31d, 4-Rotor Beta/Gamma, Fixed Ring A)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyGeneratorPreset('ukw_dual')}
+                  className="px-2.5 py-1 text-xs font-ui-header bg-[#381f0d] hover:bg-[#4d2c14] text-[#f2a879] border border-[#733c19] rounded flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <span className="material-symbols-outlined text-xs">published_with_changes</span>
+                  Speculative UKW-Dual (31d, Dynamic Reflector)
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-[#e3c193] mb-1 uppercase tracking-wider">
@@ -637,7 +841,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
                 />
               </div>
 
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-[#e3c193] mb-1 uppercase tracking-wider">
                   Prüfnummer / Serial Number:
                 </label>
@@ -650,34 +854,343 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
                   required
                 />
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-[#e3c193] mb-1 uppercase tracking-wider">
-                  Daily Entries Generation:
-                </label>
-                <label className="flex items-center gap-2 bg-[#120e04] border border-[#4e453b] rounded-lg p-2.5 cursor-pointer text-xs text-[#ede1cd]">
-                  <input
-                    type="checkbox"
-                    checked={builderGenerateAllDays}
-                    onChange={(e) => setBuilderGenerateAllDays(e.target.checked)}
-                    className="accent-[#ebc238] w-4 h-4 cursor-pointer"
-                  />
-                  <span>Automatically generate all 31 Days with cryptographically randomized authentic keys</span>
-                </label>
-              </div>
             </div>
+
+            {/* Checkbox toggle for auto-generation */}
+            <div className="bg-[#120e04] border border-[#4e453b] rounded-lg p-3">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-[#ede1cd]">
+                <input
+                  type="checkbox"
+                  checked={builderGenerateAllDays}
+                  onChange={(e) => setBuilderGenerateAllDays(e.target.checked)}
+                  className="accent-[#ebc238] w-4 h-4 cursor-pointer"
+                />
+                <span className="font-bold text-[#ebc238] uppercase tracking-wide">
+                  Generate Days with Universal Enigma Codebook Generator (Általános Generáló)
+                </span>
+              </label>
+            </div>
+
+            {/* Universal Generator Parameters Panel */}
+            {builderGenerateAllDays && (
+              <div className="bg-[#171208] border border-[#8b6f47]/60 rounded-xl p-4 sm:p-5 space-y-4 animate-fade-in">
+                <div className="flex items-center justify-between border-b border-[#3b3426] pb-2">
+                  <h3 className="text-xs font-ui-header font-bold text-[#ebc238] uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm">tune</span>
+                    Universal Generator Parameters (EnigmaGeneratorConfig)
+                  </h3>
+                  <span className="text-[10px] text-[#83715d] font-mono">
+                    Fisher-Yates Safe Randomizer
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {/* Days in Month */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#d1c4b7] mb-1">
+                      Days in Month (daysInMonth):
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={builderDaysInMonth}
+                      onChange={(e) => setBuilderDaysInMonth(parseInt(e.target.value) || 31)}
+                      className="w-full bg-[#0d0a03] border border-[#4e453b] rounded p-2 text-[#ede1cd] font-mono text-xs focus:outline-none focus:border-[#ebc238]"
+                    />
+                    <span className="text-[10px] text-[#83715d] mt-0.5 block">Standard: 30 or 31 days</span>
+                  </div>
+
+                  {/* Plugboard Pairs Count */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#d1c4b7] mb-1">
+                      Plugboard Cable Pairs (plugboardPairsCount):
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={13}
+                      value={builderPlugboardPairsCount}
+                      onChange={(e) => setBuilderPlugboardPairsCount(parseInt(e.target.value) ?? 10)}
+                      className="w-full bg-[#0d0a03] border border-[#4e453b] rounded p-2 text-[#ede1cd] font-mono text-xs focus:outline-none focus:border-[#ebc238]"
+                    />
+                    <span className="text-[10px] text-[#83715d] mt-0.5 block">Standard: 10 (max 13 cables)</span>
+                  </div>
+
+                  {/* Two-Day Rule */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#d1c4b7] mb-1">
+                      Two-Day Rule (useTwoDayRule):
+                    </label>
+                    <label className="flex items-center gap-2 bg-[#0d0a03] border border-[#4e453b] rounded p-2 cursor-pointer text-xs text-[#ede1cd] h-[38px]">
+                      <input
+                        type="checkbox"
+                        checked={builderUseTwoDayRule}
+                        onChange={(e) => setBuilderUseTwoDayRule(e.target.checked)}
+                        className="accent-[#ebc238] w-4 h-4 cursor-pointer"
+                      />
+                      <span>Inner key changes odd days only</span>
+                    </label>
+                    <span className="text-[10px] text-[#83715d] mt-0.5 block">Even days inherit odd day internal key</span>
+                  </div>
+
+                  {/* Kenngruppen Count */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#d1c4b7] mb-1">
+                      Kenngruppen Count (kenngruppenCount):
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={6}
+                      value={builderKenngruppenCount}
+                      onChange={(e) => setBuilderKenngruppenCount(parseInt(e.target.value) || 1)}
+                      className="w-full bg-[#0d0a03] border border-[#4e453b] rounded p-2 text-[#ede1cd] font-mono text-xs focus:outline-none focus:border-[#ebc238]"
+                    />
+                    <span className="text-[10px] text-[#83715d] mt-0.5 block">Luftwaffe: 4, Kriegsmarine: 3</span>
+                  </div>
+
+                  {/* Kenngruppen Length */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#d1c4b7] mb-1">
+                      Kenngruppen Length (kenngruppenLength):
+                    </label>
+                    <input
+                      type="number"
+                      min={2}
+                      max={5}
+                      value={builderKenngruppenLength}
+                      onChange={(e) => setBuilderKenngruppenLength(parseInt(e.target.value) || 3)}
+                      className="w-full bg-[#0d0a03] border border-[#4e453b] rounded p-2 text-[#ede1cd] font-mono text-xs focus:outline-none focus:border-[#ebc238]"
+                    />
+                    <span className="text-[10px] text-[#83715d] mt-0.5 block">Usually 3 (trigram groups)</span>
+                  </div>
+
+                  {/* M4 4-Rotor Support */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#d1c4b7] mb-1">
+                      Enigma M4 4-Rotor Mode:
+                    </label>
+                    <label className="flex items-center gap-2 bg-[#0d0a03] border border-[#4e453b] rounded p-2 cursor-pointer text-xs text-[#ede1cd] h-[38px]">
+                      <input
+                        type="checkbox"
+                        checked={builderIsM4}
+                        onChange={(e) => setBuilderIsM4(e.target.checked)}
+                        className="accent-[#ebc238] w-4 h-4 cursor-pointer"
+                      />
+                      <span>Enable 4th thin rotor</span>
+                    </label>
+                    <span className="text-[10px] text-[#83715d] mt-0.5 block">Kriegsmarine Shark key structure</span>
+                  </div>
+                </div>
+
+                {/* Main Rotors Pool selection */}
+                <div>
+                  <label className="block text-xs font-bold text-[#e3c193] mb-1.5 uppercase tracking-wider">
+                    Selectable Main Rotors Pool (rotorsPool):
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].map((r) => {
+                      const isSelected = builderRotorsPool.includes(r);
+                      return (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => toggleRotorInPool(r)}
+                          className={`px-3 py-1 rounded text-xs font-mono font-bold transition-colors cursor-pointer border ${
+                            isSelected
+                              ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238]'
+                              : 'bg-[#0d0a03] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                          }`}
+                        >
+                          Rotor {r}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span className="text-[10px] text-[#83715d] mt-1 block">
+                    Pool size: {builderRotorsPool.length} rotors available for 3 main rotor positions.
+                  </span>
+                </div>
+
+                {/* 4-Rotor Options (M4) */}
+                {builderIsM4 && (
+                  <div className="bg-[#0d0a03] border border-[#3b3426] p-3.5 rounded-lg space-y-3">
+                    <div className="text-xs font-bold text-[#ebc238] uppercase tracking-wider">
+                      M4 4th Thin Rotor Parameters (fourthRotorsPool & fixedFourthRing)
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-[#d1c4b7] mb-1">
+                          4th Thin Rotors Pool (fourthRotorsPool):
+                        </label>
+                        <div className="flex gap-2">
+                          {['Beta', 'Gamma'].map((r) => {
+                            const isSelected = builderFourthRotorsPool.includes(r);
+                            return (
+                              <button
+                                key={r}
+                                type="button"
+                                onClick={() => toggleFourthRotorInPool(r)}
+                                className={`px-3 py-1 rounded text-xs font-mono font-bold transition-colors cursor-pointer border ${
+                                  isSelected
+                                    ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238]'
+                                    : 'bg-[#171208] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                                }`}
+                              >
+                                {r}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-[#d1c4b7] mb-1">
+                          Fixed 4th Ring Setting (fixedFourthRing):
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-1.5 text-xs text-[#ede1cd] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={builderUseFixedFourthRing}
+                              onChange={(e) => setBuilderUseFixedFourthRing(e.target.checked)}
+                              className="accent-[#ebc238]"
+                            />
+                            <span>Fixed</span>
+                          </label>
+                          {builderUseFixedFourthRing && (
+                            <select
+                              value={builderFixedFourthRing}
+                              onChange={(e) => setBuilderFixedFourthRing(parseInt(e.target.value) || 1)}
+                              className="bg-[#171208] border border-[#4e453b] text-[#ebc238] rounded p-1 text-xs font-mono focus:outline-none"
+                            >
+                              {Array.from({ length: 26 }, (_, i) => i + 1).map((n) => (
+                                <option key={n} value={n}>
+                                  {n.toString().padStart(2, '0')} ({String.fromCharCode(64 + n)})
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-[#83715d] mt-0.5 block">
+                          Historical Kriegsmarine rule strictly fixed ring to 01 (A).
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* UKW-Dual-Dynamic Speculative Reflector Option */}
+                <div className="bg-[#0d0a03] border border-[#8b6f47]/40 p-3.5 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold text-[#ebc238] uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm text-[#e06c3a]">published_with_changes</span>
+                      UKW-Dual-Dynamic Speculative Reflector (Mit-lett-volna Dinamikus Fordítóhenger)
+                    </div>
+                    <span className="text-[10px] bg-[#381f0d] text-[#e06c3a] border border-[#733c19] px-2 py-0.5 rounded font-mono font-bold">
+                      WHAT-IF MODE
+                    </span>
+                  </div>
+
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-[#ede1cd]">
+                    <input
+                      type="checkbox"
+                      checked={builderUseDualReflector}
+                      onChange={(e) => setBuilderUseDualReflector(e.target.checked)}
+                      className="accent-[#ebc238] w-4 h-4 cursor-pointer"
+                    />
+                    <span className="font-bold text-[#d1c4b7]">
+                      Enable UKW-Dual-Dynamic Reflector for daily keys (useDualDynamicReflector)
+                    </span>
+                  </label>
+
+                  {builderUseDualReflector && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[#3b3426] animate-fade-in">
+                      {/* Fixed vs Random Reflector Ring */}
+                      <div>
+                        <label className="block text-xs text-[#d1c4b7] mb-1">
+                          Reflector Ringstellung (fixedReflectorRing):
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-1.5 text-xs text-[#ede1cd] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={builderUseFixedReflectorRing}
+                              onChange={(e) => setBuilderUseFixedReflectorRing(e.target.checked)}
+                              className="accent-[#ebc238]"
+                            />
+                            <span>Fixed Ring</span>
+                          </label>
+                          {builderUseFixedReflectorRing && (
+                            <select
+                              value={builderFixedReflectorRing}
+                              onChange={(e) => setBuilderFixedReflectorRing(parseInt(e.target.value) || 1)}
+                              className="bg-[#171208] border border-[#4e453b] text-[#ebc238] rounded p-1 text-xs font-mono focus:outline-none"
+                            >
+                              {Array.from({ length: 26 }, (_, i) => i + 1).map((n) => (
+                                <option key={n} value={n}>
+                                  {n.toString().padStart(2, '0')} ({String.fromCharCode(64 + n)})
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-[#83715d] mt-0.5 block">
+                          Unchecked: Randomized 01–26 daily per keying rules.
+                        </span>
+                      </div>
+
+                      {/* Fixed vs Random Reflector Start Position */}
+                      <div>
+                        <label className="block text-xs text-[#d1c4b7] mb-1">
+                          Reflector Start Position (fixedReflectorStart):
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-1.5 text-xs text-[#ede1cd] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={builderUseFixedReflectorStart}
+                              onChange={(e) => setBuilderUseFixedReflectorStart(e.target.checked)}
+                              className="accent-[#ebc238]"
+                            />
+                            <span>Fixed Start</span>
+                          </label>
+                          {builderUseFixedReflectorStart && (
+                            <select
+                              value={builderFixedReflectorStart}
+                              onChange={(e) => setBuilderFixedReflectorStart(parseInt(e.target.value) || 1)}
+                              className="bg-[#171208] border border-[#4e453b] text-[#ebc238] rounded p-1 text-xs font-mono focus:outline-none"
+                            >
+                              {Array.from({ length: 26 }, (_, i) => i + 1).map((n) => (
+                                <option key={n} value={n}>
+                                  {n.toString().padStart(2, '0')} ({String.fromCharCode(64 + n)})
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-[#83715d] mt-0.5 block">
+                          Unchecked: Randomized initial position per day.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="pt-4 border-t border-[#3b3426] flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setActiveViewMode('view')}
-                className="px-4 py-2 rounded-lg bg-[#3b3426] text-[#d1c4b7] hover:bg-[#4e453b] font-ui-header text-xs uppercase font-bold"
+                className="px-4 py-2 rounded-lg bg-[#3b3426] text-[#d1c4b7] hover:bg-[#4e453b] font-ui-header text-xs uppercase font-bold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-lg bg-[#ebc238] text-[#25190b] font-ui-header text-xs uppercase font-bold hover:bg-[#d4ad2d] shadow flex items-center gap-2"
+                className="px-6 py-2.5 rounded-lg bg-[#ebc238] text-[#25190b] font-ui-header text-xs uppercase font-bold hover:bg-[#d4ad2d] shadow flex items-center gap-2 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-base">check_circle</span>
                 Generate & Save Codebook
@@ -868,6 +1381,12 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
                         <div className="text-[10px] font-normal text-[#3a3022] print:text-black">(4th Rotor / Fixed Stator)</div>
                       </th>
                     )}
+                    {hasDualReflector && (
+                      <th className="border border-[#1f1910] p-2 sm:p-2.5">
+                        <div>Umkehrwalze (UKW)</div>
+                        <div className="text-[10px] font-normal text-[#3a3022] print:text-black">(Reflector Setting)</div>
+                      </th>
+                    )}
                     <th className="border border-[#1f1910] p-2 sm:p-2.5">
                       <div>Steckerverbindungen</div>
                       <div className="text-[10px] font-normal text-[#3a3022] print:text-black">(Plugboard Patches 1-10)</div>
@@ -884,7 +1403,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
                 <tbody>
                   {displayedEntries.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-[#594a36] italic">
+                      <td colSpan={5 + (hasFourthRotor ? 1 : 0) + (hasDualReflector ? 1 : 0) + 1} className="p-8 text-center text-[#594a36] italic">
                         No entries found for this codebook. {!isCurrentHistorical && 'Click "Add Date" above to add entries.'}
                       </td>
                     </tr>
@@ -914,10 +1433,26 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
                             {entry.rings.map((r) => formatRotorRing(r, ringFormat)).join(' ')}
                           </td>
 
-                           {/* 4. Walze (4th Rotor — M4 only) */}
+                          {/* 4. Walze (4th Rotor — M4 only) */}
                           {hasFourthRotor && (
                             <td className="border border-[#1f1910] p-1.5 sm:p-2 tracking-widest font-mono font-extrabold text-center">
                               {entry.fourthRotor ? `${entry.fourthRotor} (${formatRotorRing(entry.fourthRing || 1, ringFormat)})` : '—'}
+                            </td>
+                          )}
+
+                          {/* Umkehrwalze (Reflector Settings) */}
+                          {hasDualReflector && (
+                            <td className="border border-[#1f1910] p-1.5 sm:p-2 tracking-wide font-mono text-xs font-extrabold text-center">
+                              {entry.reflectorType ? (
+                                <span className="inline-flex flex-col items-center justify-center">
+                                  <span className="text-[#a32020] font-black">{entry.reflectorType}</span>
+                                  <span className="text-[10px] font-mono text-[#3a3022]">
+                                    Ring:{formatRotorRing(entry.reflectorRing || 1, ringFormat)} Pos:{formatRotorRing(entry.reflectorStart || 1, ringFormat)}
+                                  </span>
+                                </span>
+                              ) : (
+                                <span className="text-[#594a36]">Standard</span>
+                              )}
                             </td>
                           )}
 
@@ -1112,6 +1647,54 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
                   className="w-full bg-[#120e04] border border-[#4e453b] rounded p-2 text-[#ede1cd] font-mono lowercase"
                 />
               </div>
+
+              <div>
+                <label className="block text-[#d1c4b7] font-bold mb-1">Umkehrwalze (Reflector Type):</label>
+                <select
+                  value={addReflectorType}
+                  onChange={(e) => setAddReflectorType(e.target.value as ReflectorType)}
+                  className="w-full bg-[#120e04] border border-[#4e453b] rounded p-2 text-[#ede1cd] font-mono text-xs focus:outline-none focus:border-[#ebc238]"
+                >
+                  <option value="Reflector B">Reflector B (Standard UKW-B)</option>
+                  <option value="Reflector C">Reflector C (UKW-C)</option>
+                  <option value="Reflector B Thin">Reflector B Thin (M4)</option>
+                  <option value="Reflector C Thin">Reflector C Thin (M4)</option>
+                  <option value="UKW-Dual-Dynamic">UKW-Dual-Dynamic (Dynamic Rotating Reflector)</option>
+                </select>
+              </div>
+
+              {addReflectorType === 'UKW-Dual-Dynamic' && (
+                <div className="grid grid-cols-2 gap-2 bg-[#120e04] p-2.5 rounded border border-[#3b3426]">
+                  <div>
+                    <label className="block text-[11px] text-[#d1c4b7] mb-1">Reflector Ring:</label>
+                    <select
+                      value={addReflectorRing}
+                      onChange={(e) => setAddReflectorRing(parseInt(e.target.value) || 1)}
+                      className="w-full bg-[#1c160a] border border-[#4e453b] rounded p-1 text-[#ebc238] font-mono text-xs"
+                    >
+                      {Array.from({ length: 26 }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={n}>
+                          {formatRotorRing(n, ringFormat)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-[#d1c4b7] mb-1">Reflector Start Pos:</label>
+                    <select
+                      value={addReflectorStart}
+                      onChange={(e) => setAddReflectorStart(parseInt(e.target.value) || 1)}
+                      className="w-full bg-[#1c160a] border border-[#4e453b] rounded p-1 text-[#ebc238] font-mono text-xs"
+                    >
+                      {Array.from({ length: 26 }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={n}>
+                          {formatRotorRing(n, ringFormat)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
