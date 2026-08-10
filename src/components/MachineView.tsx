@@ -158,6 +158,103 @@ export const MachineView: React.FC<MachineViewProps> = ({
     playRotorClickSound(soundEnabled);
   };
 
+  const [showImportModal, setShowImportModal] = useState<boolean>(false);
+  const [importText, setImportText] = useState<string>('');
+  const [importIncludeHeader, setImportIncludeHeader] = useState<boolean>(true);
+
+  const handleImportMessage = (rawText: string, includeHeader: boolean) => {
+    let messageBody = rawText;
+    let currentConfig = { ...config };
+
+    if (includeHeader) {
+      const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length > 0) {
+        const headerLine = lines[0];
+        const tokens = headerLine.split(/\s+/);
+
+        if (tokens.length >= 1 && /^[A-Z0-9]{2,6}$/.test(tokens[0])) {
+          setSenderCallSign(tokens[0]);
+        }
+        if (tokens.length >= 2 && /^\d{4}$/.test(tokens[1])) {
+          setTransmissionTime(tokens[1]);
+        }
+        if (tokens.length >= 4) {
+          for (const token of tokens) {
+            if (/^[A-Z]{3}$/.test(token)) {
+              setKenngruppe(token);
+              break;
+            }
+          }
+        }
+        for (const token of tokens) {
+          const cleanToken = token.toUpperCase().replace(/[^A-Z]/g, '');
+          const isM4 = currentConfig.fourthRotor.type === 'Beta' || currentConfig.fourthRotor.type === 'Gamma';
+          const isUKWDual = currentConfig.reflector.type === 'UKW-Dual-Dynamic';
+          let targetLen = 3;
+          if (isM4 && isUKWDual) targetLen = 5;
+          else if (isM4 || isUKWDual) targetLen = 4;
+
+          if (cleanToken.length === targetLen) {
+            setLocalGrundstellung(cleanToken);
+            const charToNum = (char: string) => {
+              const code = char.charCodeAt(0) - 65;
+              return isNaN(code) || code < 0 || code > 25 ? 0 : code;
+            };
+            let idx = 0;
+            if (isUKWDual) {
+              const u = charToNum(cleanToken[idx++]);
+              currentConfig.reflector = { ...currentConfig.reflector, start: u, current: u };
+            }
+            if (isM4) {
+              const c4 = charToNum(cleanToken[idx++]);
+              currentConfig.fourthRotor = { ...currentConfig.fourthRotor, start: c4, current: c4 };
+            }
+            const c3 = charToNum(cleanToken[idx++]);
+            const c2 = charToNum(cleanToken[idx++]);
+            const c1 = charToNum(cleanToken[idx++]);
+
+            currentConfig.leftRotor = { ...currentConfig.leftRotor, start: c3, current: c3 };
+            currentConfig.middleRotor = { ...currentConfig.middleRotor, start: c2, current: c2 };
+            currentConfig.rightRotor = { ...currentConfig.rightRotor, start: c1, current: c1 };
+            break;
+          }
+        }
+
+        if (lines.length > 1) {
+          messageBody = lines.slice(1).join(' ');
+        }
+      }
+    }
+
+    const cleanedBody = messageBody.toUpperCase().replace(/[^A-Z ]/g, '');
+    setInputTape(cleanedBody);
+
+    let workingConfig = {
+      ...currentConfig,
+      leftRotor: { ...currentConfig.leftRotor, current: currentConfig.leftRotor.start },
+      middleRotor: { ...currentConfig.middleRotor, current: currentConfig.middleRotor.start },
+      rightRotor: { ...currentConfig.rightRotor, current: currentConfig.rightRotor.start },
+      fourthRotor: { ...currentConfig.fourthRotor, current: currentConfig.fourthRotor.start },
+      reflector: { ...currentConfig.reflector, current: currentConfig.reflector.start },
+    };
+
+    let newCipher = '';
+    for (let i = 0; i < cleanedBody.length; i++) {
+      const ch = cleanedBody[i];
+      if (ch === ' ') {
+        newCipher += ' ';
+      } else {
+        const { nextConfig, result } = encryptChar(ch, workingConfig);
+        workingConfig = nextConfig;
+        newCipher += result.outputChar;
+      }
+    }
+
+    setCipherTape(newCipher);
+    onUpdateConfig(currentConfig);
+    playRotorClickSound(soundEnabled);
+  };
+
   const getActiveCodebookKenngruppe = (): string => {
     const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
     let allSheets = HISTORICAL_CODEBOOKS;
@@ -1101,6 +1198,16 @@ export const MachineView: React.FC<MachineViewProps> = ({
                         {fullMessageCopied ? 'done' : 'forward_to_inbox'}
                       </span>
                       {fullMessageCopied ? 'Message Copied!' : 'Copy Full Message'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowImportModal(true)}
+                      className="text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]"
+                      title="Import transmission or message and optional header"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">file_upload</span>
+                      Import Message
                     </button>
                   </div>
                 </>
@@ -2155,6 +2262,16 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     </span>
                     {fullMessageCopied ? 'Message Copied!' : 'Copy Full Message'}
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowImportModal(true)}
+                    className="text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]"
+                    title="Import transmission or message and optional header"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">file_upload</span>
+                    Import Message
+                  </button>
                 </div>
                 </>
               )}
@@ -2236,6 +2353,88 @@ export const MachineView: React.FC<MachineViewProps> = ({
         soundEnabled={soundEnabled}
         ringFormat={ringFormat}
       />
+
+      {/* Import Message Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
+          <div className="bg-[#18130a] border-2 border-[#ebc238]/60 rounded-lg shadow-2xl w-full max-w-lg p-5 text-[#ede1cd] flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[#3b3426] pb-3">
+              <h3 className="text-sm sm:text-base font-bold font-monospaced-technical text-[#ebc238] flex items-center gap-2 uppercase tracking-wide">
+                <span className="material-symbols-outlined text-[18px]">file_upload</span>
+                Import Transmission / Message
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowImportModal(false)}
+                className="text-[#8c7e6a] hover:text-[#ede1cd] p-1 rounded transition-colors cursor-pointer"
+                title="Close"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-[10px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-1">
+                  Paste Full Message or Ciphertext:
+                </label>
+                <textarea
+                  value={importText}
+                  onChange={(e) => setImportText(e.target.value)}
+                  placeholder={`DFS 1200 15 UIO ABCDE\nHELLOWORLD...`}
+                  rows={6}
+                  className="w-full bg-[#120e04] text-[#ede1cd] border border-[#4e453b] rounded p-2 text-xs font-monospaced-technical focus:outline-none focus:border-[#ebc238] resize-y"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="importIncludeHeaderCheck"
+                  checked={importIncludeHeader}
+                  onChange={(e) => setImportIncludeHeader(e.target.checked)}
+                  className="rounded border-[#4e453b] bg-[#120e04] text-[#ebc238] focus:ring-0 cursor-pointer w-4 h-4"
+                />
+                <label htmlFor="importIncludeHeaderCheck" className="text-xs font-monospaced-technical text-[#d1c4b7] cursor-pointer select-none">
+                  Include header (Funktelegramm preamble with callsign, time, count, key ID, and Grundstellung rotor settings)
+                </label>
+              </div>
+
+              <div className="text-[10px] text-[#8c7e6a] italic leading-relaxed bg-[#120e04]/60 p-2.5 rounded border border-[#3b3426]/50">
+                When header is enabled, the first line is parsed to automatically configure sender, transmission time, key ID, and rotor starting positions (Grundstellung). Subsequent lines (or full text if no header) form the plaintext message to encrypt.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#3b3426]">
+              <button
+                type="button"
+                onClick={() => setShowImportModal(false)}
+                className="text-xs font-monospaced-technical px-4 py-2 rounded border border-[#4e453b] bg-[#221c11] text-[#d1c4b7] hover:bg-[#2e2619] cursor-pointer uppercase font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (importText.trim()) {
+                    handleImportMessage(importText, importIncludeHeader);
+                    setShowImportModal(false);
+                    setImportText('');
+                  }
+                }}
+                disabled={!importText.trim()}
+                className={`text-xs font-monospaced-technical px-4 py-2 rounded border font-bold uppercase transition-all cursor-pointer ${
+                  !importText.trim()
+                    ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
+                    : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
+                }`}
+              >
+                Import & Process
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
