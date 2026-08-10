@@ -6,9 +6,10 @@ interface BatterySwitchProps {
   mode: BatterySwitchMode;
   onChangeMode: (mode: BatterySwitchMode) => void;
   compact?: boolean;
+  onClose?: () => void;
 }
 
-export const BatterySwitch: React.FC<BatterySwitchProps> = ({ mode, onChangeMode, compact = false }) => {
+export const BatterySwitch: React.FC<BatterySwitchProps> = ({ mode, onChangeMode, compact = false, onClose }) => {
   const getAngle = (m: BatterySwitchMode) => {
     switch (m) {
       case 'hell': return -54;
@@ -30,13 +31,29 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({ mode, onChangeMode
 
   return (
     <div
-      className={`flex flex-col items-center bg-[#100d07] rounded-xl border border-[#3b3426] shadow-2xl select-none w-full transition-all ${
+      className={`relative flex flex-col items-center bg-[#100d07] rounded-xl border border-[#3b3426] shadow-2xl select-none w-full transition-all ${
         compact ? 'p-1.5 max-w-[145px]' : 'p-2 max-w-[160px]'
       }`}
     >
-      <div className={`font-monospaced-technical text-[#a89983] uppercase tracking-wider font-bold flex items-center gap-1 ${compact ? 'text-[8px] mb-0.5' : 'text-[9px] mb-0.5'}`}>
-        <span className="material-symbols-outlined text-xs text-[#ebc238]">bolt</span>
-        BATTERIESCHALTER
+      <div className="w-full flex items-center justify-between gap-1 mb-1 border-b border-[#3b3426]/40 pb-1">
+        <div className={`font-monospaced-technical text-[#a89983] uppercase tracking-wider font-bold flex items-center gap-1 ${compact ? 'text-[8px]' : 'text-[9px]'}`}>
+          <span className="material-symbols-outlined text-xs text-[#ebc238]">bolt</span>
+          BATTERIESCHALTER
+        </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="text-[8px] sm:text-[9px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] hover:border-[#ebc238]/40 flex items-center gap-0.5 cursor-pointer border border-[#3b3426] px-1 py-0.5 rounded bg-[#120e04] transition-colors shadow-sm"
+            title="Close Battery Switch"
+          >
+            <span className="material-symbols-outlined text-[10px] sm:text-[12px] leading-none">close</span>
+            <span>Close</span>
+          </button>
+        )}
       </div>
 
       <div className={`relative flex items-center justify-center bg-[#18130b] rounded-lg border border-[#2d2518] p-1 shadow-inner w-full ${compact ? 'h-20 my-0.5' : 'h-24 my-0.5'}`}>

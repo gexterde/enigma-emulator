@@ -164,145 +164,72 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
   const ALL_STANDARD_ROTOR_TYPES: RotorType[] = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IC', 'IIC', 'IIIC', 'I-Rocket', 'II-Rocket', 'III-Rocket', 'I-K', 'II-K', 'III-K'];
   const ALL_REFLECTORS: ReflectorType[] = ['Reflector A', 'Reflector B', 'Reflector C', 'Reflector B Thin', 'Reflector C Thin', 'UKW-Rocket', 'UKW-K', 'UKW-Dual-Dynamic'];
 
-  const randomizeRotorType = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor') => {
+  const randomizeField = (
+    rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor' | 'reflector',
+    fields: ('type' | 'ring' | 'start')[],
+    types: any[]
+  ) => {
     playRotorClickSound(soundEnabled);
-    const randomType = ALL_STANDARD_ROTOR_TYPES[Math.floor(Math.random() * ALL_STANDARD_ROTOR_TYPES.length)];
-    setDraftConfig((prev) => ({
-      ...prev,
-      [rotorKey]: { ...prev[rotorKey], type: randomType }
-    }));
-  };
-
-  const randomizeRotorRing = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor') => {
-    playRotorClickSound(soundEnabled);
-    const randomRing = Math.floor(Math.random() * 26) + 1;
-    setDraftConfig((prev) => ({
-      ...prev,
-      [rotorKey]: { ...prev[rotorKey], ring: randomRing }
-    }));
-  };
-
-  const randomizeRotorStart = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor') => {
-    playRotorClickSound(soundEnabled);
-    const randomStart = Math.floor(Math.random() * 26);
-    setDraftConfig((prev) => ({
-      ...prev,
-      [rotorKey]: { ...prev[rotorKey], start: randomStart }
-    }));
-  };
-
-  const randomizeRotorEntire = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor') => {
-    playRotorClickSound(soundEnabled);
-    const randomType = ALL_STANDARD_ROTOR_TYPES[Math.floor(Math.random() * ALL_STANDARD_ROTOR_TYPES.length)];
+    const randomType = types.length > 0 ? types[Math.floor(Math.random() * types.length)] : undefined;
     const randomRing = Math.floor(Math.random() * 26) + 1;
     const randomStart = Math.floor(Math.random() * 26);
-    setDraftConfig((prev) => ({
-      ...prev,
-      [rotorKey]: {
-        ...prev[rotorKey],
-        type: randomType,
-        ring: randomRing,
-        start: randomStart
+
+    setDraftConfig((prev) => {
+      const updatedRotor = { ...prev[rotorKey] };
+      if (fields.includes('type') && randomType !== undefined) {
+        updatedRotor.type = randomType;
       }
-    }));
-  };
-
-  const randomizeFourthRotorType = () => {
-    playRotorClickSound(soundEnabled);
-    const types: RotorType[] = ['Beta', 'Gamma'];
-    const randomType = types[Math.floor(Math.random() * types.length)];
-    setDraftConfig((prev) => ({
-      ...prev,
-      fourthRotor: { ...prev.fourthRotor, type: randomType }
-    }));
-  };
-
-  const randomizeFourthRotorRing = () => {
-    playRotorClickSound(soundEnabled);
-    const randomRing = Math.floor(Math.random() * 26) + 1;
-    setDraftConfig((prev) => ({
-      ...prev,
-      fourthRotor: { ...prev.fourthRotor, ring: randomRing }
-    }));
-  };
-
-  const randomizeFourthRotorStart = () => {
-    playRotorClickSound(soundEnabled);
-    const randomStart = Math.floor(Math.random() * 26);
-    setDraftConfig((prev) => ({
-      ...prev,
-      fourthRotor: { ...prev.fourthRotor, start: randomStart }
-    }));
-  };
-
-  const randomizeFourthRotorEntire = () => {
-    playRotorClickSound(soundEnabled);
-    const randomType: RotorType = Math.random() < 0.5 ? 'Beta' : 'Gamma';
-    const randomRing = Math.floor(Math.random() * 26) + 1;
-    const randomStart = Math.floor(Math.random() * 26);
-    setDraftConfig((prev) => ({
-      ...prev,
-      fourthRotor: {
-        ...prev.fourthRotor,
-        type: randomType,
-        ring: randomRing,
-        start: randomStart
+      if (fields.includes('ring')) {
+        updatedRotor.ring = randomRing;
       }
-    }));
+      if (fields.includes('start')) {
+        updatedRotor.start = randomStart;
+        if (rotorKey === 'reflector') {
+          (updatedRotor as any).current = randomStart;
+        }
+      }
+      return {
+        ...prev,
+        [rotorKey]: updatedRotor
+      };
+    });
   };
 
-  const randomizeReflectorType = () => {
-    playRotorClickSound(soundEnabled);
-    const randomRef = ALL_REFLECTORS[Math.floor(Math.random() * ALL_REFLECTORS.length)];
-    setDraftConfig((prev) => ({
-      ...prev,
-      reflector: {
-        ...prev.reflector,
-        type: randomRef
-      }
-    }));
-  };
+  const randomizeRotorType = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor') =>
+    randomizeField(rotorKey, ['type'], ALL_STANDARD_ROTOR_TYPES);
 
-  const randomizeReflectorRing = () => {
-    playRotorClickSound(soundEnabled);
-    const randomRing = Math.floor(Math.random() * 26) + 1;
-    setDraftConfig((prev) => ({
-      ...prev,
-      reflector: {
-        ...prev.reflector,
-        ring: randomRing
-      }
-    }));
-  };
+  const randomizeRotorRing = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor') =>
+    randomizeField(rotorKey, ['ring'], []);
 
-  const randomizeReflectorStart = () => {
-    playRotorClickSound(soundEnabled);
-    const randomStart = Math.floor(Math.random() * 26);
-    setDraftConfig((prev) => ({
-      ...prev,
-      reflector: {
-        ...prev.reflector,
-        start: randomStart,
-        current: randomStart
-      }
-    }));
-  };
+  const randomizeRotorStart = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor') =>
+    randomizeField(rotorKey, ['start'], []);
 
-  const randomizeReflectorEntire = () => {
-    playRotorClickSound(soundEnabled);
-    const randomRef = ALL_REFLECTORS[Math.floor(Math.random() * ALL_REFLECTORS.length)];
-    const randomRing = Math.floor(Math.random() * 26) + 1;
-    const randomStart = Math.floor(Math.random() * 26);
-    setDraftConfig((prev) => ({
-      ...prev,
-      reflector: {
-        type: randomRef,
-        ring: randomRing,
-        start: randomStart,
-        current: randomStart
-      }
-    }));
-  };
+  const randomizeRotorEntire = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor') =>
+    randomizeField(rotorKey, ['type', 'ring', 'start'], ALL_STANDARD_ROTOR_TYPES);
+
+  const randomizeFourthRotorType = () =>
+    randomizeField('fourthRotor', ['type'], ['Beta', 'Gamma']);
+
+  const randomizeFourthRotorRing = () =>
+    randomizeField('fourthRotor', ['ring'], []);
+
+  const randomizeFourthRotorStart = () =>
+    randomizeField('fourthRotor', ['start'], []);
+
+  const randomizeFourthRotorEntire = () =>
+    randomizeField('fourthRotor', ['type', 'ring', 'start'], ['Beta', 'Gamma']);
+
+  const randomizeReflectorType = () =>
+    randomizeField('reflector', ['type'], ALL_REFLECTORS);
+
+  const randomizeReflectorRing = () =>
+    randomizeField('reflector', ['ring'], []);
+
+  const randomizeReflectorStart = () =>
+    randomizeField('reflector', ['start'], []);
+
+  const randomizeReflectorEntire = () =>
+    randomizeField('reflector', ['type', 'ring', 'start'], ALL_REFLECTORS);
 
   const randomizeAllSettings = () => {
     playRotorClickSound(soundEnabled);

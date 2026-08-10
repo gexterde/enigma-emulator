@@ -7,7 +7,8 @@ import {
   formatRotorRing,
   generateConfigString,
   ROTOR_SPECS,
-  ALPHABET
+  ALPHABET,
+  charToNum
 } from '../lib/enigmaEngine';
 import { playKeyClickSound, playRotorClickSound } from '../lib/audio';
 import { SignalPathAnimation } from './SignalPathAnimation';
@@ -59,6 +60,46 @@ export const MachineView: React.FC<MachineViewProps> = ({
   const [pressedKey, setPressedKey] = useState<string | null>(null);
   const [activeGroupSize, setActiveGroupSize] = useState<number>(0);
 
+  const isM4Active = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+  const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
+
+  const handleStepAllForward = () => {
+    const isInputEmpty = inputTape === '';
+    const nextConfig = { ...config };
+    const nextRight = (nextConfig.rightRotor.current + 1) % 26;
+    const nextMid = (nextConfig.middleRotor.current + 1) % 26;
+    const nextLeft = (nextConfig.leftRotor.current + 1) % 26;
+    nextConfig.rightRotor = { ...nextConfig.rightRotor, current: nextRight, start: isInputEmpty ? nextRight : nextConfig.rightRotor.start };
+    nextConfig.middleRotor = { ...nextConfig.middleRotor, current: nextMid, start: isInputEmpty ? nextMid : nextConfig.middleRotor.start };
+    nextConfig.leftRotor = { ...nextConfig.leftRotor, current: nextLeft, start: isInputEmpty ? nextLeft : nextConfig.leftRotor.start };
+    if (isM4Active) {
+      const nextFourth = (nextConfig.fourthRotor.current + 1) % 26;
+      nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: nextFourth, start: isInputEmpty ? nextFourth : nextConfig.fourthRotor.start };
+    }
+    if (isUKWDual) {
+      const nextRef = (nextConfig.reflector.current + 1) % 26;
+      nextConfig.reflector = { ...nextConfig.reflector, current: nextRef, start: isInputEmpty ? nextRef : nextConfig.reflector.start };
+    }
+    onUpdateConfig(nextConfig);
+    playRotorClickSound(soundEnabled);
+  };
+
+  const handleResetAllToA = () => {
+    const isInputEmpty = inputTape === '';
+    const nextConfig = { ...config };
+    nextConfig.rightRotor = { ...nextConfig.rightRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.rightRotor.start };
+    nextConfig.middleRotor = { ...nextConfig.middleRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.middleRotor.start };
+    nextConfig.leftRotor = { ...nextConfig.leftRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.leftRotor.start };
+    if (isM4Active) {
+      nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.fourthRotor.start };
+    }
+    if (isUKWDual) {
+      nextConfig.reflector = { ...nextConfig.reflector, current: 0, start: isInputEmpty ? 0 : nextConfig.reflector.start };
+    }
+    onUpdateConfig(nextConfig);
+    playRotorClickSound(soundEnabled);
+  };
+
   // Ringstellung / Rotor position format: 'number' (01-26) or 'letter' (A-Z)
   const [ringFormat, setRingFormat] = useState<'number' | 'letter'>(() => {
     try {
@@ -104,6 +145,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
   const [tapeCollapsed, setTapeCollapsed] = useState<boolean>(false);
   const [showSignalAnimation, setShowSignalAnimation] = useState<boolean>(false);
   const [keyboardBulbsOnly, setKeyboardBulbsOnly] = useState<boolean>(false);
+  const [showBatterySwitch, setShowBatterySwitch] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('enigma_show_battery_switch');
+      return saved !== 'false';
+    } catch (e) {
+      return true;
+    }
+  });
 
   // Message Header / Funktelegramm States
   const [senderCallSign, setSenderCallSign] = useState<string>('DFS');
@@ -203,10 +252,6 @@ export const MachineView: React.FC<MachineViewProps> = ({
           const isM4 = currentConfig.fourthRotor.type === 'Beta' || currentConfig.fourthRotor.type === 'Gamma';
           const isUKWDual = currentConfig.reflector.type === 'UKW-Dual-Dynamic';
 
-          const charToNum = (char: string) => {
-            const code = char.charCodeAt(0) - 65;
-            return isNaN(code) || code < 0 || code > 25 ? 0 : code;
-          };
           let idx = 0;
           if (isUKWDual) {
             const u = charToNum(gsCandidate[idx++]);
@@ -377,11 +422,6 @@ export const MachineView: React.FC<MachineViewProps> = ({
     setLocalGrundstellung(truncated);
     
     if (truncated.length === maxLen) {
-      const charToNum = (char: string) => {
-        const code = char.charCodeAt(0) - 65;
-        return isNaN(code) || code < 0 || code > 25 ? 0 : code;
-      };
-      
       const newConfig = { ...config };
       let idx = 0;
       if (isUKWDual) {
@@ -599,7 +639,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
     return (clean.match(regex) || []).join(' ');
   };
 
-  const handleManualRotorStep = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor', delta: number) => {
+  const handleManualRotorStep = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor' | 'reflector', delta: number) => {
     playRotorClickSound(soundEnabled);
     const nextVal = (config[rotorKey].current + delta + 26) % 26;
     const isInputEmpty = inputTape === '';
@@ -644,20 +684,20 @@ export const MachineView: React.FC<MachineViewProps> = ({
     const turnoverAction = ROTOR_SPECS[rotor.type]?.turnoverAction;
 
     return (
-      <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm">
-        <span className="text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5">
+      <div className="bg-[#18130b] rounded-lg p-1.5 sm:p-2 border border-[#3b3426] flex flex-col items-center max-w-[76px] sm:max-w-[105px] w-full mx-auto shadow-sm">
+        <span className="text-[7.5px] sm:text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5 whitespace-nowrap">
           {label} ({typeDisplay})
         </span>
-        <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
+        <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-9 sm:w-12 h-11 sm:h-13 flex items-center justify-center my-0.5 overflow-hidden">
           <button
             type="button"
             onClick={() => handleManualRotorStep(rotorKey, 1)}
             className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
             title="Rotate Up"
           >
-            <span className="material-symbols-outlined text-[13px]">expand_less</span>
+            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_less</span>
           </button>
-          <span key={rotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
+          <span key={rotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-base sm:text-xl font-bold select-none animate-rotor-step">
             {formatRotorPos(rotor.current, ringFormat)}
           </span>
           <button
@@ -666,37 +706,39 @@ export const MachineView: React.FC<MachineViewProps> = ({
             className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
             title="Rotate Down"
           >
-            <span className="material-symbols-outlined text-[13px]">expand_more</span>
+            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_more</span>
           </button>
         </div>
         {isNotch ? (
-          <div className="flex flex-col items-center mt-0.5">
-            <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80" title={turnoverAction}>
+          <div className="flex flex-col items-center mt-0.5 w-full">
+            <span className="text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238]/80 whitespace-nowrap" title={turnoverAction}>
               Notch: {notchValue}
             </span>
             <button
               type="button"
               onClick={() => randomizeRotorGrundstellung(rotorKey)}
-              className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
+              className="mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none"
               title="Randomize Grundstellung (Start Position)"
             >
-              <span className="material-symbols-outlined text-[10px]">shuffle</span>
-              <span>Rand</span>
+              <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
+              <span className="hidden xs:inline">Rand</span>
+              <span className="inline xs:hidden">R</span>
             </button>
           </div>
         ) : (
-          <div className="flex flex-col items-center mt-0.5">
-            <span className="text-[8px] text-[#83715d] font-monospaced-technical" title={turnoverAction}>
+          <div className="flex flex-col items-center mt-0.5 w-full">
+            <span className="text-[7px] sm:text-[8px] text-[#83715d] font-monospaced-technical whitespace-nowrap" title={turnoverAction}>
               Fixed Stator
             </span>
             <button
               type="button"
               onClick={() => randomizeRotorGrundstellung(rotorKey)}
-              className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
+              className="mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none"
               title="Randomize Grundstellung (Start Position)"
             >
-              <span className="material-symbols-outlined text-[10px]">shuffle</span>
-              <span>Rand</span>
+              <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
+              <span className="hidden xs:inline">Rand</span>
+              <span className="inline xs:hidden">R</span>
             </button>
           </div>
         )}
@@ -783,6 +825,28 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   {showChamber ? 'visibility' : 'visibility_off'}
                 </span>
                 Rotors
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !showBatterySwitch;
+                  setShowBatterySwitch(next);
+                  try {
+                    localStorage.setItem('enigma_show_battery_switch', String(next));
+                  } catch (e) {}
+                }}
+                className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  showBatterySwitch
+                    ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
+                    : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                }`}
+                title="Toggle Battery Switch Visibility"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {showBatterySwitch ? 'visibility' : 'visibility_off'}
+                </span>
+                Battery Switch
               </button>
 
               <button
@@ -1118,28 +1182,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                           <div className="flex flex-col gap-0.5 shrink-0">
                             <button
                               type="button"
-                              onClick={() => {
-                                const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-                                const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
-                                const isInputEmpty = inputTape === '';
-                                const nextConfig = { ...config };
-                                const nextRight = (nextConfig.rightRotor.current + 1) % 26;
-                                const nextMid = (nextConfig.middleRotor.current + 1) % 26;
-                                const nextLeft = (nextConfig.leftRotor.current + 1) % 26;
-                                nextConfig.rightRotor = { ...nextConfig.rightRotor, current: nextRight, start: isInputEmpty ? nextRight : nextConfig.rightRotor.start };
-                                nextConfig.middleRotor = { ...nextConfig.middleRotor, current: nextMid, start: isInputEmpty ? nextMid : nextConfig.middleRotor.start };
-                                nextConfig.leftRotor = { ...nextConfig.leftRotor, current: nextLeft, start: isInputEmpty ? nextLeft : nextConfig.leftRotor.start };
-                                if (isM4) {
-                                  const nextFourth = (nextConfig.fourthRotor.current + 1) % 26;
-                                  nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: nextFourth, start: isInputEmpty ? nextFourth : nextConfig.fourthRotor.start };
-                                }
-                                if (isUKWDual) {
-                                  const nextRef = (nextConfig.reflector.current + 1) % 26;
-                                  nextConfig.reflector = { ...nextConfig.reflector, current: nextRef, start: isInputEmpty ? nextRef : nextConfig.reflector.start };
-                                }
-                                onUpdateConfig(nextConfig);
-                                playRotorClickSound(soundEnabled);
-                              }}
+                              onClick={handleStepAllForward}
                               className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer font-bold"
                               title="Step all rotors and reflector forward"
                             >
@@ -1147,23 +1190,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
-                                const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-                                const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
-                                const isInputEmpty = inputTape === '';
-                                const nextConfig = { ...config };
-                                nextConfig.rightRotor = { ...nextConfig.rightRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.rightRotor.start };
-                                nextConfig.middleRotor = { ...nextConfig.middleRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.middleRotor.start };
-                                nextConfig.leftRotor = { ...nextConfig.leftRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.leftRotor.start };
-                                if (isM4) {
-                                  nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.fourthRotor.start };
-                                }
-                                if (isUKWDual) {
-                                  nextConfig.reflector = { ...nextConfig.reflector, current: 0, start: isInputEmpty ? 0 : nextConfig.reflector.start };
-                                }
-                                onUpdateConfig(nextConfig);
-                                playRotorClickSound(soundEnabled);
-                              }}
+                              onClick={handleResetAllToA}
                               className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer"
                               title="Reset all rotors and reflector to A"
                             >
@@ -1531,8 +1558,22 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 </div>
 
                 {/* Battery Power Switch */}
-                <div className="hidden sm:block h-16 w-[1px] bg-[#3b3426]/80 mx-1" />
-                <BatterySwitch mode={batteryMode} onChangeMode={handleSetBatteryMode} compact={true} />
+                {showBatterySwitch && (
+                  <>
+                    <div className="hidden sm:block h-16 w-[1px] bg-[#3b3426]/80 mx-1" />
+                    <BatterySwitch
+                      mode={batteryMode}
+                      onChangeMode={handleSetBatteryMode}
+                      compact={true}
+                      onClose={() => {
+                        setShowBatterySwitch(false);
+                        try {
+                          localStorage.setItem('enigma_show_battery_switch', 'false');
+                        } catch (e) {}
+                      }}
+                    />
+                  </>
+                )}
               </div>
                 </>
               )}
@@ -1745,51 +1786,52 @@ export const MachineView: React.FC<MachineViewProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2.5 rounded-xl border border-[#3b3426]">
-             <div className={`grid grid-cols-2 ${
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2 sm:p-2.5 rounded-xl border border-[#3b3426]">
+              <div className={`grid ${
                 config.reflector.type === 'UKW-Dual-Dynamic'
-                  ? (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'sm:grid-cols-4 max-w-xs sm:max-w-md')
-                  : (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'sm:grid-cols-4 max-w-xs sm:max-w-md' : 'sm:grid-cols-3 max-w-xs sm:max-w-sm')
-              } gap-2 w-full mx-auto`}>
+                  ? (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-5 sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md')
+                  : (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md' : 'grid-cols-3 sm:grid-cols-3 max-w-xs sm:max-w-sm')
+              } gap-1 sm:gap-2 w-full mx-auto`}>
                 {/* ─── UKW-Dual-Dynamic─── */}
                 {config.reflector.type === 'UKW-Dual-Dynamic' && (
-                  <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
-                    <span className="text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider">
+                  <div className="bg-[#18130b] rounded-lg p-1.5 sm:p-2 border border-[#3b3426] flex flex-col items-center max-w-[76px] sm:max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
+                    <span className="text-[7.5px] sm:text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider whitespace-nowrap">
                       UKW-ROTOR
                     </span>
-                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
+                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-9 sm:w-12 h-11 sm:h-13 flex items-center justify-center my-0.5 overflow-hidden">
                       <button
                         type="button"
-                        onClick={() => handleManualRotorStep('reflector' as any, 1)}
+                        onClick={() => handleManualRotorStep('reflector', 1)}
                         className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
                         title="Rotate Reflector Up (manual)"
                       >
-                        <span className="material-symbols-outlined text-[13px]">expand_less</span>
+                        <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_less</span>
                       </button>
-                      <span key={config.reflector.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
+                      <span key={config.reflector.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-base sm:text-xl font-bold select-none animate-rotor-step">
                         {formatRotorPos(config.reflector.current, ringFormat)}
                       </span>
                       <button
                         type="button"
-                        onClick={() => handleManualRotorStep('reflector' as any, -1)}
+                        onClick={() => handleManualRotorStep('reflector', -1)}
                         className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
                         title="Rotate Reflector Down (manual)"
                       >
-                        <span className="material-symbols-outlined text-[13px]">expand_more</span>
+                        <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_more</span>
                       </button>
                     </div>
-                    <div className="flex flex-col items-center mt-0.5">
-                      <span className="text-[8px] text-[#83715d] font-monospaced-technical">
+                    <div className="flex flex-col items-center mt-0.5 w-full">
+                      <span className="text-[7px] sm:text-[8px] text-[#83715d] font-monospaced-technical whitespace-nowrap">
                         Dynamic Stator
                       </span>
                       <button
                         type="button"
                         onClick={() => randomizeRotorGrundstellung('reflector')}
-                        className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
+                        className="mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none"
                         title="Randomize Reflector Grundstellung"
                       >
-                        <span className="material-symbols-outlined text-[10px]">shuffle</span>
-                        <span>Rand</span>
+                        <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
+                        <span className="hidden xs:inline">Rand</span>
+                        <span className="inline xs:hidden">R</span>
                       </button>
                     </div>
                   </div>
@@ -1812,9 +1854,21 @@ export const MachineView: React.FC<MachineViewProps> = ({
               </div>
 
               {/* Battery Switch */}
-              <div className={`flex justify-center items-center w-full ${compactMode ? 'max-w-[145px] mx-auto' : 'max-w-[160px] mx-auto'}`}>
-                <BatterySwitch mode={batteryMode} onChangeMode={handleSetBatteryMode} compact={false} />
-              </div>
+              {showBatterySwitch && (
+                <div className={`flex justify-center items-center w-full ${compactMode ? 'max-w-[145px] mx-auto' : 'max-w-[160px] mx-auto'}`}>
+                  <BatterySwitch
+                    mode={batteryMode}
+                    onChangeMode={handleSetBatteryMode}
+                    compact={false}
+                    onClose={() => {
+                      setShowBatterySwitch(false);
+                      try {
+                        localStorage.setItem('enigma_show_battery_switch', 'false');
+                      } catch (e) {}
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -2191,28 +2245,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                         <div className="flex flex-col gap-0.5 shrink-0">
                           <button
                             type="button"
-                            onClick={() => {
-                              const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-                              const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
-                              const isInputEmpty = inputTape === '';
-                              const nextConfig = { ...config };
-                              const nextRight = (nextConfig.rightRotor.current + 1) % 26;
-                              const nextMid = (nextConfig.middleRotor.current + 1) % 26;
-                              const nextLeft = (nextConfig.leftRotor.current + 1) % 26;
-                              nextConfig.rightRotor = { ...nextConfig.rightRotor, current: nextRight, start: isInputEmpty ? nextRight : nextConfig.rightRotor.start };
-                              nextConfig.middleRotor = { ...nextConfig.middleRotor, current: nextMid, start: isInputEmpty ? nextMid : nextConfig.middleRotor.start };
-                              nextConfig.leftRotor = { ...nextConfig.leftRotor, current: nextLeft, start: isInputEmpty ? nextLeft : nextConfig.leftRotor.start };
-                              if (isM4) {
-                                const nextFourth = (nextConfig.fourthRotor.current + 1) % 26;
-                                nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: nextFourth, start: isInputEmpty ? nextFourth : nextConfig.fourthRotor.start };
-                              }
-                              if (isUKWDual) {
-                                const nextRef = (nextConfig.reflector.current + 1) % 26;
-                                nextConfig.reflector = { ...nextConfig.reflector, current: nextRef, start: isInputEmpty ? nextRef : nextConfig.reflector.start };
-                              }
-                              onUpdateConfig(nextConfig);
-                              playRotorClickSound(soundEnabled);
-                            }}
+                            onClick={handleStepAllForward}
                             className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer font-bold"
                             title="Step all rotors and reflector forward"
                           >
@@ -2220,23 +2253,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-                              const isUKWDual = config.reflector.type === 'UKW-Dual-Dynamic';
-                              const isInputEmpty = inputTape === '';
-                              const nextConfig = { ...config };
-                              nextConfig.rightRotor = { ...nextConfig.rightRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.rightRotor.start };
-                              nextConfig.middleRotor = { ...nextConfig.middleRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.middleRotor.start };
-                              nextConfig.leftRotor = { ...nextConfig.leftRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.leftRotor.start };
-                              if (isM4) {
-                                nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.fourthRotor.start };
-                              }
-                              if (isUKWDual) {
-                                nextConfig.reflector = { ...nextConfig.reflector, current: 0, start: isInputEmpty ? 0 : nextConfig.reflector.start };
-                              }
-                              onUpdateConfig(nextConfig);
-                              playRotorClickSound(soundEnabled);
-                            }}
+                            onClick={handleResetAllToA}
                             className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer"
                             title="Reset all rotors and reflector to A"
                           >

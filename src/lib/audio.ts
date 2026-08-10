@@ -13,75 +13,41 @@ function getAudioContext(): AudioContext {
   return audioCtx;
 }
 
-export function playKeyClickSound(enabled: boolean = true) {
+function playTone(
+  enabled: boolean,
+  config: { type: OscillatorType; freqStart: number; freqEnd: number; decay: number; gain: number }
+) {
   if (!enabled) return;
   try {
     const ctx = getAudioContext();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    // Heavy mechanical key clack frequency
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(140, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.04);
+    osc.type = config.type;
+    osc.frequency.setValueAtTime(config.freqStart, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(config.freqEnd, ctx.currentTime + config.decay);
 
-    gain.gain.setValueAtTime(0.25, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+    gain.gain.setValueAtTime(config.gain, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + config.decay);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.04);
+    osc.stop(ctx.currentTime + config.decay);
   } catch (e) {
     console.debug('Audio error:', e);
   }
+}
+
+export function playKeyClickSound(enabled: boolean = true) {
+  playTone(enabled, { type: 'triangle', freqStart: 140, freqEnd: 30, decay: 0.04, gain: 0.25 });
 }
 
 export function playRotorClickSound(enabled: boolean = true) {
-  if (!enabled) return;
-  try {
-    const ctx = getAudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(320, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.03);
-
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.03);
-  } catch (e) {
-    console.debug('Audio error:', e);
-  }
+  playTone(enabled, { type: 'square', freqStart: 320, freqEnd: 80, decay: 0.03, gain: 0.15 });
 }
 
 export function playPlugConnectSound(enabled: boolean = true) {
-  if (!enabled) return;
-  try {
-    const ctx = getAudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(220, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.05);
-
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.05);
-  } catch (e) {
-    console.debug('Audio error:', e);
-  }
+  playTone(enabled, { type: 'sine', freqStart: 220, freqEnd: 440, decay: 0.05, gain: 0.2 });
 }

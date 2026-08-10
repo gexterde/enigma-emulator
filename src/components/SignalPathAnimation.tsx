@@ -230,6 +230,41 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
     { id: 'lampboard', label: '12. Lampboard', desc: 'Glühlampenfeld', pos: 'mid-left' }
   ];
 
+  // Reusable sub-component to dry up identical card structures for entry wheel, reflector, etc.
+  const ComponentCard: React.FC<{
+    title: string;
+    isLit: boolean;
+    value: string;
+    statusLabel?: string;
+    stepLabel: string;
+    stepValue: string;
+  }> = ({ title, isLit, value, statusLabel, stepLabel, stepValue }) => (
+    <div
+      className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
+        isLit
+          ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
+          : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
+      }`}
+    >
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[9px] font-monospaced-technical uppercase opacity-90">{title}</span>
+          <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#251f12] text-[#8b6f47]'}`}>
+            {statusLabel || (isLit ? '● LIT' : '● IDLE')}
+          </span>
+        </div>
+        <span className="text-sm font-rotor-label font-bold block">{value}</span>
+      </div>
+
+      <div className="mt-3 pt-2 border-t border-current/20">
+        <span className="text-[9px] font-monospaced-technical uppercase block opacity-90 font-semibold">{stepLabel}:</span>
+        <div className={`text-xs font-monospaced-technical font-bold mt-1 px-2 py-1 rounded text-center shadow ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#201b0f] text-[#ede1cd]'}`}>
+          {stepValue}
+        </div>
+      </div>
+    </div>
+  );
+
   // Refactored helper function to render individual rotor views without duplicating HTML structure
   const renderRotorView = (
     stageSub: string,
@@ -451,30 +486,13 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                 const reflectorStep = trace.find((s) => s.stage.includes('Reflector'));
                 const isLit = activeStage.componentId === 'reflector' || isKeyPressed;
                 return (
-                  <div
-                    className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
-                      isLit
-                        ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
-                        : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-monospaced-technical uppercase opacity-90">Reflector (UKW)</span>
-                        <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#251f12] text-[#8b6f47]'}`}>
-                          {isLit ? '● LIT' : '● IDLE'}
-                        </span>
-                      </div>
-                      <span className="text-sm font-rotor-label font-bold block">{config.reflector.type}</span>
-                    </div>
-
-                    <div className="mt-3 pt-2 border-t border-current/20">
-                      <span className="text-[9px] font-monospaced-technical uppercase block opacity-90 font-semibold">Internal Mirror:</span>
-                      <div className={`text-xs font-monospaced-technical font-bold mt-1 px-2 py-1 rounded text-center shadow ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#201b0f] text-[#ede1cd]'}`}>
-                        {reflectorStep ? `${reflectorStep.inChar} ➔ ${reflectorStep.outChar}` : 'N/A'}
-                      </div>
-                    </div>
-                  </div>
+                  <ComponentCard
+                    title="Reflector (UKW)"
+                    isLit={isLit}
+                    value={config.reflector.type}
+                    stepLabel="Internal Mirror"
+                    stepValue={reflectorStep ? `${reflectorStep.inChar} ➔ ${reflectorStep.outChar}` : 'N/A'}
+                  />
                 );
               })()}
 
@@ -495,30 +513,13 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                 const etwStep = trace.find((s) => s.stage.includes('Entry Wheel'));
                 const isLit = activeStage.componentId === 'etw' || isKeyPressed;
                 return (
-                  <div
-                    className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
-                      isLit
-                        ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
-                        : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-monospaced-technical uppercase opacity-90">Entry Wheel (ETW)</span>
-                        <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#251f12] text-[#8b6f47]'}`}>
-                          {isLit ? '● LIT' : '● IDLE'}
-                        </span>
-                      </div>
-                      <span className="text-sm font-rotor-label font-bold block">Fixed Stator</span>
-                    </div>
-
-                    <div className="mt-3 pt-2 border-t border-current/20">
-                      <span className="text-[9px] font-monospaced-technical uppercase block opacity-90 font-semibold">Pass-through:</span>
-                      <div className={`text-xs font-monospaced-technical font-bold mt-1 px-2 py-1 rounded text-center shadow ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#201b0f] text-[#ede1cd]'}`}>
-                        {etwStep ? `${etwStep.inChar} ➔ ${etwStep.outChar}` : 'A ➔ A'}
-                      </div>
-                    </div>
-                  </div>
+                  <ComponentCard
+                    title="Entry Wheel (ETW)"
+                    isLit={isLit}
+                    value="Fixed Stator"
+                    stepLabel="Pass-through"
+                    stepValue={etwStep ? `${etwStep.inChar} ➔ ${etwStep.outChar}` : 'A ➔ A'}
+                  />
                 );
               })()}
             </div>

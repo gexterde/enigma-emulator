@@ -80,91 +80,6 @@ export default function App() {
 
       const isCtrlOrCmd = e.ctrlKey || e.metaKey;
 
-      // F1 or Ctrl+M / Cmd+M -> Machine View
-      if (e.key === 'F1' || (isCtrlOrCmd && e.key.toLowerCase() === 'm')) {
-        e.preventDefault();
-        setActiveTab('machine');
-        return;
-      }
-
-      // Ctrl+C or Cmd+Shift+C / Ctrl+Shift+C -> Toggle Compact Mode
-      if (isCtrlOrCmd && e.key.toLowerCase() === 'c' && !isInputFocused) {
-        const selection = window.getSelection()?.toString();
-        // Only trigger compact mode if no text is currently highlighted
-        if (!selection || selection.length === 0) {
-          e.preventDefault();
-          setCompactMode((prev) => !prev);
-          return;
-        }
-      }
-
-      // F2 or Ctrl+R / Cmd+R -> Rotor Settings View
-      if (e.key === 'F2' || (isCtrlOrCmd && e.key.toLowerCase() === 'r')) {
-        e.preventDefault();
-        setActiveTab('rotors');
-        return;
-      }
-
-      // F3 or Ctrl+P / Cmd+P -> Plugboard View
-      if (e.key === 'F3' || (isCtrlOrCmd && e.key.toLowerCase() === 'p')) {
-        e.preventDefault();
-        setActiveTab('plugboard');
-        return;
-      }
-
-      // F4 or Ctrl+B / Cmd+B -> Codebook View
-      if (e.key === 'F4' || (isCtrlOrCmd && e.key.toLowerCase() === 'b')) {
-        e.preventDefault();
-        setActiveTab('codebook');
-        return;
-      }
-
-      // F5 or Ctrl+L / Cmd+L -> Log / History View
-      if (e.key === 'F5' || (isCtrlOrCmd && e.key.toLowerCase() === 'l')) {
-        e.preventDefault();
-        setActiveTab('log');
-        return;
-      }
-
-      // F6 or Ctrl+T / Cmd+T -> Morse Trainer
-      if (e.key === 'F6' || (isCtrlOrCmd && e.key.toLowerCase() === 't')) {
-        e.preventDefault();
-        setActiveTab('morseTrainer');
-        return;
-      }
-
-      // F7 or Ctrl+S / Cmd+S -> Settings Modal
-      if (e.key === 'F7' || (isCtrlOrCmd && e.key.toLowerCase() === 's' && !e.shiftKey)) {
-        e.preventDefault();
-        setIsSettingsOpen((prev) => !prev);
-        return;
-      }
-
-      // F8 or Ctrl+H / Cmd+H -> Info Modal
-      if (e.key === 'F8' || (isCtrlOrCmd && e.key.toLowerCase() === 'h')) {
-        e.preventDefault();
-        setIsInfoOpen((prev) => !prev);
-        return;
-      }
-
-      // F9 or Ctrl+Shift+S / Cmd+Shift+S -> Share Modal
-      if (e.key === 'F9' || (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 's')) {
-        e.preventDefault();
-        setIsShareOpen((prev) => !prev);
-        return;
-      }
-
-      // F10 or ? or Ctrl+Shift+K -> Shortcuts Modal
-      if (
-        e.key === 'F10' ||
-        (e.key === '?' && !isInputFocused) ||
-        (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 'k')
-      ) {
-        e.preventDefault();
-        setIsShortcutsOpen((prev) => !prev);
-        return;
-      }
-
       // Escape -> Close any active dialog or mobile menu
       if (e.key === 'Escape') {
         setIsSettingsOpen(false);
@@ -172,6 +87,68 @@ export default function App() {
         setIsShareOpen(false);
         setIsShortcutsOpen(false);
         setIsMenuOpen(false);
+        return;
+      }
+
+      // Compact mode toggle has special text selection check
+      if (isCtrlOrCmd && e.key.toLowerCase() === 'c' && !isInputFocused) {
+        const selection = window.getSelection()?.toString();
+        if (!selection || selection.length === 0) {
+          e.preventDefault();
+          setCompactMode((prev) => !prev);
+          return;
+        }
+      }
+
+      const shortcuts = [
+        {
+          match: () => e.key === 'F1' || (isCtrlOrCmd && e.key.toLowerCase() === 'm'),
+          action: () => setActiveTab('machine'),
+        },
+        {
+          match: () => e.key === 'F2' || (isCtrlOrCmd && e.key.toLowerCase() === 'r'),
+          action: () => setActiveTab('rotors'),
+        },
+        {
+          match: () => e.key === 'F3' || (isCtrlOrCmd && e.key.toLowerCase() === 'p'),
+          action: () => setActiveTab('plugboard'),
+        },
+        {
+          match: () => e.key === 'F4' || (isCtrlOrCmd && e.key.toLowerCase() === 'b'),
+          action: () => setActiveTab('codebook'),
+        },
+        {
+          match: () => e.key === 'F5' || (isCtrlOrCmd && e.key.toLowerCase() === 'l'),
+          action: () => setActiveTab('log'),
+        },
+        {
+          match: () => e.key === 'F6' || (isCtrlOrCmd && e.key.toLowerCase() === 't'),
+          action: () => setActiveTab('morseTrainer'),
+        },
+        {
+          match: () => e.key === 'F7' || (isCtrlOrCmd && e.key.toLowerCase() === 's' && !e.shiftKey),
+          action: () => setIsSettingsOpen((prev) => !prev),
+        },
+        {
+          match: () => e.key === 'F8' || (isCtrlOrCmd && e.key.toLowerCase() === 'h'),
+          action: () => setIsInfoOpen((prev) => !prev),
+        },
+        {
+          match: () => e.key === 'F9' || (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 's'),
+          action: () => setIsShareOpen((prev) => !prev),
+        },
+        {
+          match: () => e.key === 'F10' || (!isInputFocused && e.key === '?') || (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 'k'),
+          action: () => setIsShortcutsOpen((prev) => !prev),
+        },
+      ];
+
+      for (const shortcut of shortcuts) {
+        if (shortcut.match()) {
+          e.preventDefault();
+          shortcut.action();
+          return;
+        }
       }
     };
 
@@ -272,7 +249,6 @@ export default function App() {
       {/* Footer */}
       <Footer
         onOpenInfo={() => setIsInfoOpen(true)}
-        onOpenManual={() => setIsInfoOpen(true)}
       />
 
       {/* Modals */}
