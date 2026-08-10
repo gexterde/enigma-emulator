@@ -1037,7 +1037,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
               <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#3d3526]/60 px-1">
                 <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] tracking-widest uppercase flex items-center gap-1 font-bold">
                   <span className="material-symbols-outlined text-xs text-[#ebc238]">tune</span>
-                  WALZENLAGE (ROTORS)
+                  SCRAMBLER CHAMBER (WALZEN)
                 </span>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1 text-[10px] font-monospaced-technical">
@@ -1058,20 +1058,16 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setChamberCollapsed(!chamberCollapsed)}
-                    className="text-[10px] sm:text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-0.5 cursor-pointer border border-[#3b3426] px-1.5 py-0.5 rounded bg-[#120e04]"
-                    title={chamberCollapsed ? 'Show Rotors Panel' : 'Close Rotors Panel'}
+                    onClick={() => setShowChamber(false)}
+                    className="text-[10px] sm:text-[11px] font-monospaced-technical text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-1 cursor-pointer border border-[#4e453b] px-2.5 py-1 rounded-md bg-[#120e04]/60 transition-all font-bold"
+                    title="Close Scrambler Chamber"
                   >
-                    <span className="material-symbols-outlined text-sm">
-                      {chamberCollapsed ? 'expand_more' : 'expand_less'}
-                    </span>
-                    <span>{chamberCollapsed ? 'Show' : 'Close'}</span>
+                    <span className="material-symbols-outlined text-xs">close</span>
+                    <span>CLOSE</span>
                   </button>
                 </div>
               </div>
 
-              {!chamberCollapsed && (
-                <>
                   {/* Quick Settings Action Bar in front of Rotors */}
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3 bg-[#18130a] px-2 sm:px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -1116,231 +1112,92 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 py-1">
-                {/* Dynamic Reflector Wheel if UKW-Dual-Dynamic active */}
-                {config.reflector.type === 'UKW-Dual-Dynamic' && (
-                  <div className="flex flex-col items-center border-r border-[#3d3526]/80 pr-2 mr-1">
-                    <span className="text-[9px] font-monospaced-technical text-[#e06c3a] mb-1 font-bold">DYNAMIC</span>
-                    <div className="relative bg-[#1a0e05] border border-[#733c19] rounded shadow-inner w-12 sm:w-14 h-16 sm:h-18 flex items-center justify-center my-0.5 overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('reflector', 1)}
-                        className="absolute top-0 w-full h-5 flex items-center justify-center text-[#e06c3a] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
-                        title="Rotate Reflector Up"
-                      >
-                        <span className="material-symbols-outlined text-[14px] leading-none">expand_less</span>
-                      </button>
-                      <span key={config.reflector.current} className="font-rotor-label text-[#e06c3a] text-base sm:text-lg font-bold select-none leading-none animate-rotor-step">
-                        {formatRotorPos(config.reflector.current, ringFormat)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('reflector', -1)}
-                        className="absolute bottom-0 w-full h-5 flex items-center justify-center text-[#e06c3a] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
-                        title="Rotate Reflector Down"
-                      >
-                        <span className="material-symbols-outlined text-[14px] leading-none">expand_more</span>
-                      </button>
-                    </div>
-                    <span className="text-[10px] font-monospaced-technical text-[#e06c3a] mt-1.5 font-bold tracking-wider">
-                      UKW-Dual
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => randomizeRotorGrundstellung('reflector')}
-                      className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#e06c3a] bg-[#1a0e05] hover:bg-[#e06c3a] hover:text-[#25190b] border border-[#733c19] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
-                      title="Randomize Reflector Grundstellung"
-                    >
-                      <span className="material-symbols-outlined text-[10px]">shuffle</span>
-                      <span>Rand</span>
-                    </button>
-                  </div>
-                )}
-                {/* If M4 4th rotor present */}
-                {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
-                  <div className="flex flex-col items-center">
-                    <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">
-                      FIXED
-                    </span>
-                    <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-16 sm:h-18 flex items-center justify-center my-0.5 overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('fourthRotor', 1)}
-                        className="absolute top-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
-                        title="Rotate Up"
-                      >
-                        <span className="material-symbols-outlined text-[14px] leading-none">expand_less</span>
-                      </button>
-                      <span key={config.fourthRotor.current} className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold select-none leading-none animate-rotor-step">
-                        {formatRotorPos(config.fourthRotor.current, ringFormat)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('fourthRotor', -1)}
-                        className="absolute bottom-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
-                        title="Rotate Down"
-                      >
-                        <span className="material-symbols-outlined text-[14px] leading-none">expand_more</span>
-                      </button>
-                    </div>
-                    <span className="text-[10px] font-monospaced-technical text-[#ebc238] mt-1.5 font-bold tracking-wider">
-                      {config.fourthRotor.type === 'Beta' ? 'β' : 'γ'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => randomizeRotorGrundstellung('fourthRotor')}
-                      className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
-                      title="Randomize Fourth Rotor Grundstellung"
-                    >
-                      <span className="material-symbols-outlined text-[10px]">shuffle</span>
-                      <span>Rand</span>
-                    </button>
-                  </div>
-                )}
+              <div className="space-y-3 max-w-xl mx-auto pt-1">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2 sm:p-2.5 rounded-xl border border-[#3b3426]">
+                  <div className={`grid ${
+                    config.reflector.type === 'UKW-Dual-Dynamic'
+                      ? (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-5 sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md')
+                      : (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md' : 'grid-cols-3 sm:grid-cols-3 max-w-xs sm:max-w-sm')
+                  } gap-1 sm:gap-2 w-full mx-auto`}>
+                    {/* ─── UKW-Dual-Dynamic─── */}
+                    {config.reflector.type === 'UKW-Dual-Dynamic' && (
+                      <div className="bg-[#18130b] rounded-lg p-1.5 sm:p-2 border border-[#3b3426] flex flex-col items-center max-w-[76px] sm:max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
+                        <span className="text-[7.5px] sm:text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider whitespace-nowrap">
+                          UKW-ROTOR
+                        </span>
+                        <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-9 sm:w-12 h-11 sm:h-13 flex items-center justify-center my-0.5 overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => handleManualRotorStep('reflector', 1)}
+                            className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                            title="Rotate Reflector Up (manual)"
+                          >
+                            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_less</span>
+                          </button>
+                          <span key={config.reflector.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-base sm:text-xl font-bold select-none animate-rotor-step">
+                            {formatRotorPos(config.reflector.current, ringFormat)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleManualRotorStep('reflector', -1)}
+                            className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                            title="Rotate Reflector Down (manual)"
+                          >
+                            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_more</span>
+                          </button>
+                        </div>
+                        <div className="flex flex-col items-center mt-0.5 w-full">
+                          <span className="text-[7px] sm:text-[8px] text-[#83715d] font-monospaced-technical whitespace-nowrap">
+                            Dynamic Stator
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => randomizeRotorGrundstellung('reflector')}
+                            className="mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none"
+                            title="Randomize Reflector Grundstellung"
+                          >
+                            <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
+                            <span className="hidden xs:inline">Rand</span>
+                            <span className="inline xs:hidden">R</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {/* ────────────────────────────────────────────────────── */}
 
-                {/* Left Rotor */}
-                <div className="flex flex-col items-center">
-                  <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">SLOW</span>
-                  <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-16 sm:h-18 flex items-center justify-center my-0.5 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('leftRotor', 1)}
-                      className="absolute top-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
-                      title="Rotate Up"
-                    >
-                      <span className="material-symbols-outlined text-[14px] leading-none">expand_less</span>
-                    </button>
-                    <span key={config.leftRotor.current} className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold select-none leading-none animate-rotor-step">
-                      {formatRotorPos(config.leftRotor.current, ringFormat)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('leftRotor', -1)}
-                      className="absolute bottom-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
-                      title="Rotate Down"
-                    >
-                      <span className="material-symbols-outlined text-[14px] leading-none">expand_more</span>
-                    </button>
+                    {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
+                    {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+                      renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
+                    )}
+
+                    {/* Slow Rotor */}
+                    {renderRotorView('SLOW', 'leftRotor', config.leftRotor.type, true)}
+
+                    {/* Middle Rotor */}
+                    {renderRotorView('MID', 'middleRotor', config.middleRotor.type, true)}
+
+                    {/* Fast Rotor */}
+                    {renderRotorView('FAST', 'rightRotor', config.rightRotor.type, true)}
                   </div>
-                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] mt-1.5 font-bold tracking-wider">
-                    {config.leftRotor.type}
-                  </span>
-                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.leftRotor.type]?.turnoverAction}>
-                    Notch: {ROTOR_SPECS[config.leftRotor.type]?.notch}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => randomizeRotorGrundstellung('leftRotor')}
-                    className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
-                    title="Randomize Left Rotor Grundstellung"
-                  >
-                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
-                    <span>Rand</span>
-                  </button>
                 </div>
-
-                {/* Middle Rotor */}
-                <div className="flex flex-col items-center">
-                  <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">MID</span>
-                  <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-16 sm:h-18 flex items-center justify-center my-0.5 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('middleRotor', 1)}
-                      className="absolute top-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
-                      title="Rotate Up"
-                    >
-                      <span className="material-symbols-outlined text-[14px] leading-none">expand_less</span>
-                    </button>
-                    <span key={config.middleRotor.current} className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold select-none leading-none animate-rotor-step">
-                      {formatRotorPos(config.middleRotor.current, ringFormat)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('middleRotor', -1)}
-                      className="absolute bottom-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
-                      title="Rotate Down"
-                    >
-                      <span className="material-symbols-outlined text-[14px] leading-none">expand_more</span>
-                    </button>
-                  </div>
-                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] mt-1.5 font-bold tracking-wider">
-                    {config.middleRotor.type}
-                  </span>
-                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.middleRotor.type]?.turnoverAction}>
-                    Notch: {ROTOR_SPECS[config.middleRotor.type]?.notch}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => randomizeRotorGrundstellung('middleRotor')}
-                    className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
-                    title="Randomize Middle Rotor Grundstellung"
-                  >
-                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
-                    <span>Rand</span>
-                  </button>
-                </div>
-
-                {/* Right Rotor */}
-                <div className="flex flex-col items-center">
-                  <span className="text-[9px] font-monospaced-technical text-[#83715d] mb-1 font-bold">FAST</span>
-                  <div className="relative bg-[#120e04] border border-[#4e453b] rounded shadow-inner w-12 sm:w-14 h-16 sm:h-18 flex items-center justify-center my-0.5 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('rightRotor', 1)}
-                      className="absolute top-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
-                      title="Rotate Up"
-                    >
-                      <span className="material-symbols-outlined text-[14px] leading-none">expand_less</span>
-                    </button>
-                    <span key={config.rightRotor.current} className="font-rotor-label text-[#ebc238] text-base sm:text-lg font-bold select-none leading-none animate-rotor-step">
-                      {formatRotorPos(config.rightRotor.current, ringFormat)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleManualRotorStep('rightRotor', -1)}
-                      className="absolute bottom-0 w-full h-5 flex items-center justify-center text-[#83715d] hover:text-[#ebc238] hover:bg-[#ebc238]/10 cursor-pointer transition-colors"
-                      title="Rotate Down"
-                    >
-                      <span className="material-symbols-outlined text-[14px] leading-none">expand_more</span>
-                    </button>
-                  </div>
-                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] mt-1.5 font-bold tracking-wider">
-                    {config.rightRotor.type}
-                  </span>
-                  <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.rightRotor.type]?.turnoverAction}>
-                    Notch: {ROTOR_SPECS[config.rightRotor.type]?.notch}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => randomizeRotorGrundstellung('rightRotor')}
-                    className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
-                    title="Randomize Right Rotor Grundstellung"
-                  >
-                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
-                    <span>Rand</span>
-                  </button>
-                </div>
-
-                {/* Battery Power Switch */}
-                {showBatterySwitch && (
-                  <>
-                    <div className="hidden sm:block h-16 w-[1px] bg-[#3b3426]/80 mx-1" />
-                    <BatterySwitch
-                      mode={batteryMode}
-                      onChangeMode={handleSetBatteryMode}
-                      compact={true}
-                      onClose={() => {
-                        setShowBatterySwitch(false);
-                        try {
-                          localStorage.setItem('enigma_show_battery_switch', 'false');
-                        } catch (e) {}
-                      }}
-                    />
-                  </>
-                )}
               </div>
-                </>
-              )}
+            </div>
+          )}
+
+          {/* Compact Battery Switch Panel */}
+          {!keyboardBulbsOnly && showBatterySwitch && (
+            <div className="w-full">
+              <BatterySwitch
+                mode={batteryMode}
+                onChangeMode={handleSetBatteryMode}
+                isPanel={true}
+                onClose={() => {
+                  setShowBatterySwitch(false);
+                  try {
+                    localStorage.setItem('enigma_show_battery_switch', 'false');
+                  } catch (e) {}
+                }}
+              />
             </div>
           )}
 
@@ -1378,179 +1235,178 @@ export const MachineView: React.FC<MachineViewProps> = ({
           </div>
         )}
 
-      {/* Top Section: Rotors Chamber (Walzen) */}
-      {!keyboardBulbsOnly && showChamber && (
-        <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal transition-all animate-fade-in">
-          <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#3b3426]">
-            <h2 className="text-ui-header font-ui-header text-[#ede1cd] text-xs uppercase tracking-wider flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm text-[#ebc238]">tune</span>
-              Scrambler Chamber (Walzen)
-            </h2>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 bg-[#120e04] px-2 py-0.5 rounded border border-[#3b3426] text-[10px]">
-                <span className="text-[#e3c193] font-bold uppercase hidden sm:inline">Format:</span>
-                <button
-                  type="button"
-                  onClick={() => handleSetRingFormat('number')}
-                  className={`px-1.5 py-0.5 rounded transition-all cursor-pointer font-mono font-bold ${
-                    ringFormat === 'number' ? 'bg-[#ebc238] text-[#25190b]' : 'text-[#83715d] hover:text-[#d1c4b7]'
-                  }`}
-                  title="Show 01-26 Numbers"
-                >
-                  01–26
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSetRingFormat('letter')}
-                  className={`px-1.5 py-0.5 rounded transition-all cursor-pointer font-mono font-bold ${
-                    ringFormat === 'letter' ? 'bg-[#ebc238] text-[#25190b]' : 'text-[#83715d] hover:text-[#d1c4b7]'
-                  }`}
-                  title="Show A-Z Letters"
-                >
-                  A–Z
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => setChamberCollapsed(!chamberCollapsed)}
-                className="text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-1 cursor-pointer border border-[#3b3426] px-1.5 py-0.5 rounded bg-[#120e04]"
-                title={chamberCollapsed ? 'Show Rotors Panel' : 'Close Rotors Panel'}
-              >
-                <span className="material-symbols-outlined text-sm">
-                  {chamberCollapsed ? 'expand_more' : 'expand_less'}
-                </span>
-                <span>{chamberCollapsed ? 'Show' : 'Close'}</span>
-              </button>
-            </div>
-          </div>
-
-          {!chamberCollapsed && (
-            <div className="space-y-3 max-w-xl mx-auto pt-1">
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18130a] px-2 sm:px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowRotorModal(true)}
-                  className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
-                  title="Open Quick Rotor Settings Pop-Up Window"
-                >
-                  <span className="material-symbols-outlined text-sm">settings_overscan</span>
-                  <span>ROTOR SETTINGS</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPlugModal(true)}
-                  className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
-                  title="Open Quick Plugboard Settings Pop-Up Window"
-                >
-                  <span className="material-symbols-outlined text-sm">settings_ethernet</span>
-                  <span>PLUG SETTINGS</span>
-                  <span className="bg-[#ebc238]/20 text-[#ebc238] px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
-                    {Object.keys(config.plugboard || {}).length / 2} pairs
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCodebookModal(true)}
-                  className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
-                  title="Open Codebook Key Sheets Quick Window"
-                >
-                  <span className="material-symbols-outlined text-sm">menu_book</span>
-                  <span>CODEBOOK</span>
-                </button>
-              </div>
-              <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
-                Reflector: <span className="text-[#ebc238] font-bold">{config.reflector.type}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2 sm:p-2.5 rounded-xl border border-[#3b3426]">
-              <div className={`grid ${
-                config.reflector.type === 'UKW-Dual-Dynamic'
-                  ? (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-5 sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md')
-                  : (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md' : 'grid-cols-3 sm:grid-cols-3 max-w-xs sm:max-w-sm')
-              } gap-1 sm:gap-2 w-full mx-auto`}>
-                {/* ─── UKW-Dual-Dynamic─── */}
-                {config.reflector.type === 'UKW-Dual-Dynamic' && (
-                  <div className="bg-[#18130b] rounded-lg p-1.5 sm:p-2 border border-[#3b3426] flex flex-col items-center max-w-[76px] sm:max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
-                    <span className="text-[7.5px] sm:text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider whitespace-nowrap">
-                      UKW-ROTOR
-                    </span>
-                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-9 sm:w-12 h-11 sm:h-13 flex items-center justify-center my-0.5 overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('reflector', 1)}
-                        className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                        title="Rotate Reflector Up (manual)"
-                      >
-                        <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_less</span>
-                      </button>
-                      <span key={config.reflector.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-base sm:text-xl font-bold select-none animate-rotor-step">
-                        {formatRotorPos(config.reflector.current, ringFormat)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('reflector', -1)}
-                        className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                        title="Rotate Reflector Down (manual)"
-                      >
-                        <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_more</span>
-                      </button>
-                    </div>
-                    <div className="flex flex-col items-center mt-0.5 w-full">
-                      <span className="text-[7px] sm:text-[8px] text-[#83715d] font-monospaced-technical whitespace-nowrap">
-                        Dynamic Stator
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => randomizeRotorGrundstellung('reflector')}
-                        className="mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none"
-                        title="Randomize Reflector Grundstellung"
-                      >
-                        <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
-                        <span className="hidden xs:inline">Rand</span>
-                        <span className="inline xs:hidden">R</span>
-                      </button>
-                    </div>
+      {/* Top Section: Rotors Chamber & Battery Switch Panels */}
+      {!keyboardBulbsOnly && (showChamber || showBatterySwitch) && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {showChamber && (
+            <div className={`${showBatterySwitch ? 'lg:col-span-8' : 'lg:col-span-12'} bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal transition-all animate-fade-in`}>
+              <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#3b3426]">
+                <h2 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-widest flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm text-[#ebc238]">tune</span>
+                  SCRAMBLER CHAMBER (WALZEN)
+                </h2>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-[#120e04] px-2 py-0.5 rounded border border-[#3b3426] text-[10px]">
+                    <span className="text-[#e3c193] font-bold uppercase hidden sm:inline">Format:</span>
+                    <button
+                      type="button"
+                      onClick={() => handleSetRingFormat('number')}
+                      className={`px-1.5 py-0.5 rounded transition-all cursor-pointer font-mono font-bold ${
+                        ringFormat === 'number' ? 'bg-[#ebc238] text-[#25190b]' : 'text-[#83715d] hover:text-[#d1c4b7]'
+                      }`}
+                      title="Show 01-26 Numbers"
+                    >
+                      01–26
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSetRingFormat('letter')}
+                      className={`px-1.5 py-0.5 rounded transition-all cursor-pointer font-mono font-bold ${
+                        ringFormat === 'letter' ? 'bg-[#ebc238] text-[#25190b]' : 'text-[#83715d] hover:text-[#d1c4b7]'
+                      }`}
+                      title="Show A-Z Letters"
+                    >
+                      A–Z
+                    </button>
                   </div>
-                )}
-                {/* ────────────────────────────────────────────────────── */}
-
-                {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
-                {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
-                  renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
-                )}
-
-                {/* Slow Rotor */}
-                {renderRotorView('SLOW', 'leftRotor', config.leftRotor.type, true)}
-
-                {/* Middle Rotor */}
-                {renderRotorView('MID', 'middleRotor', config.middleRotor.type, true)}
-
-                {/* Fast Rotor */}
-                {renderRotorView('FAST', 'rightRotor', config.rightRotor.type, true)}
+                  <button
+                    type="button"
+                    onClick={() => setShowChamber(false)}
+                    className="text-[10px] sm:text-[11px] font-monospaced-technical text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-1 cursor-pointer border border-[#4e453b] px-2.5 py-1 rounded-md bg-[#120e04]/60 transition-all font-bold tracking-wider"
+                    title="Close Scrambler Chamber"
+                  >
+                    <span className="material-symbols-outlined text-xs">close</span>
+                    <span>CLOSE</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Battery Switch */}
-              {showBatterySwitch && (
-                <div className={`flex justify-center items-center w-full ${compactMode ? 'max-w-[145px] mx-auto' : 'max-w-[160px] mx-auto'}`}>
-                  <BatterySwitch
-                    mode={batteryMode}
-                    onChangeMode={handleSetBatteryMode}
-                    compact={false}
-                    onClose={() => {
-                      setShowBatterySwitch(false);
-                      try {
-                        localStorage.setItem('enigma_show_battery_switch', 'false');
-                      } catch (e) {}
-                    }}
-                  />
+              <div className="space-y-3 max-w-xl mx-auto pt-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18130a] px-2 sm:px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowRotorModal(true)}
+                      className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                      title="Open Quick Rotor Settings Pop-Up Window"
+                    >
+                      <span className="material-symbols-outlined text-sm">settings_overscan</span>
+                      <span>ROTOR SETTINGS</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPlugModal(true)}
+                      className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                      title="Open Quick Plugboard Settings Pop-Up Window"
+                    >
+                      <span className="material-symbols-outlined text-sm">settings_ethernet</span>
+                      <span>PLUG SETTINGS</span>
+                      <span className="bg-[#ebc238]/20 text-[#ebc238] px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
+                        {Object.keys(config.plugboard || {}).length / 2} pairs
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCodebookModal(true)}
+                      className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                      title="Open Codebook Key Sheets Quick Window"
+                    >
+                      <span className="material-symbols-outlined text-sm">menu_book</span>
+                      <span>CODEBOOK</span>
+                    </button>
+                  </div>
+                  <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
+                    Reflector: <span className="text-[#ebc238] font-bold">{config.reflector.type}</span>
+                  </div>
                 </div>
-              )}
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2 sm:p-2.5 rounded-xl border border-[#3b3426]">
+                  <div className={`grid ${
+                    config.reflector.type === 'UKW-Dual-Dynamic'
+                      ? (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-5 sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md')
+                      : (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md' : 'grid-cols-3 sm:grid-cols-3 max-w-xs sm:max-w-sm')
+                  } gap-1 sm:gap-2 w-full mx-auto`}>
+                    {/* ─── UKW-Dual-Dynamic─── */}
+                    {config.reflector.type === 'UKW-Dual-Dynamic' && (
+                      <div className="bg-[#18130b] rounded-lg p-1.5 sm:p-2 border border-[#3b3426] flex flex-col items-center max-w-[76px] sm:max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
+                        <span className="text-[7.5px] sm:text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider whitespace-nowrap">
+                          UKW-ROTOR
+                        </span>
+                        <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-9 sm:w-12 h-11 sm:h-13 flex items-center justify-center my-0.5 overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => handleManualRotorStep('reflector', 1)}
+                            className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                            title="Rotate Reflector Up (manual)"
+                          >
+                            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_less</span>
+                          </button>
+                          <span key={config.reflector.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-base sm:text-xl font-bold select-none animate-rotor-step">
+                            {formatRotorPos(config.reflector.current, ringFormat)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleManualRotorStep('reflector', -1)}
+                            className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                            title="Rotate Reflector Down (manual)"
+                          >
+                            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_more</span>
+                          </button>
+                        </div>
+                        <div className="flex flex-col items-center mt-0.5 w-full">
+                          <span className="text-[7px] sm:text-[8px] text-[#83715d] font-monospaced-technical whitespace-nowrap">
+                            Dynamic Stator
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => randomizeRotorGrundstellung('reflector')}
+                            className="mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none"
+                            title="Randomize Reflector Grundstellung"
+                          >
+                            <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
+                            <span className="hidden xs:inline">Rand</span>
+                            <span className="inline xs:hidden">R</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {/* ────────────────────────────────────────────────────── */}
+
+                    {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
+                    {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+                      renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
+                    )}
+
+                    {/* Slow Rotor */}
+                    {renderRotorView('SLOW', 'leftRotor', config.leftRotor.type, true)}
+
+                    {/* Middle Rotor */}
+                    {renderRotorView('MID', 'middleRotor', config.middleRotor.type, true)}
+
+                    {/* Fast Rotor */}
+                    {renderRotorView('FAST', 'rightRotor', config.rightRotor.type, true)}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+
+          {showBatterySwitch && (
+            <div className={`${showChamber ? 'lg:col-span-4' : 'lg:col-span-12'}`}>
+              <BatterySwitch
+                mode={batteryMode}
+                onChangeMode={handleSetBatteryMode}
+                isPanel={true}
+                onClose={() => {
+                  setShowBatterySwitch(false);
+                  try {
+                    localStorage.setItem('enigma_show_battery_switch', 'false');
+                  } catch (e) {}
+                }}
+              />
+            </div>
+          )}
+        </div>
       )}
 
       {/* Plugboard Settings Section (Steckerbrett) */}

@@ -6,10 +6,17 @@ interface BatterySwitchProps {
   mode: BatterySwitchMode;
   onChangeMode: (mode: BatterySwitchMode) => void;
   compact?: boolean;
+  isPanel?: boolean;
   onClose?: () => void;
 }
 
-export const BatterySwitch: React.FC<BatterySwitchProps> = ({ mode, onChangeMode, compact = false, onClose }) => {
+export const BatterySwitch: React.FC<BatterySwitchProps> = ({
+  mode,
+  onChangeMode,
+  compact = false,
+  isPanel = false,
+  onClose
+}) => {
   const getAngle = (m: BatterySwitchMode) => {
     switch (m) {
       case 'hell': return -54;
@@ -29,6 +36,227 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({ mode, onChangeMode
     { id: 'sammler', label: 'Sammler 4V' }
   ];
 
+  // Shared SVG rendering
+  const renderSvgElement = (heightClass: string) => (
+    <svg viewBox="0 0 200 135" className="w-full h-full overflow-visible">
+      <defs>
+        {/* Wrinkled dark metallic panel texture gradient */}
+        <radialGradient id="panelGrad" cx="50%" cy="50%" r="70%">
+          <stop offset="0%" stopColor="#211b12" />
+          <stop offset="100%" stopColor="#0d0a06" />
+        </radialGradient>
+
+        {/* Brass finish gradient */}
+        <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#f7ea9b" />
+          <stop offset="40%" stopColor="#d8b240" />
+          <stop offset="80%" stopColor="#8f6f1c" />
+          <stop offset="100%" stopColor="#57420e" />
+        </linearGradient>
+
+        {/* Bakelite knob gradient */}
+        <radialGradient id="bakeliteBody" cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#4a2d1d" />
+          <stop offset="40%" stopColor="#28170e" />
+          <stop offset="85%" stopColor="#140b06" />
+          <stop offset="100%" stopColor="#090402" />
+        </radialGradient>
+
+        {/* Arc plate filter shadow */}
+        <filter id="plateShadow" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.8" />
+        </filter>
+      </defs>
+
+      {/* Background Textured Plate */}
+      <rect x="0" y="0" width="200" height="135" rx="6" fill="url(#panelGrad)" />
+
+      {/* Center Axle Screwhole */}
+      <circle cx="100" cy="92" r="6" fill="#080503" stroke="#2d2215" strokeWidth="1.2" />
+
+      {/* Pure White Porcelain / Enamel Arc Scale Plate */}
+      <path
+        d="M 32,92 A 68,68 0 0,1 168,92"
+        fill="none"
+        stroke="#120e09"
+        strokeWidth="28"
+        strokeLinecap="round"
+        filter="url(#plateShadow)"
+      />
+      <path
+        d="M 32,92 A 68,68 0 0,1 168,92"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="25"
+        strokeLinecap="round"
+      />
+
+      {/* Screws on Porcelain Arc Ends */}
+      <g transform="translate(32, 92)">
+        <circle cx="0" cy="0" r="3.2" fill="url(#brassGrad)" stroke="#1a1106" strokeWidth="0.6" />
+        <line x1="-2" y1="-0.8" x2="2" y2="0.8" stroke="#0a0602" strokeWidth="0.8" />
+      </g>
+      <g transform="translate(168, 92)">
+        <circle cx="0" cy="0" r="3.2" fill="url(#brassGrad)" stroke="#1a1106" strokeWidth="0.6" />
+        <line x1="-2" y1="0.8" x2="2" y2="-0.8" stroke="#0a0602" strokeWidth="0.8" />
+      </g>
+
+      {/* HIGH-CONTRAST BLACK GERMAN LABELS DIRECTLY ON WHITE ENAMEL ARC */}
+      {/* Label: hell (-54 deg) */}
+      <g transform="translate(100, 92) rotate(-54)">
+        <text x="0" y="-68" fontSize="9.5" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
+          hell
+        </text>
+        <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
+      </g>
+
+      {/* Label: Batterie (-32 deg) */}
+      <g transform="translate(100, 92) rotate(-32)">
+        <text x="0" y="-68" fontSize="8" fontWeight="800" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
+          Batterie
+        </text>
+      </g>
+
+      {/* Label: dkl (-10 deg) */}
+      <g transform="translate(100, 92) rotate(-10)">
+        <text x="0" y="-68" fontSize="9.5" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
+          dkl
+        </text>
+        <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
+      </g>
+
+      {/* Label: aus (16 deg) */}
+      <g transform="translate(100, 92) rotate(16)">
+        <text x="0" y="-68" fontSize="9.5" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
+          aus
+        </text>
+        <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
+      </g>
+
+      {/* Label: Sammler 4V (50 deg) */}
+      <g transform="translate(100, 92) rotate(50)">
+        <text x="0" y="-68" fontSize="8" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
+          Sammler 4V
+        </text>
+        <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
+      </g>
+
+      {/* Brass Binding Posts (4V Accumulator terminals on far right) */}
+      <g transform="translate(182, 38)">
+        <circle cx="0" cy="0" r="5.5" fill="url(#brassGrad)" stroke="#38290a" strokeWidth="0.8" />
+        <circle cx="0" cy="0" r="2" fill="#fce484" />
+        <line x1="-2.8" y1="0" x2="2.8" y2="0" stroke="#261b05" strokeWidth="0.8" />
+      </g>
+      <g transform="translate(182, 62)">
+        <circle cx="0" cy="0" r="5.5" fill="url(#brassGrad)" stroke="#38290a" strokeWidth="0.8" />
+        <circle cx="0" cy="0" r="2" fill="#fce484" />
+        <line x1="-2.8" y1="0" x2="2.8" y2="0" stroke="#261b05" strokeWidth="0.8" />
+      </g>
+
+      {/* ROTATING BAKELITE KNOB WITH DOUBLE-ENDED BRASS ARROW */}
+      <g
+        transform={`translate(100, 92) rotate(${angle})`}
+        className="transition-transform duration-300 ease-out cursor-pointer"
+        onClick={() => {
+          const order: BatterySwitchMode[] = ['hell', 'dkl', 'aus', 'sammler'];
+          const idx = order.indexOf(mode);
+          onChangeMode(order[(idx + 1) % order.length]);
+        }}
+      >
+        {/* Knob Base Outer Circle */}
+        <circle cx="0" cy="0" r="32" fill="#0a0604" stroke="#281a10" strokeWidth="1.2" />
+        <circle cx="0" cy="0" r="29" fill="url(#bakeliteBody)" stroke="#110a06" strokeWidth="0.8" />
+
+        {/* Raised Teardrop Bakelite Handle Bar */}
+        <path
+          d="M -10,-38 C -10,-44 10,-44 10,-38 L 12,38 C 12,44 -12,44 -12,38 Z"
+          fill="url(#bakeliteBody)"
+          stroke="#050302"
+          strokeWidth="1"
+          filter="url(#plateShadow)"
+        />
+
+        {/* Inner Handle Grip Ridge */}
+        <path
+          d="M -7,-34 L 7,-34 L 8,34 L -8,34 Z"
+          fill="#211209"
+          stroke="#382012"
+          strokeWidth="0.6"
+        />
+
+        {/* Center Brass Hub Screw */}
+        <circle cx="0" cy="0" r="5" fill="url(#brassGrad)" stroke="#2d1f07" strokeWidth="0.8" />
+        <circle cx="0" cy="0" r="1.8" fill="#120c04" />
+
+        {/* DOUBLE-ENDED BRASS ARROW INDICATOR */}
+        <g transform="translate(0, 0)">
+          {/* Top Arrow Pointer (Points directly to white arc scale label) */}
+          <path d="M 0,-28 L -5,-19 L -2,-19 L -2,-5 L 2,-5 L 2,-19 L 5,-19 Z" fill="url(#brassGrad)" stroke="#3d2c08" strokeWidth="0.5" />
+          {/* Bottom Arrow Pointer */}
+          <path d="M 0,28 L -5,19 L -2,19 L -2,5 L 2,5 L 2,19 L 5,19 Z" fill="url(#brassGrad)" stroke="#3d2c08" strokeWidth="0.5" />
+        </g>
+      </g>
+    </svg>
+  );
+
+  // If rendering as a standalone Panel (Card layout)
+  if (isPanel) {
+    return (
+      <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal transition-all animate-fade-in flex flex-col h-full select-none w-full">
+        {/* Panel Header */}
+        <div className="flex justify-between items-center mb-4 pb-2 border-b border-[#3b3426]">
+          <h2 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-widest flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm text-[#ebc238]">bolt</span>
+            BATTERIESCHALTER
+          </h2>
+          {onClose && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="text-[10px] sm:text-[11px] font-monospaced-technical text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-1 cursor-pointer border border-[#4e453b] px-2.5 py-1 rounded-md bg-[#120e04]/60 transition-all font-bold tracking-wider"
+              title="Close Battery Switch"
+            >
+              <span className="material-symbols-outlined text-xs">close</span>
+              <span>CLOSE</span>
+            </button>
+          )}
+        </div>
+
+        {/* Switch Graphical Dial */}
+        <div className="flex-1 flex flex-col justify-center items-center py-2">
+          <div className="relative flex items-center justify-center bg-[#18130b] rounded-lg border border-[#2d2518] p-1.5 shadow-inner w-full max-w-[240px] h-32 sm:h-36 my-1">
+            {renderSvgElement('h-32 sm:h-36')}
+          </div>
+        </div>
+
+        {/* Buttons underneath */}
+        <div className="flex items-center justify-center gap-2 mt-4 w-full font-monospaced-technical text-xs">
+          {modes.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => onChangeMode(m.id)}
+              className={`min-w-[54px] sm:min-w-[64px] text-center rounded border transition-all cursor-pointer font-bold px-2 py-1.5 text-xs ${
+                mode === m.id
+                  ? m.id === 'aus'
+                    ? 'bg-[#b91c1c] text-white border-[#b91c1c] shadow-md shadow-[#b91c1c]/20'
+                    : 'bg-[#ebc238] text-[#25190b] border-[#ebc238] shadow-md shadow-[#ebc238]/20 font-extrabold'
+                  : 'bg-[#1a140a] text-[#8c7e6a] hover:text-[#ede1cd] border-[#3b3426] hover:border-[#4e453b]'
+              }`}
+              title={`Set Power Switch to ${m.label}`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Original compact/nested representation
   return (
     <div
       className={`relative flex flex-col items-center bg-[#100d07] rounded-xl border border-[#3b3426] shadow-2xl select-none w-full transition-all ${
@@ -57,165 +285,7 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({ mode, onChangeMode
       </div>
 
       <div className={`relative flex items-center justify-center bg-[#18130b] rounded-lg border border-[#2d2518] p-1 shadow-inner w-full ${compact ? 'h-20 my-0.5' : 'h-24 my-0.5'}`}>
-        <svg viewBox="0 0 200 135" className="w-full h-full overflow-visible">
-          <defs>
-            {/* Wrinkled dark metallic panel texture gradient */}
-            <radialGradient id="panelGrad" cx="50%" cy="50%" r="70%">
-              <stop offset="0%" stopColor="#211b12" />
-              <stop offset="100%" stopColor="#0d0a06" />
-            </radialGradient>
-
-            {/* Brass finish gradient */}
-            <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#f7ea9b" />
-              <stop offset="40%" stopColor="#d8b240" />
-              <stop offset="80%" stopColor="#8f6f1c" />
-              <stop offset="100%" stopColor="#57420e" />
-            </linearGradient>
-
-            {/* Bakelite knob gradient */}
-            <radialGradient id="bakeliteBody" cx="35%" cy="30%" r="70%">
-              <stop offset="0%" stopColor="#4a2d1d" />
-              <stop offset="40%" stopColor="#28170e" />
-              <stop offset="85%" stopColor="#140b06" />
-              <stop offset="100%" stopColor="#090402" />
-            </radialGradient>
-
-            {/* Arc plate filter shadow */}
-            <filter id="plateShadow" x="-10%" y="-10%" width="120%" height="120%">
-              <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.8" />
-            </filter>
-          </defs>
-
-          {/* Background Textured Plate */}
-          <rect x="0" y="0" width="200" height="135" rx="6" fill="url(#panelGrad)" />
-
-          {/* Center Axle Screwhole */}
-          <circle cx="100" cy="92" r="6" fill="#080503" stroke="#2d2215" strokeWidth="1.2" />
-
-          {/* Pure White Porcelain / Enamel Arc Scale Plate */}
-          <path
-            d="M 32,92 A 68,68 0 0,1 168,92"
-            fill="none"
-            stroke="#120e09"
-            strokeWidth="28"
-            strokeLinecap="round"
-            filter="url(#plateShadow)"
-          />
-          <path
-            d="M 32,92 A 68,68 0 0,1 168,92"
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="25"
-            strokeLinecap="round"
-          />
-
-          {/* Screws on Porcelain Arc Ends */}
-          <g transform="translate(32, 92)">
-            <circle cx="0" cy="0" r="3.2" fill="url(#brassGrad)" stroke="#1a1106" strokeWidth="0.6" />
-            <line x1="-2" y1="-0.8" x2="2" y2="0.8" stroke="#0a0602" strokeWidth="0.8" />
-          </g>
-          <g transform="translate(168, 92)">
-            <circle cx="0" cy="0" r="3.2" fill="url(#brassGrad)" stroke="#1a1106" strokeWidth="0.6" />
-            <line x1="-2" y1="0.8" x2="2" y2="-0.8" stroke="#0a0602" strokeWidth="0.8" />
-          </g>
-
-          {/* HIGH-CONTRAST BLACK GERMAN LABELS DIRECTLY ON WHITE ENAMEL ARC */}
-          {/* Label: hell (-54 deg) */}
-          <g transform="translate(100, 92) rotate(-54)">
-            <text x="0" y="-68" fontSize="9.5" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
-              hell
-            </text>
-            <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
-          </g>
-
-          {/* Label: Batterie (-32 deg) */}
-          <g transform="translate(100, 92) rotate(-32)">
-            <text x="0" y="-68" fontSize="8" fontWeight="800" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
-              Batterie
-            </text>
-          </g>
-
-          {/* Label: dkl (-10 deg) */}
-          <g transform="translate(100, 92) rotate(-10)">
-            <text x="0" y="-68" fontSize="9.5" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
-              dkl
-            </text>
-            <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
-          </g>
-
-          {/* Label: aus (16 deg) */}
-          <g transform="translate(100, 92) rotate(16)">
-            <text x="0" y="-68" fontSize="9.5" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
-              aus
-            </text>
-            <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
-          </g>
-
-          {/* Label: Sammler 4V (50 deg) */}
-          <g transform="translate(100, 92) rotate(50)">
-            <text x="0" y="-68" fontSize="8" fontWeight="900" fill="#000000" textAnchor="middle" fontFamily="Georgia, 'Times New Roman', serif">
-              Sammler 4V
-            </text>
-            <line x1="0" y1="-62" x2="0" y2="-57" stroke="#000000" strokeWidth="1.8" strokeLinecap="round" />
-          </g>
-
-          {/* Brass Binding Posts (4V Accumulator terminals on far right) */}
-          <g transform="translate(182, 38)">
-            <circle cx="0" cy="0" r="5.5" fill="url(#brassGrad)" stroke="#38290a" strokeWidth="0.8" />
-            <circle cx="0" cy="0" r="2" fill="#fce484" />
-            <line x1="-2.8" y1="0" x2="2.8" y2="0" stroke="#261b05" strokeWidth="0.8" />
-          </g>
-          <g transform="translate(182, 62)">
-            <circle cx="0" cy="0" r="5.5" fill="url(#brassGrad)" stroke="#38290a" strokeWidth="0.8" />
-            <circle cx="0" cy="0" r="2" fill="#fce484" />
-            <line x1="-2.8" y1="0" x2="2.8" y2="0" stroke="#261b05" strokeWidth="0.8" />
-          </g>
-
-          {/* ROTATING BAKELITE KNOB WITH DOUBLE-ENDED BRASS ARROW */}
-          <g
-            transform={`translate(100, 92) rotate(${angle})`}
-            className="transition-transform duration-300 ease-out cursor-pointer"
-            onClick={() => {
-              const order: BatterySwitchMode[] = ['hell', 'dkl', 'aus', 'sammler'];
-              const idx = order.indexOf(mode);
-              onChangeMode(order[(idx + 1) % order.length]);
-            }}
-          >
-            {/* Knob Base Outer Circle */}
-            <circle cx="0" cy="0" r="32" fill="#0a0604" stroke="#281a10" strokeWidth="1.2" />
-            <circle cx="0" cy="0" r="29" fill="url(#bakeliteBody)" stroke="#110a06" strokeWidth="0.8" />
-
-            {/* Raised Teardrop Bakelite Handle Bar */}
-            <path
-              d="M -10,-38 C -10,-44 10,-44 10,-38 L 12,38 C 12,44 -12,44 -12,38 Z"
-              fill="url(#bakeliteBody)"
-              stroke="#050302"
-              strokeWidth="1"
-              filter="url(#plateShadow)"
-            />
-
-            {/* Inner Handle Grip Ridge */}
-            <path
-              d="M -7,-34 L 7,-34 L 8,34 L -8,34 Z"
-              fill="#211209"
-              stroke="#382012"
-              strokeWidth="0.6"
-            />
-
-            {/* Center Brass Hub Screw */}
-            <circle cx="0" cy="0" r="5" fill="url(#brassGrad)" stroke="#2d1f07" strokeWidth="0.8" />
-            <circle cx="0" cy="0" r="1.8" fill="#120c04" />
-
-            {/* DOUBLE-ENDED BRASS ARROW INDICATOR */}
-            <g transform="translate(0, 0)">
-              {/* Top Arrow Pointer (Points directly to white arc scale label) */}
-              <path d="M 0,-28 L -5,-19 L -2,-19 L -2,-5 L 2,-5 L 2,-19 L 5,-19 Z" fill="url(#brassGrad)" stroke="#3d2c08" strokeWidth="0.5" />
-              {/* Bottom Arrow Pointer */}
-              <path d="M 0,28 L -5,19 L -2,19 L -2,5 L 2,5 L 2,19 L 5,19 Z" fill="url(#brassGrad)" stroke="#3d2c08" strokeWidth="0.5" />
-            </g>
-          </g>
-        </svg>
+        {renderSvgElement(compact ? 'h-20' : 'h-24')}
       </div>
 
       {/* Quick Select Mode Buttons */}
