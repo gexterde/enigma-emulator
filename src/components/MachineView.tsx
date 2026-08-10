@@ -96,6 +96,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
   const [showPlugModal, setShowPlugModal] = useState<boolean>(false);
   const [showCodebookModal, setShowCodebookModal] = useState<boolean>(false);
   const [showChamber, setShowChamber] = useState<boolean>(true);
+  const [showHeader, setShowHeader] = useState<boolean>(true);
+  const [showTape, setShowTape] = useState<boolean>(true);
+  const [chamberCollapsed, setChamberCollapsed] = useState<boolean>(false);
+  const [headerCollapsed, setHeaderCollapsed] = useState<boolean>(false);
+  const [tapeCollapsed, setTapeCollapsed] = useState<boolean>(false);
   const [showSignalAnimation, setShowSignalAnimation] = useState<boolean>(false);
   const [keyboardBulbsOnly, setKeyboardBulbsOnly] = useState<boolean>(false);
 
@@ -571,7 +576,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
             Dim Idle Bulbs {dimIdleLights ? 'ON' : 'OFF'}
           </button>
 
-          {!keyboardBulbsOnly && !isCompactMode && (
+          {!keyboardBulbsOnly && (
             <>
               <button
                 type="button"
@@ -581,43 +586,65 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
                     : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
                 }`}
-                title="Toggle Scrambler Chamber Visibility"
+                title="Toggle Rotors / Scrambler Chamber Visibility"
               >
                 <span className="material-symbols-outlined text-sm">
                   {showChamber ? 'visibility' : 'visibility_off'}
                 </span>
-                Chamber
+                Rotors
               </button>
-
-              {/* <button
-                type="button"
-                onClick={() => setShowPlugboard(!showPlugboard)}
-                className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
-                  showPlugboard
-                    ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
-                    : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
-                }`}
-                title="Toggle Plugboard Visibility"
-              >
-                <span className="material-symbols-outlined text-sm">
-                  {showPlugboard ? 'visibility' : 'visibility_off'}
-                </span>
-                Plugboard ({plugboardPairsCount})
-              </button> */}
 
               <button
                 type="button"
-                onClick={() => setShowSignalAnimation(!showSignalAnimation)}
+                onClick={() => {
+                  setHeaderCollapsed(!headerCollapsed);
+                }}
                 className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
-                  showSignalAnimation
+                  showTape && !tapeCollapsed && !headerCollapsed
                     ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
                     : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
                 }`}
-                title="Toggle Signal Path Visualizer"
+                title="Toggle Funktelegramm Message Header Visibility"
               >
-                <span className="material-symbols-outlined text-sm">timeline</span>
-                Signal Path
+                <span className="material-symbols-outlined text-sm">
+                  {showTape && !tapeCollapsed && !headerCollapsed ? 'visibility' : 'visibility_off'}
+                </span>
+                Header
               </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setTapeCollapsed(!tapeCollapsed);
+                }}
+                className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  showTape && !tapeCollapsed
+                    ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
+                    : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                }`}
+                title="Toggle Paper Tape Visibility"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {showTape && !tapeCollapsed ? 'visibility' : 'visibility_off'}
+                </span>
+                Tape
+              </button>
+
+              {!isCompactMode && (
+                <button
+                  type="button"
+                  onClick={() => setShowSignalAnimation(!showSignalAnimation)}
+                  className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                    showSignalAnimation
+                      ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
+                      : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                  }`}
+                  title="Toggle Signal Path Visualizer"
+                >
+                  <span className="material-symbols-outlined text-sm">timeline</span>
+                  Signal Path
+                </button>
+              )}
             </>
           )}
 
@@ -645,44 +672,94 @@ export const MachineView: React.FC<MachineViewProps> = ({
             </div>
           )}
 
-          {/* Output Tape */}
-          {!keyboardBulbsOnly && (
-            <div className="bg-[#1b1710]/90 p-3 rounded-xl border border-[#3d3526] shadow-lg flex flex-col gap-2 w-full">
-              <div className="flex items-center justify-between px-1">
+          {/* Output Tape in Compact Mode */}
+          {!keyboardBulbsOnly && showTape && (
+            <div className="bg-[#1b1710]/90 p-3 rounded-xl border border-[#3d3526] shadow-lg flex flex-col gap-2 w-full animate-fade-in">
+              <div className="flex flex-wrap items-center justify-between gap-2 px-1 border-b border-[#3d3526]/50 pb-2">
                 <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] tracking-wider uppercase flex items-center gap-1.5 font-bold">
                   <span className="material-symbols-outlined text-xs text-[#ebc238]">receipt_long</span>
                   OUTPUT TAPE
                 </span>
-                <div className="flex items-center gap-1">
+
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  {/* Grouping: 5s, 4s, None */}
+                  <div className="flex items-center gap-1">
+                    <span className="text-[9px] font-monospaced-technical text-[#8c7e6a] hidden xs:inline">Group:</span>
+                    {[5, 4, 0].map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => setActiveGroupSize(size)}
+                        className={`text-[9px] sm:text-[10px] font-monospaced-technical px-1.5 sm:px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                          activeGroupSize === size
+                            ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-sm'
+                            : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426] hover:bg-[#3b3426]'
+                        }`}
+                        title={size === 0 ? 'No grouping' : `Group text into ${size}-letter blocks`}
+                      >
+                        {size === 0 ? 'None' : `${size}s`}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Clear Tape button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInputTape('');
+                      setCipherTape('');
+                    }}
+                    className="text-[9px] sm:text-[10px] font-monospaced-technical text-[#ffdad6] bg-[#93000a]/40 hover:bg-[#93000a] px-2 py-0.5 rounded border border-red-800/40 transition-colors flex items-center gap-1 cursor-pointer font-bold"
+                    title="Clear Tape Content"
+                  >
+                    <span className="material-symbols-outlined text-[12px]">backspace</span>
+                    <span>Clear Tape</span>
+                  </button>
+
+                  {/* Copy button */}
                   <button
                     type="button"
                     onClick={() => cipherTape && navigator.clipboard.writeText(formatTapeText(cipherTape))}
-                    className="p-1 text-[#8c7e6a] hover:text-[#e3c193] transition-colors rounded cursor-pointer"
+                    disabled={!cipherTape}
+                    className={`p-1 rounded border transition-colors cursor-pointer flex items-center ${
+                      cipherTape
+                        ? 'text-[#8c7e6a] hover:text-[#ebc238] border-[#3b3426] hover:border-[#ebc238]/40 bg-[#18130a]'
+                        : 'opacity-40 text-[#554e42] border-transparent cursor-not-allowed'
+                    }`}
                     title="Copy Output Tape"
                     aria-label="Copy Output"
                   >
-                    <span className="material-symbols-outlined text-sm">content_copy</span>
+                    <span className="material-symbols-outlined text-xs sm:text-sm">content_copy</span>
                   </button>
+
+                  {/* Close / Show Button */}
                   <button
                     type="button"
-                    onClick={() => { setInputTape(''); setCipherTape(''); }}
-                    className="p-1 text-[#8c7e6a] hover:text-[#ff8a80] transition-colors rounded cursor-pointer"
-                    title="Clear Output Tape"
-                    aria-label="Clear Output"
+                    onClick={() => {
+                      setTapeCollapsed(!tapeCollapsed);
+                    }}
+                    className="text-[10px] sm:text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-0.5 cursor-pointer ml-0.5 border border-[#3b3426] px-1.5 py-0.5 rounded bg-[#120e04]"
+                    title={tapeCollapsed ? 'Show Output Tape' : 'Close Output Tape'}
                   >
-                    <span className="material-symbols-outlined text-sm">backspace</span>
+                    <span className="material-symbols-outlined text-sm">
+                      {tapeCollapsed ? 'expand_more' : 'expand_less'}
+                    </span>
+                    <span>{tapeCollapsed ? 'Show' : 'Close'}</span>
                   </button>
                 </div>
               </div>
-              <div className="paper-tape min-h-[44px] max-h-[80px] w-full px-3 py-2 font-monospaced-technical text-[#2b261f] overflow-y-auto break-all tracking-widest text-sm sm:text-base font-bold rounded shadow-inner flex items-center justify-between">
-                <span>{formatTapeText(cipherTape) || <span className="text-[#8c7e6a] italic font-normal text-xs">Tape output will appear here as you type...</span>}</span>
-              </div>
+
+              {!tapeCollapsed && (
+                <div className="paper-tape min-h-[44px] max-h-[80px] w-full px-3 py-2 font-monospaced-technical text-[#2b261f] overflow-y-auto break-all tracking-widest text-sm sm:text-base font-bold rounded shadow-inner flex items-center justify-between">
+                  <span>{formatTapeText(cipherTape) || <span className="text-[#8c7e6a] italic font-normal text-xs">Tape output will appear here as you type...</span>}</span>
+                </div>
+              )}
             </div>
           )}
 
           {/* Message Header (Funktelegramm-Kopf) in Compact Mode */}
-          {!keyboardBulbsOnly && (
-            <div className="bg-[#1b1710]/90 p-3.5 rounded-xl border border-[#3d3526] shadow-lg space-y-3">
+          {!keyboardBulbsOnly && showTape && !tapeCollapsed && (
+            <div className="bg-[#1b1710]/90 p-3.5 rounded-xl border border-[#3d3526] shadow-lg space-y-3 animate-fade-in">
               <div className="flex items-center justify-between border-b border-[#3b3426] pb-1.5">
                 <div className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[15px] text-[#ebc238]">fact_check</span>
@@ -690,248 +767,286 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     Funktelegramm Header (Message Header)
                   </span>
                 </div>
-                <span className="text-[9px] text-[#8c7e6a] font-mono uppercase tracking-widest">
-                  M3 / M4 Procedure
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] text-[#8c7e6a] font-mono uppercase tracking-widest hidden xs:inline">
+                    M3 / M4 Procedure
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setHeaderCollapsed(!headerCollapsed)}
+                    className="text-[10px] sm:text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-0.5 cursor-pointer border border-[#3b3426] px-1.5 py-0.5 rounded bg-[#120e04]"
+                    title={headerCollapsed ? 'Show Message Header' : 'Close Message Header'}
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      {headerCollapsed ? 'expand_more' : 'expand_less'}
+                    </span>
+                    <span>{headerCollapsed ? 'Show' : 'Close'}</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* 1. Preamble */}
-                <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                      1. Preamble (Präambel)
-                    </span>
-                    <span className="text-[9px] text-[#8c7e6a] font-mono">Cleartext</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1">
-                    <div>
-                      <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Sender Call Sign">
-                        Sender
-                      </label>
-                      <input
-                        type="text"
-                        value={senderCallSign}
-                        onChange={(e) => setSenderCallSign(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5))}
-                        placeholder="DFS"
-                        className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                        title="Sender identification call sign (Clear text)"
-                      />
+              {!headerCollapsed && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* 1. Preamble */}
+                    <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                          1. Preamble (Präambel)
+                        </span>
+                        <span className="text-[9px] text-[#8c7e6a] font-mono">Cleartext</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <div>
+                          <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Sender Call Sign">
+                            Sender
+                          </label>
+                          <input
+                            type="text"
+                            value={senderCallSign}
+                            onChange={(e) => setSenderCallSign(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5))}
+                            placeholder="DFS"
+                            className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                            title="Sender identification call sign (Clear text)"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5 flex justify-between items-center" title="Time of Transmission">
+                            <span>Time</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const d = new Date();
+                                const hours = String(d.getHours()).padStart(2, '0');
+                                const mins = String(d.getMinutes()).padStart(2, '0');
+                                setTransmissionTime(`${hours}${mins}`);
+                                playRotorClickSound(soundEnabled);
+                              }}
+                              className="text-[8px] text-[#ebc238] hover:underline cursor-pointer font-bold"
+                              title="Set to Current Time"
+                            >
+                              Now
+                            </button>
+                          </label>
+                          <input
+                            type="text"
+                            value={transmissionTime}
+                            onChange={(e) => setTransmissionTime(e.target.value.replace(/[^0-9]/g, '').substring(0, 4))}
+                            placeholder="1200"
+                            className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                            title="Time of transmission (HHMM clear text)"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Total Letter Count">
+                            Letters
+                          </label>
+                          <div className="w-full bg-[#120e04] text-[#ede1cd] border border-[#3b3426] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center h-[23px] flex items-center justify-center" title="Total processed character count (letters only)">
+                            {inputTape.replace(/[^A-Z]/ig, '').length}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
+                        Formatted: <span className="text-[#ede1cd] font-semibold">{senderCallSign || '???'}</span> <span className="text-[#ede1cd] font-semibold">{transmissionTime || '????'}</span> <span className="text-[#ede1cd] font-semibold">{inputTape.replace(/[^A-Z]/ig, '').length}</span>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5 flex justify-between items-center" title="Time of Transmission">
-                        <span>Time</span>
+
+                    {/* 2. Kenngruppe */}
+                    <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                          2. Kenngruppe (Key ID)
+                        </span>
                         <button
                           type="button"
                           onClick={() => {
-                            const d = new Date();
-                            const hours = String(d.getHours()).padStart(2, '0');
-                            const mins = String(d.getMinutes()).padStart(2, '0');
-                            setTransmissionTime(`${hours}${mins}`);
+                            setKenngruppe(getActiveCodebookKenngruppe());
                             playRotorClickSound(soundEnabled);
                           }}
-                          className="text-[8px] text-[#ebc238] hover:underline cursor-pointer font-bold"
-                          title="Set to Current Time"
+                          className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
+                          title="Load indicator group from currently active daily key"
                         >
-                          Now
+                          Sync Key
                         </button>
-                      </label>
-                      <input
-                        type="text"
-                        value={transmissionTime}
-                        onChange={(e) => setTransmissionTime(e.target.value.replace(/[^0-9]/g, '').substring(0, 4))}
-                        placeholder="1200"
-                        className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                        title="Time of transmission (HHMM clear text)"
-                      />
+                      </div>
+                      <div className="flex-1 flex flex-col justify-center">
+                        <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
+                          Indicator Group
+                        </label>
+                        <input
+                          type="text"
+                          value={kenngruppe}
+                          onChange={(e) => setKenngruppe(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4))}
+                          placeholder="UIO"
+                          className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-0.5 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                          title="Code group showing which daily key sheet to use"
+                        />
+                      </div>
+                      <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
+                        Identifies key day: <span className="text-[#ebc238] font-bold font-monospaced-technical">{kenngruppe || '—'}</span>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Total Letter Count">
-                        Letters
-                      </label>
-                      <div className="w-full bg-[#120e04] text-[#ede1cd] border border-[#3b3426] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center h-[23px] flex items-center justify-center" title="Total processed character count (letters only)">
-                        {inputTape.replace(/[^A-Z]/ig, '').length}
+
+                    {/* 3. Grundstellung */}
+                    <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                          3. Grundstellung
+                        </span>
+                        <span className="text-[9px] text-[#8c7e6a] font-mono">Position</span>
+                      </div>
+                      <div className="flex-1 flex flex-col justify-center">
+                        <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
+                          Rotor Indicator
+                        </label>
+                        <div className="flex gap-1 items-center">
+                          <input
+                            type="text"
+                            value={localGrundstellung}
+                            onChange={handleGrundstellungChange}
+                            onBlur={() => setLocalGrundstellung(getGrundstellungString())}
+                            className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-0.5 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors uppercase"
+                            maxLength={config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3}
+                            title="Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
+                          />
+                          <div className="flex flex-col gap-0.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                                const isInputEmpty = inputTape === '';
+                                const nextConfig = { ...config };
+                                const nextRight = (nextConfig.rightRotor.current + 1) % 26;
+                                const nextMid = (nextConfig.middleRotor.current + 1) % 26;
+                                const nextLeft = (nextConfig.leftRotor.current + 1) % 26;
+                                nextConfig.rightRotor = { ...nextConfig.rightRotor, current: nextRight, start: isInputEmpty ? nextRight : nextConfig.rightRotor.start };
+                                nextConfig.middleRotor = { ...nextConfig.middleRotor, current: nextMid, start: isInputEmpty ? nextMid : nextConfig.middleRotor.start };
+                                nextConfig.leftRotor = { ...nextConfig.leftRotor, current: nextLeft, start: isInputEmpty ? nextLeft : nextConfig.leftRotor.start };
+                                if (isM4) {
+                                  const nextFourth = (nextConfig.fourthRotor.current + 1) % 26;
+                                  nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: nextFourth, start: isInputEmpty ? nextFourth : nextConfig.fourthRotor.start };
+                                }
+                                onUpdateConfig(nextConfig);
+                                playRotorClickSound(soundEnabled);
+                              }}
+                              className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer font-bold"
+                              title="Step all rotors forward"
+                            >
+                              +1 ALL
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                                const isInputEmpty = inputTape === '';
+                                const nextConfig = { ...config };
+                                nextConfig.rightRotor = { ...nextConfig.rightRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.rightRotor.start };
+                                nextConfig.middleRotor = { ...nextConfig.middleRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.middleRotor.start };
+                                nextConfig.leftRotor = { ...nextConfig.leftRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.leftRotor.start };
+                                if (isM4) {
+                                  nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.fourthRotor.start };
+                                }
+                                onUpdateConfig(nextConfig);
+                                playRotorClickSound(soundEnabled);
+                              }}
+                              className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer"
+                              title="Reset all rotors to A / AAAA"
+                            >
+                              RESET
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
+                        Start position: <span className="text-[#ebc238] font-bold font-monospaced-technical">{localGrundstellung || '—'}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
-                    Formatted: <span className="text-[#ede1cd] font-semibold">{senderCallSign || '???'}</span> <span className="text-[#ede1cd] font-semibold">{transmissionTime || '????'}</span> <span className="text-[#ede1cd] font-semibold">{inputTape.replace(/[^A-Z]/ig, '').length}</span>
-                  </div>
-                </div>
 
-                {/* 2. Kenngruppe */}
-                <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                      2. Kenngruppe (Key ID)
-                    </span>
+                  {/* Action buttons */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-[#3b3426]/60 justify-end">
                     <button
                       type="button"
-                      onClick={() => {
-                        setKenngruppe(getActiveCodebookKenngruppe());
-                        playRotorClickSound(soundEnabled);
-                      }}
-                      className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
-                      title="Load indicator group from currently active daily key"
+                      onClick={handleCopyHeader}
+                      className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
+                        headerCopied
+                          ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
+                          : 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]'
+                      }`}
+                      title="Copy the Funktelegramm header/preamble to clipboard"
                     >
-                      Sync Key
+                      <span className="material-symbols-outlined text-[14px]">
+                        {headerCopied ? 'done' : 'content_copy'}
+                      </span>
+                      {headerCopied ? 'Header Copied!' : 'Copy Header'}
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={handleCopyFullMessage}
+                      disabled={!cipherTape}
+                      className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
+                        !cipherTape
+                          ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
+                          : fullMessageCopied
+                          ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
+                          : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
+                      }`}
+                      title="Copy full transmission (Header + Ciphertext) to clipboard"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">
+                        {fullMessageCopied ? 'done' : 'forward_to_inbox'}
+                      </span>
+                      {fullMessageCopied ? 'Message Copied!' : 'Copy Full Message'}
                     </button>
                   </div>
-                  <div className="flex-1 flex flex-col justify-center">
-                    <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
-                      Indicator Group
-                    </label>
-                    <input
-                      type="text"
-                      value={kenngruppe}
-                      onChange={(e) => setKenngruppe(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4))}
-                      placeholder="UIO"
-                      className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-0.5 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                      title="Code group showing which daily key sheet to use"
-                    />
-                  </div>
-                  <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
-                    Identifies key day: <span className="text-[#ebc238] font-bold font-monospaced-technical">{kenngruppe || '—'}</span>
-                  </div>
-                </div>
-
-                {/* 3. Grundstellung */}
-                <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                      3. Grundstellung
-                    </span>
-                    <span className="text-[9px] text-[#8c7e6a] font-mono">Position</span>
-                  </div>
-                  <div className="flex-1 flex flex-col justify-center">
-                    <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
-                      Rotor Indicator
-                    </label>
-                    <div className="flex gap-1 items-center">
-                      <input
-                        type="text"
-                        value={localGrundstellung}
-                        onChange={handleGrundstellungChange}
-                        onBlur={() => setLocalGrundstellung(getGrundstellungString())}
-                        className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-0.5 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors uppercase"
-                        maxLength={config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3}
-                        title="Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
-                      />
-                      <div className="flex flex-col gap-0.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-                            const nextConfig = { ...config };
-                            nextConfig.rightRotor = { ...nextConfig.rightRotor, current: (nextConfig.rightRotor.current + 1) % 26, start: (nextConfig.rightRotor.current + 1) % 26 };
-                            nextConfig.middleRotor = { ...nextConfig.middleRotor, current: (nextConfig.middleRotor.current + 1) % 26, start: (nextConfig.middleRotor.current + 1) % 26 };
-                            nextConfig.leftRotor = { ...nextConfig.leftRotor, current: (nextConfig.leftRotor.current + 1) % 26, start: (nextConfig.leftRotor.current + 1) % 26 };
-                            if (isM4) {
-                              nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: (nextConfig.fourthRotor.current + 1) % 26, start: (nextConfig.fourthRotor.current + 1) % 26 };
-                            }
-                            onUpdateConfig(nextConfig);
-                            playRotorClickSound(soundEnabled);
-                          }}
-                          className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer font-bold"
-                          title="Step all rotors forward"
-                        >
-                          +1 ALL
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-                            const nextConfig = { ...config };
-                            nextConfig.rightRotor = { ...nextConfig.rightRotor, current: 0, start: 0 };
-                            nextConfig.middleRotor = { ...nextConfig.middleRotor, current: 0, start: 0 };
-                            nextConfig.leftRotor = { ...nextConfig.leftRotor, current: 0, start: 0 };
-                            if (isM4) {
-                              nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: 0, start: 0 };
-                            }
-                            onUpdateConfig(nextConfig);
-                            playRotorClickSound(soundEnabled);
-                          }}
-                          className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer"
-                          title="Reset all rotors to A / AAAA"
-                        >
-                          RESET
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
-                    Start position: <span className="text-[#ebc238] font-bold font-monospaced-technical">{localGrundstellung || '—'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex flex-wrap gap-2 pt-2 border-t border-[#3b3426]/60 justify-end">
-                <button
-                  type="button"
-                  onClick={handleCopyHeader}
-                  className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
-                    headerCopied
-                      ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                      : 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]'
-                  }`}
-                  title="Copy the Funktelegramm header/preamble to clipboard"
-                >
-                  <span className="material-symbols-outlined text-[14px]">
-                    {headerCopied ? 'done' : 'content_copy'}
-                  </span>
-                  {headerCopied ? 'Header Copied!' : 'Copy Header'}
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={handleCopyFullMessage}
-                  disabled={!cipherTape}
-                  className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
-                    !cipherTape
-                      ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
-                      : fullMessageCopied
-                      ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                      : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
-                  }`}
-                  title="Copy full transmission (Header + Ciphertext) to clipboard"
-                >
-                  <span className="material-symbols-outlined text-[14px]">
-                    {fullMessageCopied ? 'done' : 'forward_to_inbox'}
-                  </span>
-                  {fullMessageCopied ? 'Message Copied!' : 'Copy Full Message'}
-                </button>
-              </div>
+                </>
+              )}
             </div>
           )}
 
           {/* Rotor Bay (Walzenlage) */}
-          {!keyboardBulbsOnly && (
-            <div className="metal-plate p-3 rounded-xl shadow-md">
+          {!keyboardBulbsOnly && showChamber && (
+            <div className="metal-plate p-3 rounded-xl shadow-md animate-fade-in">
               <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#3d3526]/60 px-1">
                 <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] tracking-widest uppercase flex items-center gap-1 font-bold">
                   <span className="material-symbols-outlined text-xs text-[#ebc238]">tune</span>
                   WALZENLAGE (ROTORS)
                 </span>
-                <div className="flex items-center gap-1 text-[10px] font-monospaced-technical">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-[10px] font-monospaced-technical">
+                    <button
+                      type="button"
+                      onClick={() => handleSetRingFormat('number')}
+                      className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'number' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
+                    >
+                      01–26
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSetRingFormat('letter')}
+                      className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'letter' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
+                    >
+                      A–Z
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => handleSetRingFormat('number')}
-                    className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'number' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
+                    onClick={() => setChamberCollapsed(!chamberCollapsed)}
+                    className="text-[10px] sm:text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-0.5 cursor-pointer border border-[#3b3426] px-1.5 py-0.5 rounded bg-[#120e04]"
+                    title={chamberCollapsed ? 'Show Rotors Panel' : 'Close Rotors Panel'}
                   >
-                    01–26
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSetRingFormat('letter')}
-                    className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'letter' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
-                  >
-                    A–Z
+                    <span className="material-symbols-outlined text-sm">
+                      {chamberCollapsed ? 'expand_more' : 'expand_less'}
+                    </span>
+                    <span>{chamberCollapsed ? 'Show' : 'Close'}</span>
                   </button>
                 </div>
               </div>
 
-              {/* Quick Settings Action Bar in front of Rotors */}
+              {!chamberCollapsed && (
+                <>
+                  {/* Quick Settings Action Bar in front of Rotors */}
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3 bg-[#18130a] px-2 sm:px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <button
@@ -1104,6 +1219,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 <div className="hidden sm:block h-16 w-[1px] bg-[#3b3426]/80 mx-1" />
                 <BatterySwitch mode={batteryMode} onChangeMode={handleSetBatteryMode} compact={true} />
               </div>
+                </>
+              )}
             </div>
           )}
 
@@ -1130,9 +1247,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
               )}
             </div>
 
-            <div className="space-y-2.5 w-full max-w-lg">
+            <div className="space-y-2 sm:space-y-2.5 w-full max-w-lg">
               {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
-                <div key={rIdx} className="flex justify-center gap-1.5 sm:gap-2.5">
+                <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2.5">
                   {row.map((char) => {
                     const isPowerOn = batteryMode !== 'aus';
                     const isLit = isPowerOn && litLamp === char;
@@ -1155,10 +1272,10 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     return (
                       <div
                         key={char}
-                        className={`lamp-socket w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${lampClass}`}
+                        className={`lamp-socket w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${lampClass}`}
                       >
                         <div
-                          className={`lamp-glass w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-lamp-char text-xs sm:text-sm font-bold ${idleClass}`}
+                          className={`lamp-glass w-6 h-6 xs:w-7 xs:h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-lamp-char text-[11px] xs:text-xs sm:text-sm font-bold ${idleClass}`}
                         >
                           {char}
                         </div>
@@ -1182,9 +1299,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
               </span>
             </div>
 
-            <div className="space-y-2.5 w-full max-w-lg">
+            <div className="space-y-2 sm:space-y-2.5 w-full max-w-lg">
               {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
-                <div key={rIdx} className="flex justify-center gap-1.5 sm:gap-2.5">
+                <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2.5">
                   {row.map((char) => {
                     const isPressed = pressedKey === char;
                     return (
@@ -1196,7 +1313,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                         onMouseLeave={() => handleKeyPressEnd(char)}
                         onTouchStart={(e) => { e.preventDefault(); handleKeyPressStart(char); }}
                         onTouchEnd={(e) => { e.preventDefault(); handleKeyPressEnd(char); }}
-                        className={`bakelite-key w-8 h-8 sm:w-10 sm:h-10 rounded-full text-[#e3c193] font-rotor-label font-bold text-xs sm:text-sm flex items-center justify-center cursor-pointer select-none ${
+                        className={`bakelite-key w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-10 sm:h-10 rounded-full text-[#e3c193] font-rotor-label font-bold text-[11px] xs:text-xs sm:text-sm flex items-center justify-center cursor-pointer select-none ${
                           isPressed ? 'key-pressed' : ''
                         }`}
                       >
@@ -1228,8 +1345,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
         )}
 
       {/* Top Section: Rotors Chamber (Walzen) */}
-      {!keyboardBulbsOnly && (
-        <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal transition-all">
+      {!keyboardBulbsOnly && showChamber && (
+        <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal transition-all animate-fade-in">
           <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#3b3426]">
             <h2 className="text-ui-header font-ui-header text-[#ede1cd] text-xs uppercase tracking-wider flex items-center gap-2">
               <span className="material-symbols-outlined text-sm text-[#ebc238]">tune</span>
@@ -1261,133 +1378,121 @@ export const MachineView: React.FC<MachineViewProps> = ({
               </div>
               <button
                 type="button"
-                onClick={() => setShowChamber(!showChamber)}
-                className="text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-1 cursor-pointer"
+                onClick={() => setChamberCollapsed(!chamberCollapsed)}
+                className="text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-1 cursor-pointer border border-[#3b3426] px-1.5 py-0.5 rounded bg-[#120e04]"
+                title={chamberCollapsed ? 'Show Rotors Panel' : 'Close Rotors Panel'}
               >
                 <span className="material-symbols-outlined text-sm">
-                  {showChamber ? 'expand_less' : 'expand_more'}
+                  {chamberCollapsed ? 'expand_more' : 'expand_less'}
                 </span>
-                {showChamber ? 'Hide' : 'Show'}
+                <span>{chamberCollapsed ? 'Show' : 'Close'}</span>
               </button>
             </div>
           </div>
 
-          {showChamber ? (
+          {!chamberCollapsed && (
             <div className="space-y-3 max-w-xl mx-auto pt-1">
-              <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18130a] px-2 sm:px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
-                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowRotorModal(true)}
-                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
-                    title="Open Quick Rotor Settings Pop-Up Window"
-                  >
-                    <span className="material-symbols-outlined text-sm">settings_overscan</span>
-                    <span>ROTOR SETTINGS</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowPlugModal(true)}
-                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
-                    title="Open Quick Plugboard Settings Pop-Up Window"
-                  >
-                    <span className="material-symbols-outlined text-sm">settings_ethernet</span>
-                    <span>PLUG SETTINGS</span>
-                    <span className="bg-[#ebc238]/20 text-[#ebc238] px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
-                      {Object.keys(config.plugboard || {}).length / 2} pairs
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18130a] px-2 sm:px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRotorModal(true)}
+                  className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                  title="Open Quick Rotor Settings Pop-Up Window"
+                >
+                  <span className="material-symbols-outlined text-sm">settings_overscan</span>
+                  <span>ROTOR SETTINGS</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPlugModal(true)}
+                  className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                  title="Open Quick Plugboard Settings Pop-Up Window"
+                >
+                  <span className="material-symbols-outlined text-sm">settings_ethernet</span>
+                  <span>PLUG SETTINGS</span>
+                  <span className="bg-[#ebc238]/20 text-[#ebc238] px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
+                    {Object.keys(config.plugboard || {}).length / 2} pairs
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCodebookModal(true)}
+                  className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                  title="Open Codebook Key Sheets Quick Window"
+                >
+                  <span className="material-symbols-outlined text-sm">menu_book</span>
+                  <span>CODEBOOK</span>
+                </button>
+              </div>
+              <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
+                Reflector: <span className="text-[#ebc238] font-bold">{config.reflector.type}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2.5 rounded-xl border border-[#3b3426]">
+             <div className={`grid grid-cols-2 ${
+                config.reflector.type === 'UKW-Dual-Dynamic'
+                  ? (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'sm:grid-cols-4 max-w-xs sm:max-w-md')
+                  : (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'sm:grid-cols-4 max-w-xs sm:max-w-md' : 'sm:grid-cols-3 max-w-xs sm:max-w-sm')
+              } gap-2 w-full mx-auto`}>
+                {/* ─── UKW-Dual-Dynamic─── */}
+                {config.reflector.type === 'UKW-Dual-Dynamic' && (
+                  <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
+                    <span className="text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider">
+                      UKW-ROTOR
                     </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCodebookModal(true)}
-                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
-                    title="Open Codebook Key Sheets Quick Window"
-                  >
-                    <span className="material-symbols-outlined text-sm">menu_book</span>
-                    <span>CODEBOOK</span>
-                  </button>
-                </div>
-                <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
-                  Reflector: <span className="text-[#ebc238] font-bold">{config.reflector.type}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2.5 rounded-xl border border-[#3b3426]">
-               <div className={`grid grid-cols-2 ${
-                  config.reflector.type === 'UKW-Dual-Dynamic'
-                    ? (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'sm:grid-cols-4 max-w-xs sm:max-w-md')
-                    : (config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 'sm:grid-cols-4 max-w-xs sm:max-w-md' : 'sm:grid-cols-3 max-w-xs sm:max-w-sm')
-                } gap-2 w-full mx-auto`}>
-                  {/* ─── UKW-Dual-Dynamic─── */}
-                  {config.reflector.type === 'UKW-Dual-Dynamic' && (
-                    <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
-                      <span className="text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider">
-                        UKW-ROTOR
+                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('reflector' as any, 1)}
+                        className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                        title="Rotate Reflector Up (manual)"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">expand_less</span>
+                      </button>
+                      <span key={config.reflector.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
+                        {formatRotorPos(config.reflector.current, ringFormat)}
                       </span>
-                      <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={() => handleManualRotorStep('reflector' as any, 1)}
-                          className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                          title="Rotate Reflector Up (manual)"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">expand_less</span>
-                        </button>
-                        <span key={config.reflector.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
-                          {formatRotorPos(config.reflector.current, ringFormat)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleManualRotorStep('reflector' as any, -1)}
-                          className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                          title="Rotate Reflector Down (manual)"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">expand_more</span>
-                        </button>
-                      </div>
-                      <span className="text-[8px] text-[#83715d] font-monospaced-technical mt-0.5">
-                        Dynamic Stator
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleManualRotorStep('reflector' as any, -1)}
+                        className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+                        title="Rotate Reflector Down (manual)"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">expand_more</span>
+                      </button>
                     </div>
-                  )}
-                  {/* ────────────────────────────────────────────────────── */}
+                    <span className="text-[8px] text-[#83715d] font-monospaced-technical mt-0.5">
+                      Dynamic Stator
+                    </span>
+                  </div>
+                )}
+                {/* ────────────────────────────────────────────────────── */}
 
-                  {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
-                  {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
-                    renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
-                  )}
+                {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
+                {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+                  renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
+                )}
 
-                  {/* Slow Rotor */}
-                  {renderRotorView('SLOW', 'leftRotor', config.leftRotor.type, true)}
+                {/* Slow Rotor */}
+                {renderRotorView('SLOW', 'leftRotor', config.leftRotor.type, true)}
 
-                  {/* Middle Rotor */}
-                  {renderRotorView('MID', 'middleRotor', config.middleRotor.type, true)}
+                {/* Middle Rotor */}
+                {renderRotorView('MID', 'middleRotor', config.middleRotor.type, true)}
 
-                  {/* Fast Rotor */}
-                  {renderRotorView('FAST', 'rightRotor', config.rightRotor.type, true)}
-                </div>
+                {/* Fast Rotor */}
+                {renderRotorView('FAST', 'rightRotor', config.rightRotor.type, true)}
+              </div>
 
-                {/* Battery Switch */}
-                <div className={`flex justify-center items-center w-full ${compactMode ? 'max-w-[145px] mx-auto' : 'max-w-[160px] mx-auto'}`}>
-                  <BatterySwitch mode={batteryMode} onChangeMode={handleSetBatteryMode} compact={false} />
-                </div>
+              {/* Battery Switch */}
+              <div className={`flex justify-center items-center w-full ${compactMode ? 'max-w-[145px] mx-auto' : 'max-w-[160px] mx-auto'}`}>
+                <BatterySwitch mode={batteryMode} onChangeMode={handleSetBatteryMode} compact={false} />
               </div>
             </div>
-          ) : (
-            <div className="bg-[#120e04] border border-[#3b3426] rounded p-3 text-center text-xs text-[#d1c4b7] font-monospaced-technical flex items-center justify-between">
-              <span>
-                Chamber Hidden • Positions: Fast ({formatRotorPos(config.leftRotor.current, ringFormat)}), Mid ({formatRotorPos(config.middleRotor.current, ringFormat)}), Slow ({formatRotorPos(config.rightRotor.current, ringFormat)}){config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? `, Fixed (${formatRotorPos(config.fourthRotor.current, ringFormat)})` : ''}
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowChamber(true)}
-                className="text-[#ebc238] hover:underline font-ui-header ml-2"
-              >
-                Show
-              </button>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
       )}
 
       {/* Plugboard Settings Section (Steckerbrett) */}
@@ -1457,9 +1562,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
           )}
         </div>
 
-        <div className="space-y-3 md:space-y-4 max-w-2xl w-full">
+        <div className="space-y-2 sm:space-y-3 md:space-y-4 max-w-2xl w-full">
           {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
-            <div key={rIdx} className="flex justify-center gap-2 md:gap-4">
+            <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2 md:gap-4">
               {row.map((char) => {
                 const isPowerOn = batteryMode !== 'aus';
                 const isLit = isPowerOn && litLamp === char;
@@ -1488,9 +1593,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 return (
                   <div
                     key={char}
-                    className={`w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-100 ${litStyle}`}
+                    className={`w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-100 ${litStyle}`}
                   >
-                    <span className="font-lamp-char text-base sm:text-lg md:text-xl">
+                    <span className="font-lamp-char text-xs xs:text-sm sm:text-lg md:text-xl font-bold">
                       {char}
                     </span>
                   </div>
@@ -1513,9 +1618,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
           </span>
         </div>
 
-        <div className="space-y-3 md:space-y-4 max-w-2xl w-full">
+        <div className="space-y-2 sm:space-y-3 md:space-y-4 max-w-2xl w-full">
           {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
-            <div key={rIdx} className="flex justify-center gap-2 md:gap-4">
+            <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2 md:gap-4">
               {row.map((char) => {
                 const isPressed = pressedKey === char;
                 return (
@@ -1527,13 +1632,13 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     onMouseLeave={() => handleKeyPressEnd(char)}
                     onTouchStart={(e) => { e.preventDefault(); handleKeyPressStart(char); }}
                     onTouchEnd={(e) => { e.preventDefault(); handleKeyPressEnd(char); }}
-                    className={`w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 text-[#ede1cd] flex items-center justify-center transition-all cursor-pointer select-none ${
+                    className={`w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 text-[#ede1cd] flex items-center justify-center transition-all cursor-pointer select-none ${
                       isPressed
                         ? 'translate-y-1 bg-[#ebc238] text-[#25190b] border-white font-bold ring-4 ring-[#ebc238]/40 scale-105 shadow-[0_0_15px_#ebc238]'
                         : 'border-[#83715d] bg-[#3b3426] shadow-key-base hover:border-[#e3c193] hover:bg-[#4e453b]'
                     }`}
                   >
-                    <span className="font-rotor-label font-bold text-base sm:text-lg">
+                    <span className="font-rotor-label font-bold text-xs xs:text-sm sm:text-base md:text-lg">
                       {char}
                     </span>
                   </button>
@@ -1545,8 +1650,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
       </div>
 
       {/* Paper Tape Strip Display */}
-      {!keyboardBulbsOnly && (
-        <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal space-y-4">
+      {!keyboardBulbsOnly && showTape && (
+        <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal space-y-4 animate-fade-in">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-[#3b3426] pb-2">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-sm text-[#ebc238]">receipt_long</span>
@@ -1576,266 +1681,308 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   setInputTape('');
                   setCipherTape('');
                 }}
-                className="text-[10px] font-monospaced-technical text-[#ffdad6] bg-[#93000a]/40 hover:bg-[#93000a] px-2 py-0.5 rounded border border-red-800/40 transition-colors ml-2 cursor-pointer"
+                className="text-[10px] font-monospaced-technical text-[#ffdad6] bg-[#93000a]/40 hover:bg-[#93000a] px-2 py-0.5 rounded border border-red-800/40 transition-colors ml-1 cursor-pointer"
               >
                 Clear Tape
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTapeCollapsed(!tapeCollapsed);
+                }}
+                className="text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-0.5 cursor-pointer ml-1 border border-[#3b3426] px-2 py-0.5 rounded bg-[#120e04]"
+                title={tapeCollapsed ? 'Show Paper Tape Panel' : 'Close Paper Tape Panel'}
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {tapeCollapsed ? 'expand_more' : 'expand_less'}
+                </span>
+                <span>{tapeCollapsed ? 'Show' : 'Close'}</span>
               </button>
             </div>
           </div>
 
           {/* Message Header (Funktelegramm-Kopf) */}
-          <div className="bg-[#17130b] border border-[#3b3426] p-3.5 rounded-lg space-y-3.5">
-            <div className="flex items-center justify-between border-b border-[#3b3426] pb-1.5">
-              <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[15px] text-[#ebc238]">fact_check</span>
-                <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase tracking-wider font-bold">
-                  Funktelegramm Header (Message Header)
-                </span>
-              </div>
-              <span className="text-[9px] text-[#8c7e6a] font-mono uppercase tracking-widest">
-                M3 / M4 Procedure
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {/* 1. Preamble */}
-              <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                    1. Preamble (Präambel)
+          {showTape && !tapeCollapsed && (
+            <div className="bg-[#17130b] border border-[#3b3426] p-3.5 rounded-lg space-y-3.5 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-[#3b3426] pb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px] text-[#ebc238]">fact_check</span>
+                  <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase tracking-wider font-bold">
+                    Funktelegramm Header (Message Header)
                   </span>
-                  <span className="text-[9px] text-[#8c7e6a] font-mono">Cleartext</span>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <div>
-                    <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Sender Call Sign">
-                      Sender
-                    </label>
-                    <input
-                      type="text"
-                      value={senderCallSign}
-                      onChange={(e) => setSenderCallSign(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5))}
-                      placeholder="DFS"
-                      className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                      title="Sender identification call sign (Clear text)"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5 flex justify-between items-center" title="Time of Transmission">
-                      <span>Time</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const d = new Date();
-                          const hours = String(d.getHours()).padStart(2, '0');
-                          const mins = String(d.getMinutes()).padStart(2, '0');
-                          setTransmissionTime(`${hours}${mins}`);
-                          playRotorClickSound(soundEnabled);
-                        }}
-                        className="text-[8px] text-[#ebc238] hover:underline cursor-pointer font-bold"
-                        title="Set to Current Time"
-                      >
-                        Now
-                      </button>
-                    </label>
-                    <input
-                      type="text"
-                      value={transmissionTime}
-                      onChange={(e) => setTransmissionTime(e.target.value.replace(/[^0-9]/g, '').substring(0, 4))}
-                      placeholder="1200"
-                      className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                      title="Time of transmission (HHMM clear text)"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Total Letter Count">
-                      Letters
-                    </label>
-                    <div className="w-full bg-[#120e04] text-[#ede1cd] border border-[#3b3426] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center h-[26px] flex items-center justify-center" title="Total processed character count (letters only)">
-                      {inputTape.replace(/[^A-Z]/ig, '').length}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
-                  Formatted: <span className="text-[#ede1cd] font-semibold">{senderCallSign || '???'}</span> <span className="text-[#ede1cd] font-semibold">{transmissionTime || '????'}</span> <span className="text-[#ede1cd] font-semibold">{inputTape.replace(/[^A-Z]/ig, '').length}</span>
-                </div>
-              </div>
-
-              {/* 2. Kenngruppe */}
-              <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                    2. Kenngruppe (Key ID)
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] text-[#8c7e6a] font-mono uppercase tracking-widest hidden sm:inline">
+                    M3 / M4 Procedure
                   </span>
                   <button
                     type="button"
-                    onClick={() => {
-                      setKenngruppe(getActiveCodebookKenngruppe());
-                      playRotorClickSound(soundEnabled);
-                    }}
-                    className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
-                    title="Load indicator group from currently active daily key"
+                    onClick={() => setHeaderCollapsed(!headerCollapsed)}
+                    className="text-[10px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-0.5 cursor-pointer border border-[#3b3426] px-1.5 py-0.5 rounded bg-[#120e04]"
+                    title={headerCollapsed ? 'Show Message Header' : 'Close Message Header'}
                   >
-                    Sync Key
+                    <span className="material-symbols-outlined text-sm">
+                      {headerCollapsed ? 'expand_more' : 'expand_less'}
+                    </span>
+                    <span>{headerCollapsed ? 'Show' : 'Close'}</span>
                   </button>
-                </div>
-                <div className="flex-1 flex flex-col justify-center">
-                  <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
-                    Indicator Group
-                  </label>
-                  <input
-                    type="text"
-                    value={kenngruppe}
-                    onChange={(e) => setKenngruppe(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4))}
-                    placeholder="UIO"
-                    className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-2 py-1 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors"
-                    title="Code group showing which daily key sheet to use"
-                  />
-                </div>
-                <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
-                  Identifies key settings sheet day: <span className="text-[#ebc238] font-bold font-monospaced-technical">{kenngruppe || '—'}</span>
                 </div>
               </div>
 
-              {/* 3. Grundstellung */}
-              <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
-                    3. Grundstellung
-                  </span>
-                  <span className="text-[9px] text-[#8c7e6a] font-mono">Position</span>
-                </div>
-                <div className="flex-1 flex flex-col justify-center">
-                  <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
-                    Rotor Indicator
-                  </label>
-                  <div className="flex gap-1.5 items-center">
-                    <input
-                      type="text"
-                      value={localGrundstellung}
-                      onChange={handleGrundstellungChange}
-                      onBlur={() => setLocalGrundstellung(getGrundstellungString())}
-                      className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-2 py-1 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors uppercase"
-                      maxLength={config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3}
-                      title="Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
-                    />
-                    <div className="flex flex-col gap-0.5 shrink-0">
+              {!headerCollapsed && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* 1. Preamble */}
+                  <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                        1. Preamble (Präambel)
+                      </span>
+                      <span className="text-[9px] text-[#8c7e6a] font-mono">Cleartext</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <div>
+                        <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Sender Call Sign">
+                          Sender
+                        </label>
+                        <input
+                          type="text"
+                          value={senderCallSign}
+                          onChange={(e) => setSenderCallSign(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5))}
+                          placeholder="DFS"
+                          className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                          title="Sender identification call sign (Clear text)"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5 flex justify-between items-center" title="Time of Transmission">
+                          <span>Time</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const d = new Date();
+                              const hours = String(d.getHours()).padStart(2, '0');
+                              const mins = String(d.getMinutes()).padStart(2, '0');
+                              setTransmissionTime(`${hours}${mins}`);
+                              playRotorClickSound(soundEnabled);
+                            }}
+                            className="text-[8px] text-[#ebc238] hover:underline cursor-pointer font-bold"
+                            title="Set to Current Time"
+                          >
+                            Now
+                          </button>
+                        </label>
+                        <input
+                          type="text"
+                          value={transmissionTime}
+                          onChange={(e) => setTransmissionTime(e.target.value.replace(/[^0-9]/g, '').substring(0, 4))}
+                          placeholder="1200"
+                          className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                          title="Time of transmission (HHMM clear text)"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Total Letter Count">
+                          Letters
+                        </label>
+                        <div className="w-full bg-[#120e04] text-[#ede1cd] border border-[#3b3426] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center h-[26px] flex items-center justify-center" title="Total processed character count (letters only)">
+                          {inputTape.replace(/[^A-Z]/ig, '').length}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
+                      Formatted: <span className="text-[#ede1cd] font-semibold">{senderCallSign || '???'}</span> <span className="text-[#ede1cd] font-semibold">{transmissionTime || '????'}</span> <span className="text-[#ede1cd] font-semibold">{inputTape.replace(/[^A-Z]/ig, '').length}</span>
+                    </div>
+                  </div>
+
+                  {/* 2. Kenngruppe */}
+                  <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                        2. Kenngruppe (Key ID)
+                      </span>
                       <button
                         type="button"
                         onClick={() => {
-                          const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-                          const nextConfig = { ...config };
-                          nextConfig.rightRotor = { ...nextConfig.rightRotor, current: (nextConfig.rightRotor.current + 1) % 26, start: (nextConfig.rightRotor.current + 1) % 26 };
-                          nextConfig.middleRotor = { ...nextConfig.middleRotor, current: (nextConfig.middleRotor.current + 1) % 26, start: (nextConfig.middleRotor.current + 1) % 26 };
-                          nextConfig.leftRotor = { ...nextConfig.leftRotor, current: (nextConfig.leftRotor.current + 1) % 26, start: (nextConfig.leftRotor.current + 1) % 26 };
-                          if (isM4) {
-                            nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: (nextConfig.fourthRotor.current + 1) % 26, start: (nextConfig.fourthRotor.current + 1) % 26 };
-                          }
-                          onUpdateConfig(nextConfig);
+                          setKenngruppe(getActiveCodebookKenngruppe());
                           playRotorClickSound(soundEnabled);
                         }}
-                        className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer font-bold"
-                        title="Step all rotors forward"
+                        className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
+                        title="Load indicator group from currently active daily key"
                       >
-                        +1 ALL
+                        Sync Key
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-                          const nextConfig = { ...config };
-                          nextConfig.rightRotor = { ...nextConfig.rightRotor, current: 0, start: 0 };
-                          nextConfig.middleRotor = { ...nextConfig.middleRotor, current: 0, start: 0 };
-                          nextConfig.leftRotor = { ...nextConfig.leftRotor, current: 0, start: 0 };
-                          if (isM4) {
-                            nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: 0, start: 0 };
-                          }
-                          onUpdateConfig(nextConfig);
-                          playRotorClickSound(soundEnabled);
-                        }}
-                        className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer"
-                        title="Reset all rotors to A / AAAA"
-                      >
-                        RESET
-                      </button>
+                    </div>
+                    <div className="flex-1 flex flex-col justify-center">
+                      <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
+                        Indicator Group
+                      </label>
+                      <input
+                        type="text"
+                        value={kenngruppe}
+                        onChange={(e) => setKenngruppe(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4))}
+                        placeholder="UIO"
+                        className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-2 py-1 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                        title="Code group showing which daily key sheet to use"
+                      />
+                    </div>
+                    <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
+                      Identifies key settings sheet day: <span className="text-[#ebc238] font-bold font-monospaced-technical">{kenngruppe || '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* 3. Grundstellung */}
+                  <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                        3. Grundstellung
+                      </span>
+                      <span className="text-[9px] text-[#8c7e6a] font-mono">Position</span>
+                    </div>
+                    <div className="flex-1 flex flex-col justify-center">
+                      <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
+                        Rotor Indicator
+                      </label>
+                      <div className="flex gap-1.5 items-center">
+                        <input
+                          type="text"
+                          value={localGrundstellung}
+                          onChange={handleGrundstellungChange}
+                          onBlur={() => setLocalGrundstellung(getGrundstellungString())}
+                          className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-2 py-1 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors uppercase"
+                          maxLength={config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3}
+                          title="Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
+                        />
+                        <div className="flex flex-col gap-0.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                              const isInputEmpty = inputTape === '';
+                              const nextConfig = { ...config };
+                              const nextRight = (nextConfig.rightRotor.current + 1) % 26;
+                              const nextMid = (nextConfig.middleRotor.current + 1) % 26;
+                              const nextLeft = (nextConfig.leftRotor.current + 1) % 26;
+                              nextConfig.rightRotor = { ...nextConfig.rightRotor, current: nextRight, start: isInputEmpty ? nextRight : nextConfig.rightRotor.start };
+                              nextConfig.middleRotor = { ...nextConfig.middleRotor, current: nextMid, start: isInputEmpty ? nextMid : nextConfig.middleRotor.start };
+                              nextConfig.leftRotor = { ...nextConfig.leftRotor, current: nextLeft, start: isInputEmpty ? nextLeft : nextConfig.leftRotor.start };
+                              if (isM4) {
+                                const nextFourth = (nextConfig.fourthRotor.current + 1) % 26;
+                                nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: nextFourth, start: isInputEmpty ? nextFourth : nextConfig.fourthRotor.start };
+                              }
+                              onUpdateConfig(nextConfig);
+                              playRotorClickSound(soundEnabled);
+                            }}
+                            className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer font-bold"
+                            title="Step all rotors forward"
+                          >
+                            +1 ALL
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                              const isInputEmpty = inputTape === '';
+                              const nextConfig = { ...config };
+                              nextConfig.rightRotor = { ...nextConfig.rightRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.rightRotor.start };
+                              nextConfig.middleRotor = { ...nextConfig.middleRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.middleRotor.start };
+                              nextConfig.leftRotor = { ...nextConfig.leftRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.leftRotor.start };
+                              if (isM4) {
+                                nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: 0, start: isInputEmpty ? 0 : nextConfig.fourthRotor.start };
+                              }
+                              onUpdateConfig(nextConfig);
+                              playRotorClickSound(soundEnabled);
+                            }}
+                            className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer"
+                            title="Reset all rotors to A / AAAA"
+                          >
+                            RESET
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
+                      Initial starting positions: <span className="text-[#ebc238] font-bold font-monospaced-technical">{localGrundstellung || '—'}</span>
                     </div>
                   </div>
                 </div>
-                <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
-                  Initial starting positions: <span className="text-[#ebc238] font-bold font-monospaced-technical">{localGrundstellung || '—'}</span>
+
+                {/* Action buttons */}
+                <div className="flex flex-wrap gap-2 pt-2.5 border-t border-[#3b3426]/60 justify-end">
+                  <button
+                    type="button"
+                    onClick={handleCopyHeader}
+                    className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
+                      headerCopied
+                        ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
+                        : 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]'
+                    }`}
+                    title="Copy the Funktelegramm header/preamble to clipboard"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">
+                      {headerCopied ? 'done' : 'content_copy'}
+                    </span>
+                    {headerCopied ? 'Header Copied!' : 'Copy Header'}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={handleCopyFullMessage}
+                    disabled={!cipherTape}
+                    className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
+                      !cipherTape
+                        ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
+                        : fullMessageCopied
+                        ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
+                        : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
+                    }`}
+                    title="Copy full transmission (Header + Ciphertext) to clipboard"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">
+                      {fullMessageCopied ? 'done' : 'forward_to_inbox'}
+                    </span>
+                    {fullMessageCopied ? 'Message Copied!' : 'Copy Full Message'}
+                  </button>
                 </div>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex flex-wrap gap-2 pt-2.5 border-t border-[#3b3426]/60 justify-end">
-              <button
-                type="button"
-                onClick={handleCopyHeader}
-                className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
-                  headerCopied
-                    ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                    : 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]'
-                }`}
-                title="Copy the Funktelegramm header/preamble to clipboard"
-              >
-                <span className="material-symbols-outlined text-[14px]">
-                  {headerCopied ? 'done' : 'content_copy'}
-                </span>
-                {headerCopied ? 'Header Copied!' : 'Copy Header'}
-              </button>
-              
-              <button
-                type="button"
-                onClick={handleCopyFullMessage}
-                disabled={!cipherTape}
-                className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
-                  !cipherTape
-                    ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
-                    : fullMessageCopied
-                    ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                    : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
-                }`}
-                title="Copy full transmission (Header + Ciphertext) to clipboard"
-              >
-                <span className="material-symbols-outlined text-[14px]">
-                  {fullMessageCopied ? 'done' : 'forward_to_inbox'}
-                </span>
-                {fullMessageCopied ? 'Message Copied!' : 'Copy Full Message'}
-              </button>
-            </div>
-          </div>
-
-          {/* Input Text Tape */}
-          <div>
-            <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] uppercase block mb-1">
-              Plaintext Input:
-            </span>
-            <div className="bg-[#f6dfc7] text-[#25190b] font-monospaced-technical p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold select-all">
-              {formatTapeText(inputTape) || <span className="opacity-40 italic">Type characters above...</span>}
-            </div>
-          </div>
-
-          {/* Ciphertext Output Tape */}
-          <div>
-            <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase block mb-1">
-              Ciphertext Output:
-            </span>
-            <div className="bg-[#f6dfc7] text-[#25190b] font-monospaced-technical p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold border-2 border-[#ebc238] select-all flex justify-between items-center">
-              <span>{formatTapeText(cipherTape) || <span className="opacity-40 italic">Ciphertext will appear here...</span>}</span>
-              {cipherTape && (
-                <button
-                  type="button"
-                  onClick={() => navigator.clipboard.writeText(formatTapeText(cipherTape))}
-                  className="text-[10px] bg-[#25190b] text-[#f6dfc7] hover:bg-[#3c2e1e] px-2 py-1 rounded shadow flex items-center gap-1 shrink-0 ml-2 cursor-pointer"
-                  title="Copy Ciphertext"
-                >
-                  <span className="material-symbols-outlined text-[12px]">content_copy</span>
-                  Copy
-                </button>
+                </>
               )}
             </div>
-          </div>
+          )}
+
+          {!tapeCollapsed && (
+            <>
+              {/* Input Text Tape */}
+              <div>
+                <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] uppercase block mb-1">
+                  Plaintext Input:
+                </span>
+                <div className="bg-[#f6dfc7] text-[#25190b] font-monospaced-technical p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold select-all">
+                  {formatTapeText(inputTape) || <span className="opacity-40 italic">Type characters above...</span>}
+                </div>
+              </div>
+
+              {/* Ciphertext Output Tape */}
+              <div>
+                <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase block mb-1">
+                  Ciphertext Output:
+                </span>
+                <div className="bg-[#f6dfc7] text-[#25190b] font-monospaced-technical p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold border-2 border-[#ebc238] select-all flex justify-between items-center">
+                  <span>{formatTapeText(cipherTape) || <span className="opacity-40 italic">Ciphertext will appear here...</span>}</span>
+                  {cipherTape && (
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(formatTapeText(cipherTape))}
+                      className="text-[10px] bg-[#25190b] text-[#f6dfc7] hover:bg-[#3c2e1e] px-2 py-1 rounded shadow flex items-center gap-1 shrink-0 ml-2 cursor-pointer"
+                      title="Copy Ciphertext"
+                    >
+                      <span className="material-symbols-outlined text-[12px]">content_copy</span>
+                      Copy
+                    </button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
