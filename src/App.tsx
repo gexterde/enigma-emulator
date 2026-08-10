@@ -7,6 +7,7 @@ import { MachineView } from './components/MachineView';
 import { PlugboardView } from './components/PlugboardView';
 import { CodebookView } from './components/CodebookView';
 import { LogView } from './components/LogView';
+import { MorseTrainer } from './components/MorseTrainer';
 import { SettingsModal, InfoModal, ShareModal, ShortcutsModal } from './components/Modals';
 import { ActiveTab, EnigmaConfig, LogEntry } from './types';
 import { DEFAULT_ENIGMA_CONFIG } from './lib/enigmaEngine';
@@ -125,30 +126,37 @@ export default function App() {
         return;
       }
 
-      // F6 or Ctrl+S / Cmd+S -> Settings Modal
-      if (e.key === 'F6' || (isCtrlOrCmd && e.key.toLowerCase() === 's' && !e.shiftKey)) {
+      // F6 or Ctrl+T / Cmd+T -> Morse Trainer
+      if (e.key === 'F6' || (isCtrlOrCmd && e.key.toLowerCase() === 't')) {
+        e.preventDefault();
+        setActiveTab('morseTrainer');
+        return;
+      }
+
+      // F7 or Ctrl+S / Cmd+S -> Settings Modal
+      if (e.key === 'F7' || (isCtrlOrCmd && e.key.toLowerCase() === 's' && !e.shiftKey)) {
         e.preventDefault();
         setIsSettingsOpen((prev) => !prev);
         return;
       }
 
-      // F7 or Ctrl+H / Cmd+H -> Info Modal
-      if (e.key === 'F7' || (isCtrlOrCmd && e.key.toLowerCase() === 'h')) {
+      // F8 or Ctrl+H / Cmd+H -> Info Modal
+      if (e.key === 'F8' || (isCtrlOrCmd && e.key.toLowerCase() === 'h')) {
         e.preventDefault();
         setIsInfoOpen((prev) => !prev);
         return;
       }
 
-      // F8 or Ctrl+Shift+S / Cmd+Shift+S -> Share Modal
-      if (e.key === 'F8' || (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 's')) {
+      // F9 or Ctrl+Shift+S / Cmd+Shift+S -> Share Modal
+      if (e.key === 'F9' || (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 's')) {
         e.preventDefault();
         setIsShareOpen((prev) => !prev);
         return;
       }
 
-      // F9 or ? or Ctrl+Shift+K -> Shortcuts Modal
+      // F10 or ? or Ctrl+Shift+K -> Shortcuts Modal
       if (
-        e.key === 'F9' ||
+        e.key === 'F10' ||
         (e.key === '?' && !isInputFocused) ||
         (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 'k')
       ) {
@@ -253,6 +261,10 @@ export default function App() {
 
           {activeTab === 'log' && (
             <LogView logs={logs} onClearLogs={() => setLogs([])} />
+          )}
+
+          {activeTab === 'morseTrainer' && (
+            <MorseTrainer />
           )}
         </main>
       </div>

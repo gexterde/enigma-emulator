@@ -23,7 +23,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'rotors', label: 'Rotor Settings', icon: 'settings_overscan', shortcut: 'F2 / ^R' },
     { id: 'plugboard', label: 'Plugboard', icon: 'settings_ethernet', shortcut: 'F3 / ^P' },
     { id: 'codebook', label: 'Codebook', icon: 'menu_book', shortcut: 'F4 / ^B' },
-    { id: 'log', label: 'Log', icon: 'history_edu', shortcut: 'F5 / ^L' }
+    { id: 'log', label: 'Log', icon: 'history_edu', shortcut: 'F5 / ^L' },
+    { id: 'morseTrainer', label: 'Morse Trainer', icon: 'school', shortcut: 'F6 / ^T' }
   ];
 
   return (
