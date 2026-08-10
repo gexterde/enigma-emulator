@@ -289,18 +289,20 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-wrap gap-2 pt-2 border-t border-[#3b3426]/60 justify-end">
+          <div className={`flex ${isCompact ? 'flex-nowrap overflow-x-auto pb-1.5 justify-start' : 'flex-wrap justify-end'} gap-1.5 sm:gap-2 pt-2 border-t border-[#3b3426]/60 scrollbar-none`}>
             <button
               type="button"
               onClick={handleCopyHeader}
-              className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`shrink-0 ${
+                isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
+              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${
                 headerCopied
                   ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
                   : 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]'
               }`}
               title="Copy the Funktelegramm header/preamble to clipboard"
             >
-              <span className="material-symbols-outlined text-[14px]">
+              <span className="material-symbols-outlined text-[13px]">
                 {headerCopied ? 'done' : 'content_copy'}
               </span>
               {headerCopied ? 'Header Copied!' : 'Copy Header'}
@@ -310,7 +312,9 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               type="button"
               onClick={handleCopyFullMessage}
               disabled={!cipherTape}
-              className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`shrink-0 ${
+                isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
+              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${
                 !cipherTape
                   ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
                   : fullMessageCopied
@@ -319,30 +323,34 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               }`}
               title="Copy full transmission (Header + Ciphertext) to clipboard"
             >
-              <span className="material-symbols-outlined text-[14px]">
+              <span className="material-symbols-outlined text-[13px]">
                 {fullMessageCopied ? 'done' : 'forward_to_inbox'}
               </span>
-              {fullMessageCopied ? 'Message Copied!' : 'Copy Full Message'}
+              {fullMessageCopied ? 'Message Copied!' : isCompact ? 'Copy Full' : 'Copy Full Message'}
             </button>
 
             <button
               type="button"
               onClick={() => setShowImportModal(true)}
-              className="text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]"
+              className={`shrink-0 ${
+                isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
+              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]`}
               title="Import transmission or message and optional header"
             >
-              <span className="material-symbols-outlined text-[14px]">file_upload</span>
-              Import Message
+              <span className="material-symbols-outlined text-[13px]">file_upload</span>
+              {isCompact ? 'Import Msg' : 'Import Message'}
             </button>
 
             <button
               type="button"
               onClick={() => setShowBroadcastModal(true)}
-              className="text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]"
+              className={`shrink-0 ${
+                isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
+              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]`}
               title="Broadcast message via Morse code audio and visual signal"
             >
-              <span className="material-symbols-outlined text-[14px]">rss_feed</span>
-              Broadcast Message
+              <span className="material-symbols-outlined text-[13px]">rss_feed</span>
+              {isCompact ? 'Broadcast' : 'Broadcast Message'}
             </button>
           </div>
         </>
