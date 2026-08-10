@@ -101,7 +101,7 @@ export function generateConfigString(config: EnigmaConfig, ringFormat: 'number' 
   let rotors = `${config.leftRotor.type}-${config.middleRotor.type}-${config.rightRotor.type}`;
   if (isM4) {
     const fourthLabel = config.fourthRotor.type === 'Beta' ? 'β' : 'γ';
-    rotors += `-${fourthLabel}`;
+    rotors = `${fourthLabel}-${rotors}`;
   }
   if (isUKWDual) {
     rotors = `UKW-Dual-${rotors}`;
@@ -109,7 +109,7 @@ export function generateConfigString(config: EnigmaConfig, ringFormat: 'number' 
 
   let starts = `${formatRotorPos(config.leftRotor.current, ringFormat)}-${formatRotorPos(config.middleRotor.current, ringFormat)}-${formatRotorPos(config.rightRotor.current, ringFormat)}`;
   if (isM4) {
-    starts += `-${formatRotorPos(config.fourthRotor.current, ringFormat)}`;
+    starts = `${formatRotorPos(config.fourthRotor.current, ringFormat)}-${starts}`;
   }
   if (isUKWDual) {
     const refPos = typeof config.reflector === 'object' && config.reflector !== null ? config.reflector.current : 0;
@@ -118,14 +118,14 @@ export function generateConfigString(config: EnigmaConfig, ringFormat: 'number' 
 
   let rings = `${formatRotorRing(config.leftRotor.ring, ringFormat)}-${formatRotorRing(config.middleRotor.ring, ringFormat)}-${formatRotorRing(config.rightRotor.ring, ringFormat)}`;
   if (isM4) {
-    rings += `-${formatRotorRing(config.fourthRotor.ring, ringFormat)}`;
+    rings = `${formatRotorRing(config.fourthRotor.ring, ringFormat)}-${rings}`;
   }
   if (isUKWDual) {
     const refRing = typeof config.reflector === 'object' && config.reflector !== null ? config.reflector.ring : 1;
     rings = `${formatRotorRing(refRing, ringFormat)}-${rings}`;
   }
 
-  return `${reflectorName} | ${rotors} | ${starts} | ${rings}`;
+  return `${reflectorName} | ${rotors} | ${rings} | ${starts}`;
 }
 
 /**
