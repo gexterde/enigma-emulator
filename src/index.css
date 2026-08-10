@@ -128,6 +128,48 @@
     color: #2b261f;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.05);
   }
+
+  /* Material Symbols Font Variation settings */
+  .material-fill-0 {
+    font-variation-settings: 'FILL' 0;
+  }
+  .material-fill-1 {
+    font-variation-settings: 'FILL' 1;
+  }
+
+  /* Cable Connections Utility Classes */
+  .cable-bg-0 { background-color: #b33939; }
+  .cable-bg-1 { background-color: #218c74; }
+  .cable-bg-2 { background-color: #227093; }
+  .cable-bg-3 { background-color: #cc8e35; }
+  .cable-bg-4 { background-color: #40407a; }
+  .cable-bg-5 { background-color: #ff5252; }
+  .cable-bg-6 { background-color: #33d9b2; }
+  .cable-bg-7 { background-color: #34ace0; }
+  .cable-bg-8 { background-color: #ffb142; }
+  .cable-bg-9 { background-color: #706fd3; }
+  .cable-bg-10 { background-color: #ff793f; }
+  .cable-bg-11 { background-color: #84817a; }
+  .cable-bg-12 { background-color: #d1ccc0; }
+
+  .cable-border-0 { border-color: #b33939; }
+  .cable-border-1 { border-color: #218c74; }
+  .cable-border-2 { border-color: #227093; }
+  .cable-border-3 { border-color: #cc8e35; }
+  .cable-border-4 { border-color: #40407a; }
+  .cable-border-5 { border-color: #ff5252; }
+  .cable-border-6 { border-color: #33d9b2; }
+  .cable-border-7 { border-color: #34ace0; }
+  .cable-border-8 { border-color: #ffb142; }
+  .cable-border-9 { border-color: #706fd3; }
+  .cable-border-10 { border-color: #ff793f; }
+  .cable-border-11 { border-color: #84817a; }
+  .cable-border-12 { border-color: #d1ccc0; }
+
+  /* Progress Bar Custom Properties */
+  .step-progress-fill {
+    width: var(--progress-width, 0%);
+  }
 }
 
 /* Rotor mechanical step rotation animation */

@@ -178,6 +178,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
         const isSelected = selectedSocket === char;
         const partner = plugboard[char];
         const pairIndex = pairs.findIndex(([a, b]) => a === char || b === char);
+        const colorClassIndex = pairIndex !== -1 ? (pairIndex % CORD_COLORS.length) : -1;
         const color = pairIndex !== -1 ? CORD_COLORS[pairIndex % CORD_COLORS.length] : undefined;
 
         return (
@@ -192,24 +193,23 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
               className={`bg-[#1a1510] border-2 rounded-full p-1 cursor-pointer flex flex-col gap-1 items-center justify-center transition-all min-w-[34px] min-h-[50px] sm:min-w-[44px] sm:min-h-[58px] ${
                 isSelected
                   ? 'border-[#ebc238] shadow-[0_0_12px_#ebc238] scale-110'
-                  : isConnected
-                  ? 'border-[#4e453b] shadow-md'
+                  : isConnected && colorClassIndex !== -1
+                  ? `cable-border-${colorClassIndex} shadow-md`
                   : 'border-[#2a221a] hover:border-[#9a8f83]'
               }`}
-              style={{
-                borderColor: isSelected ? '#ebc238' : color || undefined
-              }}
               aria-label={`Socket ${char}`}
               title={partner ? `Plugged to ${partner}` : 'Click to connect'}
             >
               {/* Double pin holes (stecker sockets) */}
               <div
-                className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#111] border border-[#000] shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)]"
-                style={{ backgroundColor: isConnected ? color : '#111' }}
+                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border border-[#000] shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] ${
+                  isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : 'bg-[#111]'
+                }`}
               />
               <div
-                className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#111] border border-[#000] shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)]"
-                style={{ backgroundColor: isConnected ? color : '#111' }}
+                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border border-[#000] shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] ${
+                  isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : 'bg-[#111]'
+                }`}
               />
             </button>
           </div>
@@ -324,7 +324,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
           </span>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             {pairs.map(([a, b], idx) => {
-              const cordColor = CORD_COLORS[idx % CORD_COLORS.length];
+              const colorIdx = idx % CORD_COLORS.length;
               return (
                 <div
                   key={`${a}-${b}`}
@@ -332,8 +332,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
                 >
                   <div className="flex items-center gap-1.5">
                     <div
-                      className="w-2.5 h-2.5 rounded-full shadow-xs"
-                      style={{ backgroundColor: cordColor }}
+                      className={`w-2.5 h-2.5 rounded-full shadow-xs cable-bg-${colorIdx}`}
                     />
                     <span className="font-monospaced-technical text-xs text-[#ede1cd] font-bold">
                       {a} ↔ {b}

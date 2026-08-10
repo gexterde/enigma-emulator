@@ -27,6 +27,10 @@ interface MachineViewProps {
   soundEnabled: boolean;
   compactMode?: boolean;
   onToggleCompactMode?: () => void;
+  inputTape: string;
+  setInputTape: React.Dispatch<React.SetStateAction<string>>;
+  cipherTape: string;
+  setCipherTape: React.Dispatch<React.SetStateAction<string>>;
 }
 
 // Authentic Enigma M3/M4 Lampboard/Keyboard Layout (3 rows: 9, 8, 9 keys)
@@ -44,12 +48,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
   onAddLog,
   soundEnabled,
   compactMode,
-  onToggleCompactMode
+  onToggleCompactMode,
+  inputTape,
+  setInputTape,
+  cipherTape,
+  setCipherTape
 }) => {
   const [litLamp, setLitLamp] = useState<string | null>(null);
   const [pressedKey, setPressedKey] = useState<string | null>(null);
-  const [inputTape, setInputTape] = useState<string>('');
-  const [cipherTape, setCipherTape] = useState<string>('');
   const [activeGroupSize, setActiveGroupSize] = useState<number>(0);
 
   // Ringstellung / Rotor position format: 'number' (01-26) or 'letter' (A-Z)
@@ -92,6 +98,158 @@ export const MachineView: React.FC<MachineViewProps> = ({
   const [showChamber, setShowChamber] = useState<boolean>(true);
   const [showSignalAnimation, setShowSignalAnimation] = useState<boolean>(false);
   const [keyboardBulbsOnly, setKeyboardBulbsOnly] = useState<boolean>(false);
+
+  // Message Header / Funktelegramm States
+  const [senderCallSign, setSenderCallSign] = useState<string>('DFS');
+  const [transmissionTime, setTransmissionTime] = useState<string>(() => {
+    const d = new Date();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    return `${hours}${mins}`;
+  });
+  const [kenngruppe, setKenngruppe] = useState<string>('');
+  const [localGrundstellung, setLocalGrundstellung] = useState<string>('');
+  const [headerCopied, setHeaderCopied] = useState<boolean>(false);
+  const [fullMessageCopied, setFullMessageCopied] = useState<boolean>(false);
+
+  const getGrundstellungString = (): string => {
+    const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+    const r1 = numToChar(config.rightRotor.start);
+    const r2 = numToChar(config.middleRotor.start);
+    const r3 = numToChar(config.leftRotor.start);
+    if (isM4) {
+      const r4 = numToChar(config.fourthRotor.start);
+      return `${r4}${r3}${r2}${r1}`;
+    }
+    return `${r3}${r2}${r1}`;
+  };
+
+  const getHeaderString = (): string => {
+    const lettersCount = inputTape.replace(/[^A-Z]/ig, '').length;
+    const callSign = senderCallSign || '???';
+    const time = transmissionTime || '????';
+    const kg = kenngruppe || '???';
+    const gs = getGrundstellungString() || '???';
+    return `${callSign} ${time} ${lettersCount} ${kg} ${gs}`;
+  };
+
+  const handleCopyHeader = () => {
+    const headerStr = getHeaderString();
+    navigator.clipboard.writeText(headerStr);
+    setHeaderCopied(true);
+    setTimeout(() => setHeaderCopied(false), 2000);
+    playRotorClickSound(soundEnabled);
+  };
+
+  const handleCopyFullMessage = () => {
+    const headerStr = getHeaderString();
+    const formattedCipher = formatTapeText(cipherTape) || '';
+    const fullMessage = `${headerStr}\n\n${formattedCipher}`;
+    navigator.clipboard.writeText(fullMessage);
+    setFullMessageCopied(true);
+    setTimeout(() => setFullMessageCopied(false), 2000);
+    playRotorClickSound(soundEnabled);
+  };
+
+  const getActiveCodebookKenngruppe = (): string => {
+    const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+    for (const sheet of HISTORICAL_CODEBOOKS) {
+      for (const entry of sheet.entries) {
+        const matchLeft = entry.rotors[0] === config.leftRotor.type && entry.rings[0] === config.leftRotor.ring;
+        const matchMiddle = entry.rotors[1] === config.middleRotor.type && entry.rings[1] === config.middleRotor.ring;
+        const matchRight = entry.rotors[2] === config.rightRotor.type && entry.rings[2] === config.rightRotor.ring;
+        let matchFourth = true;
+        if (entry.fourthRotor) {
+          matchFourth = entry.fourthRotor === config.fourthRotor.type && entry.fourthRing === config.fourthRotor.ring;
+        } else {
+          matchFourth = !isM4;
+        }
+        if (matchLeft && matchMiddle && matchRight && matchFourth) {
+          return entry.kenngruppen && entry.kenngruppen.length > 0 ? entry.kenngruppen[0].toUpperCase() : 'UIO';
+        }
+      }
+    }
+    return 'UIO';
+  };
+
+  // Sync Kenngruppe on key loaded
+  useEffect(() => {
+    setKenngruppe(getActiveCodebookKenngruppe());
+  }, [
+    config.leftRotor.type, config.leftRotor.ring,
+    config.middleRotor.type, config.middleRotor.ring,
+    config.rightRotor.type, config.rightRotor.ring,
+    config.fourthRotor.type, config.fourthRotor.ring
+  ]);
+
+  // Sync Grundstellung local state with machine start position
+  useEffect(() => {
+    setLocalGrundstellung(getGrundstellungString());
+  }, [
+    config.leftRotor.start,
+    config.middleRotor.start,
+    config.rightRotor.start,
+    config.fourthRotor.start,
+    config.fourthRotor.type
+  ]);
+
+  // Reset current rotor positions to their initial start positions when inputTape is empty/cleared
+  useEffect(() => {
+    if (inputTape === '') {
+      const hasDifference =
+        config.leftRotor.current !== config.leftRotor.start ||
+        config.middleRotor.current !== config.middleRotor.start ||
+        config.rightRotor.current !== config.rightRotor.start ||
+        config.fourthRotor.current !== config.fourthRotor.start;
+
+      if (hasDifference) {
+        onUpdateConfig({
+          ...config,
+          leftRotor: { ...config.leftRotor, current: config.leftRotor.start },
+          middleRotor: { ...config.middleRotor, current: config.middleRotor.start },
+          rightRotor: { ...config.rightRotor, current: config.rightRotor.start },
+          fourthRotor: { ...config.fourthRotor, current: config.fourthRotor.start }
+        });
+      }
+    }
+  }, [inputTape, config, onUpdateConfig]);
+
+  const handleGrundstellungChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+    const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+    const maxLen = isM4 ? 4 : 3;
+    const truncated = val.substring(0, maxLen);
+    
+    setLocalGrundstellung(truncated);
+    
+    if (truncated.length === maxLen) {
+      const charToNum = (char: string) => {
+        const code = char.charCodeAt(0) - 65;
+        return isNaN(code) || code < 0 || code > 25 ? 0 : code;
+      };
+      
+      const newConfig = { ...config };
+      if (isM4) {
+        const c4 = charToNum(truncated[0]);
+        const c3 = charToNum(truncated[1]);
+        const c2 = charToNum(truncated[2]);
+        const c1 = charToNum(truncated[3]);
+        newConfig.fourthRotor = { ...newConfig.fourthRotor, start: c4, current: c4 };
+        newConfig.leftRotor = { ...newConfig.leftRotor, start: c3, current: c3 };
+        newConfig.middleRotor = { ...newConfig.middleRotor, start: c2, current: c2 };
+        newConfig.rightRotor = { ...newConfig.rightRotor, start: c1, current: c1 };
+      } else {
+        const c3 = charToNum(truncated[0]);
+        const c2 = charToNum(truncated[1]);
+        const c1 = charToNum(truncated[2]);
+        newConfig.leftRotor = { ...newConfig.leftRotor, start: c3, current: c3 };
+        newConfig.middleRotor = { ...newConfig.middleRotor, start: c2, current: c2 };
+        newConfig.rightRotor = { ...newConfig.rightRotor, start: c1, current: c1 };
+      }
+      onUpdateConfig(newConfig);
+      playRotorClickSound(soundEnabled);
+    }
+  };
   const [isCompactMode, setIsCompactMode] = useState<boolean>(() => {
     if (compactMode !== undefined) return compactMode;
     try {
@@ -289,13 +447,65 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
   const handleManualRotorStep = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor', delta: number) => {
     playRotorClickSound(soundEnabled);
+    const nextVal = (config[rotorKey].current + delta + 26) % 26;
+    const isInputEmpty = inputTape === '';
     onUpdateConfig({
       ...config,
       [rotorKey]: {
         ...config[rotorKey],
-        current: (config[rotorKey].current + delta + 26) % 26
+        current: nextVal,
+        start: isInputEmpty ? nextVal : config[rotorKey].start
       }
     });
+  };
+
+  const renderRotorView = (
+    label: string,
+    rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor',
+    typeDisplay: string,
+    isNotch: boolean
+  ) => {
+    const rotor = config[rotorKey];
+    const notchValue = ROTOR_SPECS[rotor.type]?.notch;
+    const turnoverAction = ROTOR_SPECS[rotor.type]?.turnoverAction;
+
+    return (
+      <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm">
+        <span className="text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5">
+          {label} ({typeDisplay})
+        </span>
+        <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => handleManualRotorStep(rotorKey, 1)}
+            className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+            title="Rotate Up"
+          >
+            <span className="material-symbols-outlined text-[13px]">expand_less</span>
+          </button>
+          <span key={rotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
+            {formatRotorPos(rotor.current, ringFormat)}
+          </span>
+          <button
+            type="button"
+            onClick={() => handleManualRotorStep(rotorKey, -1)}
+            className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
+            title="Rotate Down"
+          >
+            <span className="material-symbols-outlined text-[13px]">expand_more</span>
+          </button>
+        </div>
+        {isNotch ? (
+          <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={turnoverAction}>
+            Notch: {notchValue}
+          </span>
+        ) : (
+          <span className="text-[8px] text-[#83715d] font-monospaced-technical mt-0.5" title={turnoverAction}>
+            Fixed Stator
+          </span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -470,6 +680,231 @@ export const MachineView: React.FC<MachineViewProps> = ({
             </div>
           )}
 
+          {/* Message Header (Funktelegramm-Kopf) in Compact Mode */}
+          {!keyboardBulbsOnly && (
+            <div className="bg-[#1b1710]/90 p-3.5 rounded-xl border border-[#3d3526] shadow-lg space-y-3">
+              <div className="flex items-center justify-between border-b border-[#3b3426] pb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px] text-[#ebc238]">fact_check</span>
+                  <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase tracking-wider font-bold">
+                    Funktelegramm Header (Message Header)
+                  </span>
+                </div>
+                <span className="text-[9px] text-[#8c7e6a] font-mono uppercase tracking-widest">
+                  M3 / M4 Procedure
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* 1. Preamble */}
+                <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                      1. Preamble (Präambel)
+                    </span>
+                    <span className="text-[9px] text-[#8c7e6a] font-mono">Cleartext</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    <div>
+                      <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Sender Call Sign">
+                        Sender
+                      </label>
+                      <input
+                        type="text"
+                        value={senderCallSign}
+                        onChange={(e) => setSenderCallSign(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5))}
+                        placeholder="DFS"
+                        className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                        title="Sender identification call sign (Clear text)"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5 flex justify-between items-center" title="Time of Transmission">
+                        <span>Time</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const d = new Date();
+                            const hours = String(d.getHours()).padStart(2, '0');
+                            const mins = String(d.getMinutes()).padStart(2, '0');
+                            setTransmissionTime(`${hours}${mins}`);
+                            playRotorClickSound(soundEnabled);
+                          }}
+                          className="text-[8px] text-[#ebc238] hover:underline cursor-pointer font-bold"
+                          title="Set to Current Time"
+                        >
+                          Now
+                        </button>
+                      </label>
+                      <input
+                        type="text"
+                        value={transmissionTime}
+                        onChange={(e) => setTransmissionTime(e.target.value.replace(/[^0-9]/g, '').substring(0, 4))}
+                        placeholder="1200"
+                        className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                        title="Time of transmission (HHMM clear text)"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Total Letter Count">
+                        Letters
+                      </label>
+                      <div className="w-full bg-[#120e04] text-[#ede1cd] border border-[#3b3426] rounded px-1 py-0.5 text-xs font-monospaced-technical font-bold text-center h-[23px] flex items-center justify-center" title="Total processed character count (letters only)">
+                        {inputTape.replace(/[^A-Z]/ig, '').length}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
+                    Formatted: <span className="text-[#ede1cd] font-semibold">{senderCallSign || '???'}</span> <span className="text-[#ede1cd] font-semibold">{transmissionTime || '????'}</span> <span className="text-[#ede1cd] font-semibold">{inputTape.replace(/[^A-Z]/ig, '').length}</span>
+                  </div>
+                </div>
+
+                {/* 2. Kenngruppe */}
+                <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                      2. Kenngruppe (Key ID)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setKenngruppe(getActiveCodebookKenngruppe());
+                        playRotorClickSound(soundEnabled);
+                      }}
+                      className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
+                      title="Load indicator group from currently active daily key"
+                    >
+                      Sync Key
+                    </button>
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
+                      Indicator Group
+                    </label>
+                    <input
+                      type="text"
+                      value={kenngruppe}
+                      onChange={(e) => setKenngruppe(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4))}
+                      placeholder="UIO"
+                      className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-0.5 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                      title="Code group showing which daily key sheet to use"
+                    />
+                  </div>
+                  <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
+                    Identifies key day: <span className="text-[#ebc238] font-bold font-monospaced-technical">{kenngruppe || '—'}</span>
+                  </div>
+                </div>
+
+                {/* 3. Grundstellung */}
+                <div className="border border-[#4e453b]/60 rounded p-2 bg-[#120e04]/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                      3. Grundstellung
+                    </span>
+                    <span className="text-[9px] text-[#8c7e6a] font-mono">Position</span>
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
+                      Rotor Indicator
+                    </label>
+                    <div className="flex gap-1 items-center">
+                      <input
+                        type="text"
+                        value={localGrundstellung}
+                        onChange={handleGrundstellungChange}
+                        onBlur={() => setLocalGrundstellung(getGrundstellungString())}
+                        className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-0.5 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors uppercase"
+                        maxLength={config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3}
+                        title="Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
+                      />
+                      <div className="flex flex-col gap-0.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                            const nextConfig = { ...config };
+                            nextConfig.rightRotor = { ...nextConfig.rightRotor, current: (nextConfig.rightRotor.current + 1) % 26, start: (nextConfig.rightRotor.current + 1) % 26 };
+                            nextConfig.middleRotor = { ...nextConfig.middleRotor, current: (nextConfig.middleRotor.current + 1) % 26, start: (nextConfig.middleRotor.current + 1) % 26 };
+                            nextConfig.leftRotor = { ...nextConfig.leftRotor, current: (nextConfig.leftRotor.current + 1) % 26, start: (nextConfig.leftRotor.current + 1) % 26 };
+                            if (isM4) {
+                              nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: (nextConfig.fourthRotor.current + 1) % 26, start: (nextConfig.fourthRotor.current + 1) % 26 };
+                            }
+                            onUpdateConfig(nextConfig);
+                            playRotorClickSound(soundEnabled);
+                          }}
+                          className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer font-bold"
+                          title="Step all rotors forward"
+                        >
+                          +1 ALL
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                            const nextConfig = { ...config };
+                            nextConfig.rightRotor = { ...nextConfig.rightRotor, current: 0, start: 0 };
+                            nextConfig.middleRotor = { ...nextConfig.middleRotor, current: 0, start: 0 };
+                            nextConfig.leftRotor = { ...nextConfig.leftRotor, current: 0, start: 0 };
+                            if (isM4) {
+                              nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: 0, start: 0 };
+                            }
+                            onUpdateConfig(nextConfig);
+                            playRotorClickSound(soundEnabled);
+                          }}
+                          className="text-[7px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-0.5 py-0.2 rounded cursor-pointer"
+                          title="Reset all rotors to A / AAAA"
+                        >
+                          RESET
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
+                    Start position: <span className="text-[#ebc238] font-bold font-monospaced-technical">{localGrundstellung || '—'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-[#3b3426]/60 justify-end">
+                <button
+                  type="button"
+                  onClick={handleCopyHeader}
+                  className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
+                    headerCopied
+                      ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
+                      : 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]'
+                  }`}
+                  title="Copy the Funktelegramm header/preamble to clipboard"
+                >
+                  <span className="material-symbols-outlined text-[14px]">
+                    {headerCopied ? 'done' : 'content_copy'}
+                  </span>
+                  {headerCopied ? 'Header Copied!' : 'Copy Header'}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={handleCopyFullMessage}
+                  disabled={!cipherTape}
+                  className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
+                    !cipherTape
+                      ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
+                      : fullMessageCopied
+                      ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
+                      : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
+                  }`}
+                  title="Copy full transmission (Header + Ciphertext) to clipboard"
+                >
+                  <span className="material-symbols-outlined text-[14px]">
+                    {fullMessageCopied ? 'done' : 'forward_to_inbox'}
+                  </span>
+                  {fullMessageCopied ? 'Message Copied!' : 'Copy Full Message'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Rotor Bay (Walzenlage) */}
           {!keyboardBulbsOnly && (
             <div className="metal-plate p-3 rounded-xl shadow-md">
@@ -497,12 +932,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
               </div>
 
               {/* Quick Settings Action Bar in front of Rotors */}
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3 bg-[#18130a] px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3 bg-[#18130a] px-2 sm:px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => setShowRotorModal(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
                     title="Open Quick Rotor Settings Pop-Up Window"
                   >
                     <span className="material-symbols-outlined text-sm">settings_overscan</span>
@@ -511,19 +946,19 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowPlugModal(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
                     title="Open Quick Plugboard Settings Pop-Up Window"
                   >
                     <span className="material-symbols-outlined text-sm">settings_ethernet</span>
                     <span>PLUG SETTINGS</span>
-                    <span className="bg-[#ebc238]/20 text-[#ebc238] px-1.5 py-0.2 rounded text-[10px] font-mono">
+                    <span className="bg-[#ebc238]/20 text-[#ebc238] px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
                       {Object.keys(config.plugboard || {}).length / 2} pairs
                     </span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowCodebookModal(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
                     title="Open Codebook Key Sheets Quick Window"
                   >
                     <span className="material-symbols-outlined text-sm">menu_book</span>
@@ -839,12 +1274,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
           {showChamber ? (
             <div className="space-y-3 max-w-xl mx-auto pt-1">
-              <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18130a] px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18130a] px-2 sm:px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => setShowRotorModal(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
                     title="Open Quick Rotor Settings Pop-Up Window"
                   >
                     <span className="material-symbols-outlined text-sm">settings_overscan</span>
@@ -853,19 +1288,19 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowPlugModal(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
                     title="Open Quick Plugboard Settings Pop-Up Window"
                   >
                     <span className="material-symbols-outlined text-sm">settings_ethernet</span>
                     <span>PLUG SETTINGS</span>
-                    <span className="bg-[#ebc238]/20 text-[#ebc238] px-1.5 py-0.2 rounded text-[10px] font-mono">
+                    <span className="bg-[#ebc238]/20 text-[#ebc238] px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
                       {Object.keys(config.plugboard || {}).length / 2} pairs
                     </span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowCodebookModal(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
                     title="Open Codebook Key Sheets Quick Window"
                   >
                     <span className="material-symbols-outlined text-sm">menu_book</span>
@@ -919,129 +1354,17 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
                   {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
                   {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
-                    <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm">
-                      <span className="text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5">
-                        FIXED ({config.fourthRotor.type === 'Beta' ? 'β' : 'γ'})
-                      </span>
-                      <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={() => handleManualRotorStep('fourthRotor', 1)}
-                          className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                          title="Rotate Up (manual only)"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">expand_less</span>
-                        </button>
-                        <span key={config.fourthRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
-                          {formatRotorPos(config.fourthRotor.current, ringFormat)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleManualRotorStep('fourthRotor', -1)}
-                          className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                          title="Rotate Down (manual only)"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">expand_more</span>
-                        </button>
-                      </div>
-                      <span className="text-[8px] text-[#83715d] font-monospaced-technical mt-0.5" title={ROTOR_SPECS[config.fourthRotor.type]?.turnoverAction}>
-                        Fixed Stator
-                      </span>
-                    </div>
+                    renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
                   )}
 
                   {/* Slow Rotor */}
-                  <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm">
-                    <span className="text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5">
-                      SLOW ({config.leftRotor.type})
-                    </span>
-                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('leftRotor', 1)}
-                        className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                        title="Rotate Up"
-                      >
-                        <span className="material-symbols-outlined text-[13px]">expand_less</span>
-                      </button>
-                      <span key={config.leftRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
-                        {formatRotorPos(config.leftRotor.current, ringFormat)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('leftRotor', -1)}
-                        className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                        title="Rotate Down"
-                      >
-                        <span className="material-symbols-outlined text-[13px]">expand_more</span>
-                      </button>
-                    </div>
-                    <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.leftRotor.type]?.turnoverAction}>
-                      Notch: {ROTOR_SPECS[config.leftRotor.type]?.notch}
-                    </span>
-                  </div>
+                  {renderRotorView('SLOW', 'leftRotor', config.leftRotor.type, true)}
 
                   {/* Middle Rotor */}
-                  <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm">
-                    <span className="text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5">
-                      MID ({config.middleRotor.type})
-                    </span>
-                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('middleRotor', 1)}
-                        className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                        title="Rotate Up"
-                      >
-                        <span className="material-symbols-outlined text-[13px]">expand_less</span>
-                      </button>
-                      <span key={config.middleRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
-                        {formatRotorPos(config.middleRotor.current, ringFormat)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('middleRotor', -1)}
-                        className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                        title="Rotate Down"
-                      >
-                        <span className="material-symbols-outlined text-[13px]">expand_more</span>
-                      </button>
-                    </div>
-                    <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.middleRotor.type]?.turnoverAction}>
-                      Notch: {ROTOR_SPECS[config.middleRotor.type]?.notch}
-                    </span>
-                  </div>
+                  {renderRotorView('MID', 'middleRotor', config.middleRotor.type, true)}
 
                   {/* Fast Rotor */}
-                  <div className="bg-[#18130b] rounded-lg p-2 border border-[#3b3426] flex flex-col items-center max-w-[105px] w-full mx-auto shadow-sm">
-                    <span className="text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5">
-                      FAST ({config.rightRotor.type})
-                    </span>
-                    <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-12 h-13 flex items-center justify-center my-0.5 overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('rightRotor', 1)}
-                        className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                        title="Rotate Up"
-                      >
-                        <span className="material-symbols-outlined text-[13px]">expand_less</span>
-                      </button>
-                      <span key={config.rightRotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-xl font-bold select-none animate-rotor-step">
-                        {formatRotorPos(config.rightRotor.current, ringFormat)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleManualRotorStep('rightRotor', -1)}
-                        className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                        title="Rotate Down"
-                      >
-                        <span className="material-symbols-outlined text-[13px]">expand_more</span>
-                      </button>
-                    </div>
-                    <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.rightRotor.type]?.turnoverAction}>
-                      Notch: {ROTOR_SPECS[config.rightRotor.type]?.notch}
-                    </span>
-                  </div>
+                  {renderRotorView('FAST', 'rightRotor', config.rightRotor.type, true)}
                 </div>
 
                 {/* Battery Switch */}
@@ -1256,6 +1579,229 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 className="text-[10px] font-monospaced-technical text-[#ffdad6] bg-[#93000a]/40 hover:bg-[#93000a] px-2 py-0.5 rounded border border-red-800/40 transition-colors ml-2 cursor-pointer"
               >
                 Clear Tape
+              </button>
+            </div>
+          </div>
+
+          {/* Message Header (Funktelegramm-Kopf) */}
+          <div className="bg-[#17130b] border border-[#3b3426] p-3.5 rounded-lg space-y-3.5">
+            <div className="flex items-center justify-between border-b border-[#3b3426] pb-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[15px] text-[#ebc238]">fact_check</span>
+                <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase tracking-wider font-bold">
+                  Funktelegramm Header (Message Header)
+                </span>
+              </div>
+              <span className="text-[9px] text-[#8c7e6a] font-mono uppercase tracking-widest">
+                M3 / M4 Procedure
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* 1. Preamble */}
+              <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                    1. Preamble (Präambel)
+                  </span>
+                  <span className="text-[9px] text-[#8c7e6a] font-mono">Cleartext</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div>
+                    <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Sender Call Sign">
+                      Sender
+                    </label>
+                    <input
+                      type="text"
+                      value={senderCallSign}
+                      onChange={(e) => setSenderCallSign(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5))}
+                      placeholder="DFS"
+                      className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                      title="Sender identification call sign (Clear text)"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5 flex justify-between items-center" title="Time of Transmission">
+                      <span>Time</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date();
+                          const hours = String(d.getHours()).padStart(2, '0');
+                          const mins = String(d.getMinutes()).padStart(2, '0');
+                          setTransmissionTime(`${hours}${mins}`);
+                          playRotorClickSound(soundEnabled);
+                        }}
+                        className="text-[8px] text-[#ebc238] hover:underline cursor-pointer font-bold"
+                        title="Set to Current Time"
+                      >
+                        Now
+                      </button>
+                    </label>
+                    <input
+                      type="text"
+                      value={transmissionTime}
+                      onChange={(e) => setTransmissionTime(e.target.value.replace(/[^0-9]/g, '').substring(0, 4))}
+                      placeholder="1200"
+                      className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                      title="Time of transmission (HHMM clear text)"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5" title="Total Letter Count">
+                      Letters
+                    </label>
+                    <div className="w-full bg-[#120e04] text-[#ede1cd] border border-[#3b3426] rounded px-1.5 py-1 text-xs font-monospaced-technical font-bold text-center h-[26px] flex items-center justify-center" title="Total processed character count (letters only)">
+                      {inputTape.replace(/[^A-Z]/ig, '').length}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
+                  Formatted: <span className="text-[#ede1cd] font-semibold">{senderCallSign || '???'}</span> <span className="text-[#ede1cd] font-semibold">{transmissionTime || '????'}</span> <span className="text-[#ede1cd] font-semibold">{inputTape.replace(/[^A-Z]/ig, '').length}</span>
+                </div>
+              </div>
+
+              {/* 2. Kenngruppe */}
+              <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                    2. Kenngruppe (Key ID)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setKenngruppe(getActiveCodebookKenngruppe());
+                      playRotorClickSound(soundEnabled);
+                    }}
+                    className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
+                    title="Load indicator group from currently active daily key"
+                  >
+                    Sync Key
+                  </button>
+                </div>
+                <div className="flex-1 flex flex-col justify-center">
+                  <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
+                    Indicator Group
+                  </label>
+                  <input
+                    type="text"
+                    value={kenngruppe}
+                    onChange={(e) => setKenngruppe(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 4))}
+                    placeholder="UIO"
+                    className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-2 py-1 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors"
+                    title="Code group showing which daily key sheet to use"
+                  />
+                </div>
+                <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
+                  Identifies key settings sheet day: <span className="text-[#ebc238] font-bold font-monospaced-technical">{kenngruppe || '—'}</span>
+                </div>
+              </div>
+
+              {/* 3. Grundstellung */}
+              <div className="border border-[#4e453b]/60 rounded p-2.5 bg-[#120e04]/50 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                    3. Grundstellung
+                  </span>
+                  <span className="text-[9px] text-[#8c7e6a] font-mono">Position</span>
+                </div>
+                <div className="flex-1 flex flex-col justify-center">
+                  <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
+                    Rotor Indicator
+                  </label>
+                  <div className="flex gap-1.5 items-center">
+                    <input
+                      type="text"
+                      value={localGrundstellung}
+                      onChange={handleGrundstellungChange}
+                      onBlur={() => setLocalGrundstellung(getGrundstellungString())}
+                      className="w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded px-2 py-1 text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors uppercase"
+                      maxLength={config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma' ? 4 : 3}
+                      title="Type letters (e.g. HER or AHER) to instantly reposition all active rotors"
+                    />
+                    <div className="flex flex-col gap-0.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                          const nextConfig = { ...config };
+                          nextConfig.rightRotor = { ...nextConfig.rightRotor, current: (nextConfig.rightRotor.current + 1) % 26, start: (nextConfig.rightRotor.current + 1) % 26 };
+                          nextConfig.middleRotor = { ...nextConfig.middleRotor, current: (nextConfig.middleRotor.current + 1) % 26, start: (nextConfig.middleRotor.current + 1) % 26 };
+                          nextConfig.leftRotor = { ...nextConfig.leftRotor, current: (nextConfig.leftRotor.current + 1) % 26, start: (nextConfig.leftRotor.current + 1) % 26 };
+                          if (isM4) {
+                            nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: (nextConfig.fourthRotor.current + 1) % 26, start: (nextConfig.fourthRotor.current + 1) % 26 };
+                          }
+                          onUpdateConfig(nextConfig);
+                          playRotorClickSound(soundEnabled);
+                        }}
+                        className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer font-bold"
+                        title="Step all rotors forward"
+                      >
+                        +1 ALL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+                          const nextConfig = { ...config };
+                          nextConfig.rightRotor = { ...nextConfig.rightRotor, current: 0, start: 0 };
+                          nextConfig.middleRotor = { ...nextConfig.middleRotor, current: 0, start: 0 };
+                          nextConfig.leftRotor = { ...nextConfig.leftRotor, current: 0, start: 0 };
+                          if (isM4) {
+                            nextConfig.fourthRotor = { ...nextConfig.fourthRotor, current: 0, start: 0 };
+                          }
+                          onUpdateConfig(nextConfig);
+                          playRotorClickSound(soundEnabled);
+                        }}
+                        className="text-[8px] font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 px-1 py-0.5 rounded cursor-pointer"
+                        title="Reset all rotors to A / AAAA"
+                      >
+                        RESET
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-[9px] text-[#8c7e6a] mt-2 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1.5">
+                  Initial starting positions: <span className="text-[#ebc238] font-bold font-monospaced-technical">{localGrundstellung || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex flex-wrap gap-2 pt-2.5 border-t border-[#3b3426]/60 justify-end">
+              <button
+                type="button"
+                onClick={handleCopyHeader}
+                className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
+                  headerCopied
+                    ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
+                    : 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]'
+                }`}
+                title="Copy the Funktelegramm header/preamble to clipboard"
+              >
+                <span className="material-symbols-outlined text-[14px]">
+                  {headerCopied ? 'done' : 'content_copy'}
+                </span>
+                {headerCopied ? 'Header Copied!' : 'Copy Header'}
+              </button>
+              
+              <button
+                type="button"
+                onClick={handleCopyFullMessage}
+                disabled={!cipherTape}
+                className={`text-[10px] font-monospaced-technical font-bold uppercase px-3 py-1.5 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
+                  !cipherTape
+                    ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
+                    : fullMessageCopied
+                    ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
+                    : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
+                }`}
+                title="Copy full transmission (Header + Ciphertext) to clipboard"
+              >
+                <span className="material-symbols-outlined text-[14px]">
+                  {fullMessageCopied ? 'done' : 'forward_to_inbox'}
+                </span>
+                {fullMessageCopied ? 'Message Copied!' : 'Copy Full Message'}
               </button>
             </div>
           </div>

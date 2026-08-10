@@ -79,6 +79,154 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
     });
   };
 
+  const handleRandomizeRotorType = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor') => {
+    playRotorClickSound(soundEnabled);
+    const randomType = rotorOptions[Math.floor(Math.random() * rotorOptions.length)];
+    onUpdateConfig({
+      ...config,
+      [rotorKey]: { ...config[rotorKey], type: randomType }
+    });
+  };
+
+  const handleRandomizeRotorRing = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor') => {
+    playRotorClickSound(soundEnabled);
+    const randomRing = Math.floor(Math.random() * 26) + 1;
+    onUpdateConfig({
+      ...config,
+      [rotorKey]: { ...config[rotorKey], ring: randomRing }
+    });
+  };
+
+  const handleRandomizeRotorStart = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor') => {
+    playRotorClickSound(soundEnabled);
+    const randomStart = Math.floor(Math.random() * 26);
+    onUpdateConfig({
+      ...config,
+      [rotorKey]: { ...config[rotorKey], start: randomStart, current: randomStart }
+    });
+  };
+
+  const handleRandomizeRotorEntire = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor') => {
+    playRotorClickSound(soundEnabled);
+    const randomType = rotorOptions[Math.floor(Math.random() * rotorOptions.length)];
+    const randomRing = Math.floor(Math.random() * 26) + 1;
+    const randomStart = Math.floor(Math.random() * 26);
+    onUpdateConfig({
+      ...config,
+      [rotorKey]: {
+        ...config[rotorKey],
+        type: randomType,
+        ring: randomRing,
+        start: randomStart,
+        current: randomStart
+      }
+    });
+  };
+
+  const handleRandomizeFourthRotorEntire = () => {
+    playRotorClickSound(soundEnabled);
+    const randomType: RotorType = Math.random() < 0.5 ? 'Beta' : 'Gamma';
+    const randomRing = Math.floor(Math.random() * 26) + 1;
+    const randomStart = Math.floor(Math.random() * 26);
+    onUpdateConfig({
+      ...config,
+      fourthRotor: {
+        ...config.fourthRotor,
+        type: randomType,
+        ring: randomRing,
+        start: randomStart,
+        current: randomStart
+      }
+    });
+  };
+
+  const handleRandomizeReflectorType = () => {
+    playRotorClickSound(soundEnabled);
+    const randomRef = reflectorOptions[Math.floor(Math.random() * reflectorOptions.length)];
+    onUpdateConfig({
+      ...config,
+      reflector: {
+        ...config.reflector,
+        type: randomRef
+      }
+    });
+  };
+
+  const handleRandomizeReflectorRing = () => {
+    playRotorClickSound(soundEnabled);
+    const randomRing = Math.floor(Math.random() * 26) + 1;
+    onUpdateConfig({
+      ...config,
+      reflector: {
+        ...config.reflector,
+        ring: randomRing
+      }
+    });
+  };
+
+  const handleRandomizeReflectorStart = () => {
+    playRotorClickSound(soundEnabled);
+    const randomStart = Math.floor(Math.random() * 26);
+    onUpdateConfig({
+      ...config,
+      reflector: {
+        ...config.reflector,
+        start: randomStart,
+        current: randomStart
+      }
+    });
+  };
+
+  const handleRandomizeReflectorEntire = () => {
+    playRotorClickSound(soundEnabled);
+    const randomRef = reflectorOptions[Math.floor(Math.random() * reflectorOptions.length)];
+    const randomRing = Math.floor(Math.random() * 26) + 1;
+    const randomStart = Math.floor(Math.random() * 26);
+    onUpdateConfig({
+      ...config,
+      reflector: {
+        type: randomRef,
+        ring: randomRing,
+        start: randomStart,
+        current: randomStart
+      }
+    });
+  };
+
+  const handleRandomizeAll = () => {
+    playRotorClickSound(soundEnabled);
+    const randType = () => rotorOptions[Math.floor(Math.random() * rotorOptions.length)];
+    const randRing = () => Math.floor(Math.random() * 26) + 1;
+    const randStart = () => Math.floor(Math.random() * 26);
+    
+    const isM4Active = Math.random() < 0.5;
+    const fourthType: RotorType = isM4Active ? (Math.random() < 0.5 ? 'Beta' : 'Gamma') : 'I';
+    
+    let refType: ReflectorType;
+    if (fourthType === 'Beta') {
+      refType = 'Reflector B Thin';
+    } else if (fourthType === 'Gamma') {
+      refType = 'Reflector C Thin';
+    } else {
+      const standardRefs: ReflectorType[] = ['Reflector A', 'Reflector B', 'Reflector C', 'UKW-Dual-Dynamic'];
+      refType = standardRefs[Math.floor(Math.random() * standardRefs.length)];
+    }
+
+    onUpdateConfig({
+      leftRotor: { type: randType(), ring: randRing(), start: randStart(), current: randStart() },
+      middleRotor: { type: randType(), ring: randRing(), start: randStart(), current: randStart() },
+      rightRotor: { type: randType(), ring: randRing(), start: randStart(), current: randStart() },
+      fourthRotor: { type: fourthType, ring: randRing(), start: randStart(), current: randStart() },
+      reflector: {
+        type: refType,
+        ring: randRing(),
+        start: randStart(),
+        current: randStart()
+      },
+      plugboard: config.plugboard || {}
+    });
+  };
+
   const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
 
   return (
@@ -107,9 +255,19 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
         {/* Reflector & Machine Mode */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 bg-[#120e04] p-3 rounded-lg border border-[#3b3426]">
           <div>
-            <label className="text-[11px] font-monospaced-technical text-[#ebc238] uppercase font-bold block mb-1">
-              Reflector (Umkehrwalze - UKW)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] font-monospaced-technical text-[#ebc238] uppercase font-bold block">
+                Reflector (Umkehrwalze - UKW)
+              </label>
+              <button
+                type="button"
+                onClick={handleRandomizeReflectorType}
+                className="text-[#8c7e6a] hover:text-[#ebc238] p-0.5 cursor-pointer flex items-center justify-center rounded"
+                title="Randomize Reflector Type"
+              >
+                <span className="material-symbols-outlined text-[11px]">shuffle</span>
+              </button>
+            </div>
             <select
               value={config.reflector.type}
               onChange={(e) => handleUpdateReflector(e.target.value as ReflectorType)}
@@ -179,12 +337,32 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
           {/* M4 4th Rotor if active */}
           {isM4 && (
             <div className="bg-[#120e04] p-3 rounded-lg border border-[#ebc238]/30 flex flex-col items-center">
-              <span className="text-[10px] font-monospaced-technical text-[#ebc238] font-bold uppercase mb-1">
-                4th Rotor ({config.fourthRotor.type})
-              </span>
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className="text-[10px] font-monospaced-technical text-[#ebc238] font-bold uppercase">
+                  4th Rotor ({config.fourthRotor.type})
+                </span>
+                <button
+                  type="button"
+                  onClick={handleRandomizeFourthRotorEntire}
+                  className="text-[#8c7e6a] hover:text-[#ebc238] p-0.5 cursor-pointer flex items-center justify-center rounded"
+                  title="Randomize Fourth Rotor settings"
+                >
+                  <span className="material-symbols-outlined text-xs">shuffle</span>
+                </button>
+              </div>
               <div className="w-full space-y-2 mt-1">
                 <div>
-                  <span className="text-[10px] text-[#9e8d78] block mb-0.5">Ringstellung</span>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-[#9e8d78] block">Ringstellung</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRandomizeRotorRing('fourthRotor')}
+                      className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                      title="Randomize Fourth Rotor Ring"
+                    >
+                      <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                    </button>
+                  </div>
                   <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
                     <button onClick={() => handleAdjustRing('fourthRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
                     <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorRing(config.fourthRotor.ring, ringFormat)}</span>
@@ -192,7 +370,17 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   </div>
                 </div>
                 <div>
-                  <span className="text-[10px] text-[#9e8d78] block mb-0.5">Grundstellung</span>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-[#9e8d78] block">Grundstellung</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRandomizeRotorStart('fourthRotor')}
+                      className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                      title="Randomize Fourth Rotor Start"
+                    >
+                      <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                    </button>
+                  </div>
                   <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
                     <button onClick={() => handleAdjustStart('fourthRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
                     <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorPos(config.fourthRotor.start, ringFormat)}</span>
@@ -206,16 +394,36 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
           {/* ─── 'UKW-Dual-Dynamic' rotor quick settings ─── */}
           {config.reflector.type === 'UKW-Dual-Dynamic' && (
             <div className="bg-[#120e04] p-3 rounded-lg border border-[#3b3426] flex flex-col items-center">
-              <span className="text-[10px] font-monospaced-technical text-[#ebc238] font-bold uppercase mb-1 tracking-wider">
-                Reflector (UKW)
-              </span>
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className="text-[10px] font-monospaced-technical text-[#ebc238] font-bold uppercase tracking-wider">
+                  Reflector (UKW)
+                </span>
+                <button
+                  type="button"
+                  onClick={handleRandomizeReflectorEntire}
+                  className="p-0.5 text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer rounded"
+                  title="Randomize Reflector"
+                >
+                  <span className="material-symbols-outlined text-xs">shuffle</span>
+                </button>
+              </div>
               <div className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2 py-1 text-xs text-center text-gray-400 font-bold mb-2 select-none">
                 UKW-Dual-Dynamic
               </div>
 
               {/* Ring Setting */}
               <div className="w-full mb-2">
-                <label className="block text-[9px] uppercase font-mono text-[#a89985] mb-0.5 text-center">Ring</label>
+                <div className="flex items-center justify-between mb-0.5">
+                  <label className="block text-[9px] uppercase font-mono text-[#a89985] text-center flex-1">Ring</label>
+                  <button
+                    type="button"
+                    onClick={handleRandomizeReflectorRing}
+                    className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                    title="Randomize Reflector Ring"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                  </button>
+                </div>
                 <div className="flex items-center justify-between bg-[#201b0f] border border-[#4e453b] rounded px-2 py-0.5">
                   <button
                     type="button"
@@ -243,7 +451,17 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
 
               {/* Start Position */}
               <div className="w-full">
-                <label className="block text-[9px] uppercase font-mono text-[#a89985] mb-0.5 text-center">Start</label>
+                <div className="flex items-center justify-between mb-0.5">
+                  <label className="block text-[9px] uppercase font-mono text-[#a89985] text-center flex-1">Start</label>
+                  <button
+                    type="button"
+                    onClick={handleRandomizeReflectorStart}
+                    className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                    title="Randomize Reflector Start"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                  </button>
+                </div>
                 <div className="flex items-center justify-between bg-[#201b0f] border border-[#4e453b] rounded px-2 py-0.5">
                   <button
                     type="button"
@@ -271,21 +489,51 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
 
           {/* Left / Slow Rotor */}
           <div className="bg-[#120e04] p-3 rounded-lg border border-[#3b3426] flex flex-col items-center">
-            <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase mb-1">
-              Slow Rotor (Left)
-            </span>
-            <select
-              value={config.leftRotor.type}
-              onChange={(e) => handleUpdateRotorType('leftRotor', e.target.value as RotorType)}
-              className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2 py-1 text-xs text-[#ebc238] font-bold mb-2 cursor-pointer text-center"
-            >
-              {rotorOptions.map((r) => (
-                <option key={r} value={r}>Rotor {r}</option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between w-full mb-1">
+              <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                Slow Rotor (Left)
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRandomizeRotorEntire('leftRotor')}
+                className="p-0.5 text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer rounded"
+                title="Randomize Left Rotor"
+              >
+                <span className="material-symbols-outlined text-xs">shuffle</span>
+              </button>
+            </div>
+            <div className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2 py-1 text-xs text-[#ebc238] font-bold mb-2 flex items-center justify-between">
+              <select
+                value={config.leftRotor.type}
+                onChange={(e) => handleUpdateRotorType('leftRotor', e.target.value as RotorType)}
+                className="bg-transparent border-none text-xs text-[#ebc238] font-bold cursor-pointer text-center flex-1 focus:outline-none"
+              >
+                {rotorOptions.map((r) => (
+                  <option key={r} value={r}>Rotor {r}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => handleRandomizeRotorType('leftRotor')}
+                className="text-[#8c7e6a] hover:text-[#ebc238] p-0.5 cursor-pointer"
+                title="Randomize Rotor Type"
+              >
+                <span className="material-symbols-outlined text-[11px]">shuffle</span>
+              </button>
+            </div>
             <div className="w-full space-y-2">
               <div>
-                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Ringstellung</span>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[10px] text-[#9e8d78] block">Ringstellung</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRandomizeRotorRing('leftRotor')}
+                    className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                    title="Randomize Left Ring"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                  </button>
+                </div>
                 <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
                   <button onClick={() => handleAdjustRing('leftRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
                   <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorRing(config.leftRotor.ring, ringFormat)}</span>
@@ -293,7 +541,17 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                 </div>
               </div>
               <div>
-                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Grundstellung</span>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[10px] text-[#9e8d78] block">Grundstellung</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRandomizeRotorStart('leftRotor')}
+                    className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                    title="Randomize Left Start"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                  </button>
+                </div>
                 <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
                   <button onClick={() => handleAdjustStart('leftRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
                   <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorPos(config.leftRotor.start, ringFormat)}</span>
@@ -305,21 +563,51 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
 
           {/* Middle Rotor */}
           <div className="bg-[#120e04] p-3 rounded-lg border border-[#3b3426] flex flex-col items-center">
-            <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase mb-1">
-              Mid Rotor (Center)
-            </span>
-            <select
-              value={config.middleRotor.type}
-              onChange={(e) => handleUpdateRotorType('middleRotor', e.target.value as RotorType)}
-              className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2 py-1 text-xs text-[#ebc238] font-bold mb-2 cursor-pointer text-center"
-            >
-              {rotorOptions.map((r) => (
-                <option key={r} value={r}>Rotor {r}</option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between w-full mb-1">
+              <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                Mid Rotor (Center)
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRandomizeRotorEntire('middleRotor')}
+                className="p-0.5 text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer rounded"
+                title="Randomize Middle Rotor"
+              >
+                <span className="material-symbols-outlined text-xs">shuffle</span>
+              </button>
+            </div>
+            <div className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2 py-1 text-xs text-[#ebc238] font-bold mb-2 flex items-center justify-between">
+              <select
+                value={config.middleRotor.type}
+                onChange={(e) => handleUpdateRotorType('middleRotor', e.target.value as RotorType)}
+                className="bg-transparent border-none text-xs text-[#ebc238] font-bold cursor-pointer text-center flex-1 focus:outline-none"
+              >
+                {rotorOptions.map((r) => (
+                  <option key={r} value={r}>Rotor {r}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => handleRandomizeRotorType('middleRotor')}
+                className="text-[#8c7e6a] hover:text-[#ebc238] p-0.5 cursor-pointer"
+                title="Randomize Rotor Type"
+              >
+                <span className="material-symbols-outlined text-[11px]">shuffle</span>
+              </button>
+            </div>
             <div className="w-full space-y-2">
               <div>
-                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Ringstellung</span>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[10px] text-[#9e8d78] block">Ringstellung</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRandomizeRotorRing('middleRotor')}
+                    className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                    title="Randomize Middle Ring"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                  </button>
+                </div>
                 <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
                   <button onClick={() => handleAdjustRing('middleRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
                   <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorRing(config.middleRotor.ring, ringFormat)}</span>
@@ -327,7 +615,17 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                 </div>
               </div>
               <div>
-                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Grundstellung</span>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[10px] text-[#9e8d78] block">Grundstellung</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRandomizeRotorStart('middleRotor')}
+                    className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                    title="Randomize Middle Start"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                  </button>
+                </div>
                 <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
                   <button onClick={() => handleAdjustStart('middleRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
                   <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorPos(config.middleRotor.start, ringFormat)}</span>
@@ -339,21 +637,51 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
 
           {/* Right / Fast Rotor */}
           <div className="bg-[#120e04] p-3 rounded-lg border border-[#3b3426] flex flex-col items-center">
-            <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase mb-1">
-              Fast Rotor (Right)
-            </span>
-            <select
-              value={config.rightRotor.type}
-              onChange={(e) => handleUpdateRotorType('rightRotor', e.target.value as RotorType)}
-              className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2 py-1 text-xs text-[#ebc238] font-bold mb-2 cursor-pointer text-center"
-            >
-              {rotorOptions.map((r) => (
-                <option key={r} value={r}>Rotor {r}</option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between w-full mb-1">
+              <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                Fast Rotor (Right)
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRandomizeRotorEntire('rightRotor')}
+                className="p-0.5 text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer rounded"
+                title="Randomize Right Rotor"
+              >
+                <span className="material-symbols-outlined text-xs">shuffle</span>
+              </button>
+            </div>
+            <div className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-2 py-1 text-xs text-[#ebc238] font-bold mb-2 flex items-center justify-between">
+              <select
+                value={config.rightRotor.type}
+                onChange={(e) => handleUpdateRotorType('rightRotor', e.target.value as RotorType)}
+                className="bg-transparent border-none text-xs text-[#ebc238] font-bold cursor-pointer text-center flex-1 focus:outline-none"
+              >
+                {rotorOptions.map((r) => (
+                  <option key={r} value={r}>Rotor {r}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => handleRandomizeRotorType('rightRotor')}
+                className="text-[#8c7e6a] hover:text-[#ebc238] p-0.5 cursor-pointer"
+                title="Randomize Rotor Type"
+              >
+                <span className="material-symbols-outlined text-[11px]">shuffle</span>
+              </button>
+            </div>
             <div className="w-full space-y-2">
               <div>
-                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Ringstellung</span>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[10px] text-[#9e8d78] block">Ringstellung</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRandomizeRotorRing('rightRotor')}
+                    className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                    title="Randomize Right Ring"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                  </button>
+                </div>
                 <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
                   <button onClick={() => handleAdjustRing('rightRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
                   <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorRing(config.rightRotor.ring, ringFormat)}</span>
@@ -361,7 +689,17 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                 </div>
               </div>
               <div>
-                <span className="text-[10px] text-[#9e8d78] block mb-0.5">Grundstellung</span>
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[10px] text-[#9e8d78] block">Grundstellung</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRandomizeRotorStart('rightRotor')}
+                    className="text-[#8c7e6a] hover:text-[#ebc238] cursor-pointer"
+                    title="Randomize Right Start"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                  </button>
+                </div>
                 <div className="flex items-center justify-between bg-[#201b0f] rounded border border-[#3b3426] p-1">
                   <button onClick={() => handleAdjustStart('rightRotor', -1)} className="w-6 h-6 text-xs text-[#ebc238] bg-[#2a2215] rounded hover:bg-[#ebc238] hover:text-[#1c170d] cursor-pointer">-</button>
                   <span className="text-xs font-bold text-[#ebc238] font-monospaced-technical">{formatRotorPos(config.rightRotor.start, ringFormat)}</span>
@@ -374,13 +712,23 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
 
         {/* Footer buttons */}
         <div className="flex items-center justify-between pt-3 border-t border-[#3b3426]">
-          <button
-            type="button"
-            onClick={handleResetPositions}
-            className="px-3 py-1.5 text-xs text-[#d1c4b7] hover:text-[#ebc238] bg-[#201b0f] hover:bg-[#2c2415] rounded border border-[#3b3426] cursor-pointer transition-colors"
-          >
-            Reset Positions to A (01)
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleResetPositions}
+              className="px-3 py-1.5 text-xs text-[#d1c4b7] hover:text-[#ebc238] bg-[#201b0f] hover:bg-[#2c2415] rounded border border-[#3b3426] cursor-pointer transition-colors"
+            >
+              Reset to A (01)
+            </button>
+            <button
+              type="button"
+              onClick={handleRandomizeAll}
+              className="px-3 py-1.5 text-xs text-[#ebc238] hover:bg-[#ebc238]/20 bg-[#201b0f] rounded border border-[#ebc238]/40 cursor-pointer transition-colors flex items-center gap-1 font-bold"
+            >
+              <span className="material-symbols-outlined text-xs">shuffle</span>
+              <span>Randomize All</span>
+            </button>
+          </div>
           <button
             type="button"
             onClick={onClose}

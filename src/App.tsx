@@ -11,12 +11,52 @@ import { SettingsModal, InfoModal, ShareModal, ShortcutsModal } from './componen
 import { ActiveTab, EnigmaConfig, LogEntry } from './types';
 import { DEFAULT_ENIGMA_CONFIG } from './lib/enigmaEngine';
 
+function isValidRotorState(obj: any): boolean {
+  return !!(obj && typeof obj.type === 'string' && typeof obj.ring === 'number' && typeof obj.start === 'number' && typeof obj.current === 'number');
+}
+
+function isValidEnigmaConfig(obj: any): boolean {
+  if (!obj) return false;
+  return !!(
+    isValidRotorState(obj.leftRotor) &&
+    isValidRotorState(obj.middleRotor) &&
+    isValidRotorState(obj.rightRotor) &&
+    isValidRotorState(obj.fourthRotor) &&
+    isValidRotorState(obj.reflector) &&
+    typeof obj.plugboard === 'object' &&
+    obj.plugboard !== null
+  );
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('machine');
-  const [config, setConfig] = useState<EnigmaConfig>(DEFAULT_ENIGMA_CONFIG);
+  const [config, setConfig] = useState<EnigmaConfig>(() => {
+    try {
+      const saved = localStorage.getItem('enigma_machine_config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (isValidEnigmaConfig(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return DEFAULT_ENIGMA_CONFIG;
+  });
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [compactMode, setCompactMode] = useState<boolean>(false);
+  const [inputTape, setInputTape] = useState<string>('');
+  const [cipherTape, setCipherTape] = useState<string>('');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('enigma_machine_config', JSON.stringify(config));
+    } catch (e) {
+      // ignore
+    }
+  }, [config]);
 
   // Modals and sidebar state
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -140,6 +180,8 @@ export default function App() {
   const handleResetMachine = () => {
     setConfig(JSON.parse(JSON.stringify(DEFAULT_ENIGMA_CONFIG)));
     setLogs([]);
+    setInputTape('');
+    setCipherTape('');
   };
 
   const handleAddLog = (entry: LogEntry) => {
@@ -186,6 +228,10 @@ export default function App() {
               soundEnabled={soundEnabled}
               compactMode={compactMode}
               onToggleCompactMode={() => setCompactMode((prev) => !prev)}
+              inputTape={inputTape}
+              setInputTape={setInputTape}
+              cipherTape={cipherTape}
+              setCipherTape={setCipherTape}
             />
           )}
 

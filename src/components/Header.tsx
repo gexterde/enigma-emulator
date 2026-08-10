@@ -38,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
           title="Keyboard Shortcuts (F9 / ?)"
           aria-label="Keyboard Shortcuts"
         >
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>keyboard</span>
+          <span className="material-symbols-outlined material-fill-0">keyboard</span>
         </button>
         <button
           onClick={onOpenSettings}
@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
           title="Settings (F6 / ^S)"
           aria-label="Settings"
         >
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>settings</span>
+          <span className="material-symbols-outlined material-fill-0">settings</span>
         </button>
         <button
           onClick={onOpenInfo}
@@ -54,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
           title="Historical Information (F7 / ^H)"
           aria-label="Info"
         >
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>info</span>
+          <span className="material-symbols-outlined material-fill-0">info</span>
         </button>
         <button
           onClick={onOpenShare}
@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
           title="Share Configuration (F8 / ^Shift+S)"
           aria-label="Share"
         >
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>share</span>
+          <span className="material-symbols-outlined material-fill-0">share</span>
         </button>
       </div>
     </header>

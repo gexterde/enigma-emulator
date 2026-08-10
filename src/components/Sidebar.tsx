@@ -84,10 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     : 'text-[#d1c4b7] hover:bg-[#2f291c] hover:text-[#ede1cd]'
                 }`}
               >
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontVariationSettings: `'FILL' ${isActive ? 1 : 0}` }}
-                >
+                <span className={`material-symbols-outlined ${isActive ? 'material-fill-1' : 'material-fill-0'}`}>
                   {item.icon}
                 </span>
                 <span className="text-ui-body font-ui-body flex-1">{item.label}</span>

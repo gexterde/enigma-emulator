@@ -230,6 +230,67 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
     { id: 'lampboard', label: '12. Lampboard', desc: 'Glühlampenfeld', pos: 'mid-left' }
   ];
 
+  // Refactored helper function to render individual rotor views without duplicating HTML structure
+  const renderRotorView = (
+    stageSub: string,
+    componentIdFwd: string,
+    componentIdRev: string,
+    rotorType: string,
+    currentPos: number,
+    ringVal: number,
+    label: string
+  ) => {
+    const fwdStep = trace.find((s) => s.stage.includes(stageSub) && !s.stage.includes('Return') && !s.stage.includes('Reverse'));
+    const revStep = trace.find((s) => s.stage.includes(stageSub) && (s.stage.includes('Return') || s.stage.includes('Reverse')));
+    const isLit = activeStage.componentId === componentIdFwd || activeStage.componentId === componentIdRev || isKeyPressed;
+    return (
+      <div
+        key={stageSub}
+        className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
+          isLit
+            ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
+            : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
+        }`}
+      >
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[9px] font-monospaced-technical uppercase opacity-90">{label} ({rotorType})</span>
+            <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#251f12] text-[#8b6f47]'}`}>
+              {isLit ? '● LIT' : '● IDLE'}
+            </span>
+          </div>
+
+          {/* Rotor Window Dial */}
+          <div className={`my-1.5 p-1.5 rounded text-center border shadow-inner ${isLit ? 'bg-[#25190b] border-[#ebc238]' : 'bg-[#201b0f] border-[#3b3426]'}`}>
+            <span className="text-[9px] font-monospaced-technical uppercase block text-[#d1c4b7]">Position</span>
+            <span className={`text-2xl font-rotor-label font-bold ${isLit ? 'text-[#ebc238]' : 'text-[#ede1cd]'}`}>
+              {numToChar(currentPos)}
+            </span>
+            <span className="text-[8px] font-monospaced-technical block opacity-75">
+              Ring: {formatRotorRing(ringVal)}
+            </span>
+          </div>
+        </div>
+
+        {/* Parameter Transformations */}
+        <div className="mt-2 pt-1.5 border-t border-current/20 space-y-1 text-[10px] font-monospaced-technical">
+          <div className="flex justify-between items-center">
+            <span className="opacity-90">FWD:</span>
+            <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
+              {fwdStep ? `${fwdStep.inChar} ➔ ${fwdStep.outChar}` : '-'}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="opacity-90">REV:</span>
+            <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
+              {revStep ? `${revStep.inChar} ➔ ${revStep.outChar}` : '-'}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 md:p-6 shadow-panel texture-metal space-y-6">
       {/* Header & Controls */}
@@ -418,212 +479,16 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
               })()}
 
               {/* 4th Rotor (Fixed) */}
-              {isM4Active && (() => {
-                const fwdStep = trace.find((s) => s.stage.includes('4th Rotor') && !s.stage.includes('Return') && !s.stage.includes('Reverse'));
-                const revStep = trace.find((s) => s.stage.includes('4th Rotor') && (s.stage.includes('Return') || s.stage.includes('Reverse')));
-                const isLit = activeStage.componentId === 'rotor_fourth' || activeStage.componentId === 'rotor_fourth_rev' || isKeyPressed;
-                return (
-                  <div
-                    className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
-                      isLit
-                        ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
-                        : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-monospaced-technical uppercase opacity-90">Rotor 4 ({config.fourthRotor.type})</span>
-                        <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#251f12] text-[#8b6f47]'}`}>
-                          {isLit ? '● LIT' : '● IDLE'}
-                        </span>
-                      </div>
-
-                      {/* Rotor Window Dial */}
-                      <div className={`my-1.5 p-1.5 rounded text-center border shadow-inner ${isLit ? 'bg-[#25190b] border-[#ebc238]' : 'bg-[#201b0f] border-[#3b3426]'}`}>
-                        <span className="text-[9px] font-monospaced-technical uppercase block text-[#d1c4b7]">Position</span>
-                        <span className={`text-2xl font-rotor-label font-bold ${isLit ? 'text-[#ebc238]' : 'text-[#ede1cd]'}`}>
-                          {numToChar(config.fourthRotor.current)}
-                        </span>
-                        <span className="text-[8px] font-monospaced-technical block opacity-75">
-                          Ring: {formatRotorRing(config.fourthRotor.ring)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Parameter Transformations */}
-                    <div className="mt-2 pt-1.5 border-t border-current/20 space-y-1 text-[10px] font-monospaced-technical">
-                      <div className="flex justify-between items-center">
-                        <span className="opacity-90">FWD:</span>
-                        <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
-                          {fwdStep ? `${fwdStep.inChar} ➔ ${fwdStep.outChar}` : '-'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="opacity-90">REV:</span>
-                        <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
-                          {revStep ? `${revStep.inChar} ➔ ${revStep.outChar}` : '-'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {isM4Active && renderRotorView('4th Rotor', 'rotor_fourth', 'rotor_fourth_rev', config.fourthRotor.type, config.fourthRotor.current, config.fourthRotor.ring, 'Rotor 4')}
 
               {/* Left Rotor (Slow) */}
-              {(() => {
-                const fwdStep = trace.find((s) => s.stage.includes('Left Rotor') && !s.stage.includes('Return') && !s.stage.includes('Reverse'));
-                const revStep = trace.find((s) => s.stage.includes('Left Rotor') && (s.stage.includes('Return') || s.stage.includes('Reverse')));
-                const isLit = activeStage.componentId === 'rotor_left' || activeStage.componentId === 'rotor_left_rev' || isKeyPressed;
-                return (
-                  <div
-                    className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
-                      isLit
-                        ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
-                        : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-monospaced-technical uppercase opacity-90">Rotor L ({config.leftRotor.type})</span>
-                        <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#251f12] text-[#8b6f47]'}`}>
-                          {isLit ? '● LIT' : '● IDLE'}
-                        </span>
-                      </div>
-
-                      {/* Rotor Window Dial */}
-                      <div className={`my-1.5 p-1.5 rounded text-center border shadow-inner ${isLit ? 'bg-[#25190b] border-[#ebc238]' : 'bg-[#201b0f] border-[#3b3426]'}`}>
-                        <span className="text-[9px] font-monospaced-technical uppercase block text-[#d1c4b7]">Position</span>
-                        <span className={`text-2xl font-rotor-label font-bold ${isLit ? 'text-[#ebc238]' : 'text-[#ede1cd]'}`}>
-                          {numToChar(config.leftRotor.current)}
-                        </span>
-                        <span className="text-[8px] font-monospaced-technical block opacity-75">
-                          Ring: {formatRotorRing(config.leftRotor.ring)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Parameter Transformations */}
-                    <div className="mt-2 pt-1.5 border-t border-current/20 space-y-1 text-[10px] font-monospaced-technical">
-                      <div className="flex justify-between items-center">
-                        <span className="opacity-90">FWD:</span>
-                        <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
-                          {fwdStep ? `${fwdStep.inChar} ➔ ${fwdStep.outChar}` : '-'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="opacity-90">REV:</span>
-                        <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
-                          {revStep ? `${revStep.inChar} ➔ ${revStep.outChar}` : '-'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {renderRotorView('Left Rotor', 'rotor_left', 'rotor_left_rev', config.leftRotor.type, config.leftRotor.current, config.leftRotor.ring, 'Rotor L')}
 
               {/* Middle Rotor */}
-              {(() => {
-                const fwdStep = trace.find((s) => s.stage.includes('Middle Rotor') && !s.stage.includes('Return') && !s.stage.includes('Reverse'));
-                const revStep = trace.find((s) => s.stage.includes('Middle Rotor') && (s.stage.includes('Return') || s.stage.includes('Reverse')));
-                const isLit = activeStage.componentId === 'rotor_middle' || activeStage.componentId === 'rotor_middle_rev' || isKeyPressed;
-                return (
-                  <div
-                    className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
-                      isLit
-                        ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
-                        : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-monospaced-technical uppercase opacity-90">Rotor M ({config.middleRotor.type})</span>
-                        <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#251f12] text-[#8b6f47]'}`}>
-                          {isLit ? '● LIT' : '● IDLE'}
-                        </span>
-                      </div>
-
-                      {/* Rotor Window Dial */}
-                      <div className={`my-1.5 p-1.5 rounded text-center border shadow-inner ${isLit ? 'bg-[#25190b] border-[#ebc238]' : 'bg-[#201b0f] border-[#3b3426]'}`}>
-                        <span className="text-[9px] font-monospaced-technical uppercase block text-[#d1c4b7]">Position</span>
-                        <span className={`text-2xl font-rotor-label font-bold ${isLit ? 'text-[#ebc238]' : 'text-[#ede1cd]'}`}>
-                          {numToChar(config.middleRotor.current)}
-                        </span>
-                        <span className="text-[8px] font-monospaced-technical block opacity-75">
-                          Ring: {formatRotorRing(config.middleRotor.ring)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Parameter Transformations */}
-                    <div className="mt-2 pt-1.5 border-t border-current/20 space-y-1 text-[10px] font-monospaced-technical">
-                      <div className="flex justify-between items-center">
-                        <span className="opacity-90">FWD:</span>
-                        <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
-                          {fwdStep ? `${fwdStep.inChar} ➔ ${fwdStep.outChar}` : '-'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="opacity-90">REV:</span>
-                        <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
-                          {revStep ? `${revStep.inChar} ➔ ${revStep.outChar}` : '-'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {renderRotorView('Middle Rotor', 'rotor_middle', 'rotor_middle_rev', config.middleRotor.type, config.middleRotor.current, config.middleRotor.ring, 'Rotor M')}
 
               {/* Right Rotor (Fast) */}
-              {(() => {
-                const fwdStep = trace.find((s) => s.stage.includes('Right Rotor') && !s.stage.includes('Return') && !s.stage.includes('Reverse'));
-                const revStep = trace.find((s) => s.stage.includes('Right Rotor') && (s.stage.includes('Return') || s.stage.includes('Reverse')));
-                const isLit = activeStage.componentId === 'rotor_right' || activeStage.componentId === 'rotor_right_rev' || isKeyPressed;
-                return (
-                  <div
-                    className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
-                      isLit
-                        ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
-                        : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-monospaced-technical uppercase opacity-90">Rotor R ({config.rightRotor.type})</span>
-                        <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#251f12] text-[#8b6f47]'}`}>
-                          {isLit ? '● LIT' : '● IDLE'}
-                        </span>
-                      </div>
-
-                      {/* Rotor Window Dial */}
-                      <div className={`my-1.5 p-1.5 rounded text-center border shadow-inner ${isLit ? 'bg-[#25190b] border-[#ebc238]' : 'bg-[#201b0f] border-[#3b3426]'}`}>
-                        <span className="text-[9px] font-monospaced-technical uppercase block text-[#d1c4b7]">Position</span>
-                        <span className={`text-2xl font-rotor-label font-bold ${isLit ? 'text-[#ebc238]' : 'text-[#ede1cd]'}`}>
-                          {numToChar(config.rightRotor.current)}
-                        </span>
-                        <span className="text-[8px] font-monospaced-technical block opacity-75">
-                          Ring: {formatRotorRing(config.rightRotor.ring)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Parameter Transformations */}
-                    <div className="mt-2 pt-1.5 border-t border-current/20 space-y-1 text-[10px] font-monospaced-technical">
-                      <div className="flex justify-between items-center">
-                        <span className="opacity-90">FWD:</span>
-                        <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
-                          {fwdStep ? `${fwdStep.inChar} ➔ ${fwdStep.outChar}` : '-'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="opacity-90">REV:</span>
-                        <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
-                          {revStep ? `${revStep.inChar} ➔ ${revStep.outChar}` : '-'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {renderRotorView('Right Rotor', 'rotor_right', 'rotor_right_rev', config.rightRotor.type, config.rightRotor.current, config.rightRotor.ring, 'Rotor R')}
 
               {/* Entry Wheel (ETW Stator) */}
               {(() => {
@@ -767,10 +632,10 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
           {/* Wire Background */}
           <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1 bg-[#3b3426] z-0 rounded">
             <div
-              className="h-full bg-gradient-to-r from-[#8b6f47] via-[#ebc238] to-[#fff5d6] transition-all duration-300 rounded shadow-[0_0_8px_#ebc238]"
+              className="h-full bg-gradient-to-r from-[#8b6f47] via-[#ebc238] to-[#fff5d6] transition-all duration-300 rounded shadow-[0_0_8px_#ebc238] step-progress-fill"
               style={{
-                width: `${(currentStep / (totalStages - 1)) * 100}%`
-              }}
+                '--progress-width': `${(currentStep / (totalStages - 1)) * 100}%`
+              } as React.CSSProperties}
             />
           </div>
 
