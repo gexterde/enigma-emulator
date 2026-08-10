@@ -723,262 +723,10 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
         </div>
       </div>
 
-      {/* Bento Grid Layout for Settings */}
-      <div className={`grid grid-cols-1 ${draftConfig.fourthRotor.type === 'Beta' || draftConfig.fourthRotor.type === 'Gamma' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4 md:gap-6`}>
-        {/* Fourth Rotor (Fixed Stator — M4 Naval only, visible when Beta/Gamma selected) — Far Left */}
-        {(draftConfig.fourthRotor.type === 'Beta' || draftConfig.fourthRotor.type === 'Gamma') && (
-          <div className="bg-[#201b0f] rounded-lg p-4 md:p-5 border border-[#4e453b] shadow-panel texture-metal relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-[#e3c193]/5 rounded-bl-full -z-10 group-hover:bg-[#e3c193]/10 transition-colors" />
-            <h3 className="text-ui-header font-ui-header text-[#ede1cd] border-b border-[#3b3426] pb-2 mb-4 flex justify-between items-center">
-              <span>Fourth Rotor (Fixed)</span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={randomizeFourthRotorEntire}
-                  className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded bg-[#120e04]/40 border border-[#3b3426]"
-                  title="Randomize all settings for Fourth Rotor"
-                >
-                  <span className="material-symbols-outlined text-xs">shuffle</span>
-                </button>
-                <span className="text-monospaced-technical text-[10px] text-[#d1c4b7]">Pos 4 · M4</span>
-              </div>
-            </h3>
-            <div className="space-y-4 md:space-y-5">
-              {/* Type Selection */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7]">
-                    Rotor Type (Walzenlage)
-                  </label>
-                  <button
-                    type="button"
-                    onClick={randomizeFourthRotorType}
-                    className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded"
-                    title="Randomize Fourth Rotor Type"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">shuffle</span>
-                  </button>
-                </div>
-                {renderFourthRotorSelect()}
-              </div>
-
-              <div>
-                {/* Ring Setting */}
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7]">
-                    Ring ({ringFormat === 'number' ? '01-26' : 'A-Z'})
-                  </label>
-                  <button
-                    type="button"
-                    onClick={randomizeFourthRotorRing}
-                    className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded"
-                    title="Randomize Fourth Rotor Ring Setting"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">shuffle</span>
-                  </button>
-                </div>
-                <div className="relative bg-[#3b3426] border border-[#3b3426] rounded shadow-rotor-window h-14 min-h-[48px] flex items-center justify-center overflow-hidden">
-                  <button
-                    onClick={() => adjustFourthRing(1)}
-                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
-                    aria-label="Increase Fourth Rotor Ring"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">expand_less</span>
-                  </button>
-                  <span className="text-rotor-label font-rotor-label text-[#e3c193] z-10 pointer-events-none">
-                    {formatRotorRing(draftConfig.fourthRotor.ring, ringFormat)}
-                  </span>
-                  <button
-                    onClick={() => adjustFourthRing(-1)}
-                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
-                    aria-label="Decrease Fourth Rotor Ring"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">expand_more</span>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                {/* Start Position (Grundstellung) — Fixed rotor does not step */}
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7]">
-                    Start ({ringFormat === 'number' ? '00-25' : 'A-Z'}) · Fixed
-                  </label>
-                  <button
-                    type="button"
-                    onClick={randomizeFourthRotorStart}
-                    className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded"
-                    title="Randomize Fourth Rotor Start Position"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">shuffle</span>
-                  </button>
-                </div>
-                <div className="relative bg-[#3b3426] border border-[#3b3426] rounded shadow-rotor-window h-14 min-h-[48px] flex items-center justify-center overflow-hidden">
-                  <button
-                    onClick={() => adjustFourthStart(1)}
-                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
-                    aria-label="Increase Fourth Rotor Start"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">expand_less</span>
-                  </button>
-                  <span className="text-rotor-label font-rotor-label text-[#e3c193] z-10 pointer-events-none">
-                    {formatRotorPos(draftConfig.fourthRotor.start, ringFormat)}
-                  </span>
-                  <button
-                    onClick={() => adjustFourthStart(-1)}
-                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
-                    aria-label="Decrease Fourth Rotor Start"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">expand_more</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Turnover Notch Info */}
-              <div className="bg-[#120e04]/80 p-2.5 rounded border border-[#3b3426] text-xs">
-                <div className="flex items-center justify-between text-[#ebc238] font-monospaced-technical font-bold text-[11px] mb-1">
-                  <span className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-xs">lock</span>
-                    Fixed Stator
-                  </span>
-                  <span className="text-[#8c7e6a] text-[10px]">{ROTOR_SPECS[draftConfig.fourthRotor.type]?.year}</span>
-                </div>
-                <p className="text-[#a89985] text-[10px] leading-snug">
-                  {ROTOR_SPECS[draftConfig.fourthRotor.type]?.turnoverAction}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* ─── DYNAMIC REFLECTOR IMPROVED INTERFACE PANEL ─── */}
-        {draftConfig.reflector.type === 'UKW-Dual-Dynamic' && (
-          <div className="bg-[#201b0f] rounded-lg p-4 md:p-5 border border-[#4e453b] shadow-panel texture-metal relative overflow-hidden group mt-6">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-[#e3c193]/5 rounded-bl-full -z-10 group-hover:bg-[#e3c193]/10 transition-colors" />
-            <h3 className="text-ui-header font-ui-header text-[#ede1cd] border-b border-[#3b3426] pb-2 mb-4 flex justify-between items-center">
-              <span>Reflector Mechanics (UKW-Rotor)</span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={randomizeReflectorEntire}
-                  className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded bg-[#120e04]/40 border border-[#3b3426]"
-                  title="Randomize all settings for Reflector"
-                >
-                  <span className="material-symbols-outlined text-xs">shuffle</span>
-                </button>
-                <span className="text-monospaced-technical text-[10px] text-[#ebc238] font-bold">UNLOCKED</span>
-              </div>
-            </h3>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
-              {/* Reflector Ring Adjustment */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7]">
-                    Reflector Ring ({ringFormat === 'number' ? '01-26' : 'A-Z'})
-                  </label>
-                  <button
-                    type="button"
-                    onClick={randomizeReflectorRing}
-                    className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded"
-                    title="Randomize Reflector Ring"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">shuffle</span>
-                  </button>
-                </div>
-                <div className="relative bg-[#3b3426] border border-[#3b3426] rounded shadow-rotor-window h-14 min-h-[48px] flex items-center justify-center overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => adjustReflectorRing(1)}
-                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
-                    aria-label="Increase Reflector Ring"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">expand_less</span>
-                  </button>
-                  <span className="text-rotor-label font-rotor-label text-[#e3c193] z-10 pointer-events-none">
-                    {formatRotorRing(draftConfig.reflector.ring, ringFormat)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => adjustReflectorRing(-1)}
-                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
-                    aria-label="Decrease Reflector Ring"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">expand_more</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Reflector Start Position Adjustment */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7]">
-                    Reflector Start ({ringFormat === 'number' ? '00-25' : 'A-Z'})
-                  </label>
-                  <button
-                    type="button"
-                    onClick={randomizeReflectorStart}
-                    className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded"
-                    title="Randomize Reflector Start"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">shuffle</span>
-                  </button>
-                </div>
-                <div className="relative bg-[#3b3426] border border-[#3b3426] rounded shadow-rotor-window h-14 min-h-[48px] flex items-center justify-center overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => adjustReflectorStart(1)}
-                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
-                    aria-label="Increase Reflector Start"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">expand_less</span>
-                  </button>
-                  <span className="text-rotor-label font-rotor-label text-[#e3c193] z-10 pointer-events-none">
-                    {formatRotorPos(draftConfig.reflector.start, ringFormat)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => adjustReflectorStart(-1)}
-                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
-                    aria-label="Decrease Reflector Start"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">expand_more</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Alternative History Info Panel */}
-            <div className="bg-[#120e04]/80 p-2.5 rounded border border-[#3b3426] text-xs mt-4">
-              <div className="flex items-center justify-between text-[#ebc238] font-monospaced-technical font-bold text-[11px] mb-1">
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs">autorenew</span>
-                  Reflector Action: Dynamic Stepping
-                </span>
-                <span className="text-[#8c7e6a] text-[10px]">Asymmetric 1943</span>
-              </div>
-              <p className="text-[#a89985] text-[10px] leading-snug">
-                Self-encoding prevention mechanism disabled. The reflector rotates once every time the left (Slow) rotor completes a full turn.
-              </p>
-            </div>
-          </div>
-        )}
-        {/* ─────────────────────────────────────────────────── */}
-
-
-        {/* Left Rotor (Slow) */}
-        {renderRotorSettingPanel('leftRotor', 'Left Rotor (Slow)', 'Pos 1')}
-
-        {/* Middle Rotor */}
-        {renderRotorSettingPanel('middleRotor', 'Middle Rotor', 'Pos 2')}
-
-        {/* Right Rotor (Fast) */}
-        {renderRotorSettingPanel('rightRotor', 'Right Rotor (Fast)', 'Pos 3')}
-      </div>
-
-      {/* Lower Section: Reflector & Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-        {/* Reflector (Umkehrwalze) */}
-        <div className="md:col-span-2 bg-[#201b0f] rounded-lg p-4 md:p-5 border border-[#4e453b] shadow-panel texture-metal flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
+      {/* Bento Grid Layout for Settings in requested order: Reflector, Fourth Rotor, Left Rotor (Slow), Middle Rotor, Right Rotor */}
+      <div className="space-y-6">
+        {/* 1. Reflector (Umkehrwalze) */}
+        <div className="bg-[#201b0f] rounded-lg p-4 md:p-5 border border-[#4e453b] shadow-panel texture-metal flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
           <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[#3b3426] border-4 border-[#181307] shadow-[inset_0_4px_8px_rgba(0,0,0,0.8)] flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-[#d1c4b7] text-2xl md:text-3xl">sync</span>
           </div>
@@ -1020,20 +768,247 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="bg-[#201b0f] rounded-lg p-4 md:p-5 border border-[#4e453b] shadow-panel texture-metal flex flex-col justify-center gap-4">
+        {/* Reflector Mechanics (UKW-Rotor) if UKW-Dual-Dynamic */}
+        {draftConfig.reflector.type === 'UKW-Dual-Dynamic' && (
+          <div className="bg-[#201b0f] rounded-lg p-4 md:p-5 border border-[#4e453b] shadow-panel texture-metal relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-[#e3c193]/5 rounded-bl-full -z-10 group-hover:bg-[#e3c193]/10 transition-colors" />
+            <h3 className="text-ui-header font-ui-header text-[#ede1cd] border-b border-[#3b3426] pb-2 mb-4 flex justify-between items-center">
+              <span>Reflector Mechanics (UKW-Rotor)</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={randomizeReflectorEntire}
+                  className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded bg-[#120e04]/40 border border-[#3b3426]"
+                  title="Randomize all settings for Reflector"
+                >
+                  <span className="material-symbols-outlined text-xs">shuffle</span>
+                </button>
+                <span className="text-monospaced-technical text-[10px] text-[#ebc238] font-bold">UNLOCKED</span>
+              </div>
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7]">
+                    Reflector Ring ({ringFormat === 'number' ? '01-26' : 'A-Z'})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={randomizeReflectorRing}
+                    className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded"
+                    title="Randomize Reflector Ring"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">shuffle</span>
+                  </button>
+                </div>
+                <div className="relative bg-[#3b3426] border border-[#3b3426] rounded shadow-rotor-window h-14 min-h-[48px] flex items-center justify-center overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => adjustReflectorRing(1)}
+                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Increase Reflector Ring"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_less</span>
+                  </button>
+                  <span className="text-rotor-label font-rotor-label text-[#e3c193] z-10 pointer-events-none">
+                    {formatRotorRing(draftConfig.reflector.ring, ringFormat)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => adjustReflectorRing(-1)}
+                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Decrease Reflector Ring"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7]">
+                    Reflector Start ({ringFormat === 'number' ? '00-25' : 'A-Z'})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={randomizeReflectorStart}
+                    className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded"
+                    title="Randomize Reflector Start"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">shuffle</span>
+                  </button>
+                </div>
+                <div className="relative bg-[#3b3426] border border-[#3b3426] rounded shadow-rotor-window h-14 min-h-[48px] flex items-center justify-center overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => adjustReflectorStart(1)}
+                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Increase Reflector Start"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_less</span>
+                  </button>
+                  <span className="text-rotor-label font-rotor-label text-[#e3c193] z-10 pointer-events-none">
+                    {formatRotorPos(draftConfig.reflector.start, ringFormat)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => adjustReflectorStart(-1)}
+                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Decrease Reflector Start"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#120e04]/80 p-2.5 rounded border border-[#3b3426] text-xs mt-4">
+              <div className="flex items-center justify-between text-[#ebc238] font-monospaced-technical font-bold text-[11px] mb-1">
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">autorenew</span>
+                  Reflector Action: Dynamic Stepping
+                </span>
+                <span className="text-[#8c7e6a] text-[10px]">Asymmetric 1943</span>
+              </div>
+              <p className="text-[#a89985] text-[10px] leading-snug">
+                Self-encoding prevention mechanism disabled. The reflector rotates once every time the left (Slow) rotor completes a full turn.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 2. Fourth Rotor (Fixed Stator / M4) */}
+        {(draftConfig.fourthRotor.type === 'Beta' || draftConfig.fourthRotor.type === 'Gamma') && (
+          <div className="bg-[#201b0f] rounded-lg p-4 md:p-5 border border-[#4e453b] shadow-panel texture-metal relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-[#e3c193]/5 rounded-bl-full -z-10 group-hover:bg-[#e3c193]/10 transition-colors" />
+            <h3 className="text-ui-header font-ui-header text-[#ede1cd] border-b border-[#3b3426] pb-2 mb-4 flex justify-between items-center">
+              <span>Fourth Rotor (Fixed / IV. Rotor)</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={randomizeFourthRotorEntire}
+                  className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded bg-[#120e04]/40 border border-[#3b3426]"
+                  title="Randomize all settings for Fourth Rotor"
+                >
+                  <span className="material-symbols-outlined text-xs">shuffle</span>
+                </button>
+                <span className="text-monospaced-technical text-[10px] text-[#d1c4b7]">Pos 4 · M4</span>
+              </div>
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7]">
+                    Rotor Type (Walzenlage)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={randomizeFourthRotorType}
+                    className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded"
+                    title="Randomize Fourth Rotor Type"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">shuffle</span>
+                  </button>
+                </div>
+                {renderFourthRotorSelect()}
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7]">
+                    Ring ({ringFormat === 'number' ? '01-26' : 'A-Z'})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={randomizeFourthRotorRing}
+                    className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded"
+                    title="Randomize Fourth Rotor Ring Setting"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">shuffle</span>
+                  </button>
+                </div>
+                <div className="relative bg-[#3b3426] border border-[#3b3426] rounded shadow-rotor-window h-14 min-h-[48px] flex items-center justify-center overflow-hidden">
+                  <button
+                    onClick={() => adjustFourthRing(1)}
+                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Increase Fourth Rotor Ring"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_less</span>
+                  </button>
+                  <span className="text-rotor-label font-rotor-label text-[#e3c193] z-10 pointer-events-none">
+                    {formatRotorRing(draftConfig.fourthRotor.ring, ringFormat)}
+                  </span>
+                  <button
+                    onClick={() => adjustFourthRing(-1)}
+                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Decrease Fourth Rotor Ring"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-monospaced-technical font-monospaced-technical text-[#d1c4b7]">
+                    Start ({ringFormat === 'number' ? '00-25' : 'A-Z'}) · Fixed
+                  </label>
+                  <button
+                    type="button"
+                    onClick={randomizeFourthRotorStart}
+                    className="p-1 text-[#8c7e6a] hover:text-[#ebc238] transition-colors cursor-pointer flex items-center justify-center rounded"
+                    title="Randomize Fourth Rotor Start Position"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">shuffle</span>
+                  </button>
+                </div>
+                <div className="relative bg-[#3b3426] border border-[#3b3426] rounded shadow-rotor-window h-14 min-h-[48px] flex items-center justify-center overflow-hidden">
+                  <button
+                    onClick={() => adjustFourthStart(1)}
+                    className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Increase Fourth Rotor Start"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_less</span>
+                  </button>
+                  <span className="text-rotor-label font-rotor-label text-[#e3c193] z-10 pointer-events-none">
+                    {formatRotorPos(draftConfig.fourthRotor.start, ringFormat)}
+                  </span>
+                  <button
+                    onClick={() => adjustFourthStart(-1)}
+                    className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] transition-colors"
+                    aria-label="Decrease Fourth Rotor Start"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3, 4, 5. Scrambler Rotors (Left Slow, Middle Mid, Right Fast) in a 3-column grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          {renderRotorSettingPanel('leftRotor', 'Left Rotor (Slow)', 'Pos 1')}
+          {renderRotorSettingPanel('middleRotor', 'Middle Rotor (Mid)', 'Pos 2')}
+          {renderRotorSettingPanel('rightRotor', 'Right Rotor (Fast)', 'Pos 3')}
+        </div>
+
+        {/* Apply Settings Bar */}
+        <div className="bg-[#201b0f] rounded-lg p-4 md:p-5 border border-[#4e453b] shadow-panel texture-metal flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 className="text-ui-header font-ui-header text-[#ede1cd]">Apply Rotor Configuration</h3>
+            <p className="text-xs text-[#d1c4b7]">Updates scrambler wiring, rings, and starting positions across the machine state.</p>
+          </div>
           <button
             onClick={handleApply}
-            className="w-full min-h-[48px] py-4 bg-[#8b6f47] text-[#fffaf8] rounded shadow-key-base hover:bg-[#8b6f47]/90 active:shadow-key-pressed active:translate-y-1 transition-all font-ui-header font-bold text-lg border border-[#e3c193]/30 flex items-center justify-center gap-2 group cursor-pointer"
+            className="w-full sm:w-auto min-w-[200px] min-h-[48px] py-3 px-6 bg-[#8b6f47] text-[#fffaf8] rounded shadow-key-base hover:bg-[#8b6f47]/90 active:shadow-key-pressed active:translate-y-1 transition-all font-ui-header font-bold text-base border border-[#e3c193]/30 flex items-center justify-center gap-2 group cursor-pointer"
           >
             <span className="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500">
               memory
             </span>
             Apply Settings
           </button>
-          <p className="text-center text-[10px] text-[#d1c4b7] font-monospaced-technical opacity-70">
-            Will reset current message state.
-          </p>
         </div>
       </div>
     </div>

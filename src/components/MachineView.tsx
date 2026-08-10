@@ -160,7 +160,15 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
   const getActiveCodebookKenngruppe = (): string => {
     const isM4 = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
-    for (const sheet of HISTORICAL_CODEBOOKS) {
+    let allSheets = HISTORICAL_CODEBOOKS;
+    try {
+      const saved = localStorage.getItem('enigma_custom_codebooks_v1');
+      if (saved) {
+        allSheets = [...HISTORICAL_CODEBOOKS, ...JSON.parse(saved)];
+      }
+    } catch (e) {}
+
+    for (const sheet of allSheets) {
       for (const entry of sheet.entries) {
         const matchLeft = entry.rotors[0] === config.leftRotor.type && entry.rings[0] === config.leftRotor.ring;
         const matchMiddle = entry.rotors[1] === config.middleRotor.type && entry.rings[1] === config.middleRotor.ring;
@@ -172,7 +180,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
           matchFourth = !isM4;
         }
         if (matchLeft && matchMiddle && matchRight && matchFourth) {
-          return entry.kenngruppen && entry.kenngruppen.length > 0 ? entry.kenngruppen[0].toUpperCase() : 'UIO';
+          if (entry.kenngruppen && entry.kenngruppen.length > 0) {
+            const randIdx = Math.floor(Math.random() * entry.kenngruppen.length);
+            return entry.kenngruppen[randIdx].toUpperCase();
+          }
+          return 'UIO';
         }
       }
     }
@@ -489,6 +501,26 @@ export const MachineView: React.FC<MachineViewProps> = ({
     });
   };
 
+  const randomizeRotorGrundstellung = (rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor' | 'reflector') => {
+    playRotorClickSound(soundEnabled);
+    const randomStart = Math.floor(Math.random() * 26);
+    const newConfig = { ...config };
+    if (rotorKey === 'reflector') {
+      newConfig.reflector = {
+        ...newConfig.reflector,
+        current: randomStart,
+        start: randomStart
+      };
+    } else {
+      newConfig[rotorKey] = {
+        ...newConfig[rotorKey],
+        current: randomStart,
+        start: randomStart
+      };
+    }
+    onUpdateConfig(newConfig);
+  };
+
   const renderRotorView = (
     label: string,
     rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor',
@@ -526,13 +558,35 @@ export const MachineView: React.FC<MachineViewProps> = ({
           </button>
         </div>
         {isNotch ? (
-          <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={turnoverAction}>
-            Notch: {notchValue}
-          </span>
+          <div className="flex flex-col items-center mt-0.5">
+            <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80" title={turnoverAction}>
+              Notch: {notchValue}
+            </span>
+            <button
+              type="button"
+              onClick={() => randomizeRotorGrundstellung(rotorKey)}
+              className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
+              title="Randomize Grundstellung (Start Position)"
+            >
+              <span className="material-symbols-outlined text-[10px]">shuffle</span>
+              <span>Rand</span>
+            </button>
+          </div>
         ) : (
-          <span className="text-[8px] text-[#83715d] font-monospaced-technical mt-0.5" title={turnoverAction}>
-            Fixed Stator
-          </span>
+          <div className="flex flex-col items-center mt-0.5">
+            <span className="text-[8px] text-[#83715d] font-monospaced-technical" title={turnoverAction}>
+              Fixed Stator
+            </span>
+            <button
+              type="button"
+              onClick={() => randomizeRotorGrundstellung(rotorKey)}
+              className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
+              title="Randomize Grundstellung (Start Position)"
+            >
+              <span className="material-symbols-outlined text-[10px]">shuffle</span>
+              <span>Rand</span>
+            </button>
+          </div>
         )}
       </div>
     );
@@ -888,17 +942,19 @@ export const MachineView: React.FC<MachineViewProps> = ({
                         <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
                           2. Kenngruppe (Key ID)
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setKenngruppe(getActiveCodebookKenngruppe());
-                            playRotorClickSound(soundEnabled);
-                          }}
-                          className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
-                          title="Load indicator group from currently active daily key"
-                        >
-                          Sync Key
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setKenngruppe(getActiveCodebookKenngruppe());
+                              playRotorClickSound(soundEnabled);
+                            }}
+                            className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
+                            title="Randomly select indicator group from currently active daily key"
+                          >
+                            🎲 Random Key
+                          </button>
+                        </div>
                       </div>
                       <div className="flex-1 flex flex-col justify-center">
                         <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">
@@ -1166,6 +1222,15 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     <span className="text-[10px] font-monospaced-technical text-[#e06c3a] mt-1.5 font-bold tracking-wider">
                       UKW-Dual
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => randomizeRotorGrundstellung('reflector')}
+                      className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#e06c3a] bg-[#1a0e05] hover:bg-[#e06c3a] hover:text-[#25190b] border border-[#733c19] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
+                      title="Randomize Reflector Grundstellung"
+                    >
+                      <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                      <span>Rand</span>
+                    </button>
                   </div>
                 )}
                 {/* If M4 4th rotor present */}
@@ -1198,6 +1263,15 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     <span className="text-[10px] font-monospaced-technical text-[#ebc238] mt-1.5 font-bold tracking-wider">
                       {config.fourthRotor.type === 'Beta' ? 'β' : 'γ'}
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => randomizeRotorGrundstellung('fourthRotor')}
+                      className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
+                      title="Randomize Fourth Rotor Grundstellung"
+                    >
+                      <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                      <span>Rand</span>
+                    </button>
                   </div>
                 )}
 
@@ -1231,6 +1305,15 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.leftRotor.type]?.turnoverAction}>
                     Notch: {ROTOR_SPECS[config.leftRotor.type]?.notch}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => randomizeRotorGrundstellung('leftRotor')}
+                    className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
+                    title="Randomize Left Rotor Grundstellung"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                    <span>Rand</span>
+                  </button>
                 </div>
 
                 {/* Middle Rotor */}
@@ -1263,6 +1346,15 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.middleRotor.type]?.turnoverAction}>
                     Notch: {ROTOR_SPECS[config.middleRotor.type]?.notch}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => randomizeRotorGrundstellung('middleRotor')}
+                    className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
+                    title="Randomize Middle Rotor Grundstellung"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                    <span>Rand</span>
+                  </button>
                 </div>
 
                 {/* Right Rotor */}
@@ -1295,6 +1387,15 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   <span className="text-[8px] font-monospaced-technical text-[#ebc238]/80 mt-0.5" title={ROTOR_SPECS[config.rightRotor.type]?.turnoverAction}>
                     Notch: {ROTOR_SPECS[config.rightRotor.type]?.notch}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => randomizeRotorGrundstellung('rightRotor')}
+                    className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
+                    title="Randomize Right Rotor Grundstellung"
+                  >
+                    <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                    <span>Rand</span>
+                  </button>
                 </div>
 
                 {/* Battery Power Switch */}
@@ -1545,9 +1646,20 @@ export const MachineView: React.FC<MachineViewProps> = ({
                         <span className="material-symbols-outlined text-[13px]">expand_more</span>
                       </button>
                     </div>
-                    <span className="text-[8px] text-[#83715d] font-monospaced-technical mt-0.5">
-                      Dynamic Stator
-                    </span>
+                    <div className="flex flex-col items-center mt-0.5">
+                      <span className="text-[8px] text-[#83715d] font-monospaced-technical">
+                        Dynamic Stator
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => randomizeRotorGrundstellung('reflector')}
+                        className="mt-1 px-1.5 py-0.5 text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center gap-0.5 shadow-xs"
+                        title="Randomize Reflector Grundstellung"
+                      >
+                        <span className="material-symbols-outlined text-[10px]">shuffle</span>
+                        <span>Rand</span>
+                      </button>
+                    </div>
                   </div>
                 )}
                 {/* ────────────────────────────────────────────────────── */}
@@ -1883,17 +1995,19 @@ export const MachineView: React.FC<MachineViewProps> = ({
                       <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
                         2. Kenngruppe (Key ID)
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setKenngruppe(getActiveCodebookKenngruppe());
-                          playRotorClickSound(soundEnabled);
-                        }}
-                        className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
-                        title="Load indicator group from currently active daily key"
-                      >
-                        Sync Key
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setKenngruppe(getActiveCodebookKenngruppe());
+                            playRotorClickSound(soundEnabled);
+                          }}
+                          className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
+                          title="Randomly select indicator group from currently active daily key"
+                        >
+                          🎲 Random Key
+                        </button>
+                      </div>
                     </div>
                     <div className="flex-1 flex flex-col justify-center">
                       <label className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5">

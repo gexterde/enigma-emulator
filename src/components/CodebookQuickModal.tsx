@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { EnigmaConfig } from '../types';
 import { formatRotorRing } from '../lib/enigmaEngine';
 import { playRotorClickSound } from '../lib/audio';
-import { HISTORICAL_CODEBOOKS, CodebookEntry } from './CodebookView';
+import { HISTORICAL_CODEBOOKS, CodebookEntry, CodebookSheet } from './CodebookView';
 
 interface CodebookQuickModalProps {
   isOpen: boolean;
@@ -19,14 +19,40 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
   soundEnabled,
   ringFormat
 }) => {
-  if (!isOpen) return null;
+  const [customSheets, setCustomSheets] = useState<CodebookSheet[]>([]);
 
-  const [selectedSheetId, setSelectedSheetId] = useState<string>(HISTORICAL_CODEBOOKS[0].id);
-  const [selectedDay, setSelectedDay] = useState<number>(new Date().getDate() || 1);
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        const saved = localStorage.getItem('enigma_custom_codebooks_v1');
+        if (saved) {
+          setCustomSheets(JSON.parse(saved));
+        } else {
+          setCustomSheets([]);
+        }
+      } catch (e) {
+        setCustomSheets([]);
+      }
+    }
+  }, [isOpen]);
+
+  const allSheets = [...HISTORICAL_CODEBOOKS, ...customSheets];
+
+  const [selectedSheetId, setSelectedSheetId] = useState<string>('luftwaffe_2744');
+  const [selectedDay, setSelectedDay] = useState<number>(() => new Date().getDate() || 1);
   const [appliedMsg, setAppliedMsg] = useState<string | null>(null);
 
-  const currentSheet = HISTORICAL_CODEBOOKS.find(s => s.id === selectedSheetId) || HISTORICAL_CODEBOOKS[0];
-  const currentEntry = currentSheet.entries.find(e => e.day === selectedDay) || currentSheet.entries[0];
+  useEffect(() => {
+    if (isOpen) {
+      const today = new Date().getDate() || 1;
+      setSelectedDay(today);
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const currentSheet = allSheets.find(s => s.id === selectedSheetId) || allSheets[0];
+  const currentEntry = currentSheet?.entries.find(e => e.day === selectedDay) || currentSheet?.entries[0];
 
   const handleApply = (entry: CodebookEntry) => {
     playRotorClickSound(soundEnabled);
@@ -116,11 +142,22 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
             }}
             className="w-full bg-[#201b0f] border border-[#4e453b] rounded px-3 py-2 text-xs text-[#ebc238] font-bold focus:outline-none focus:border-[#ebc238] cursor-pointer"
           >
-            {HISTORICAL_CODEBOOKS.map((sheet) => (
-              <option key={sheet.id} value={sheet.id}>
-                {sheet.title} ({sheet.monthYear})
-              </option>
-            ))}
+            <optgroup label="Historical Key Sheets">
+              {HISTORICAL_CODEBOOKS.map((sheet) => (
+                <option key={sheet.id} value={sheet.id}>
+                  {sheet.title} ({sheet.monthYear})
+                </option>
+              ))}
+            </optgroup>
+            {customSheets.length > 0 && (
+              <optgroup label="Custom & Imported Codebooks">
+                {customSheets.map((sheet) => (
+                  <option key={sheet.id} value={sheet.id}>
+                    ⭐ {sheet.title} ({sheet.monthYear || 'Custom'})
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         </div>
 
@@ -193,6 +230,21 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
                     ))}
                   </div>
                 </div>
+
+                {currentEntry.kenngruppen && currentEntry.kenngruppen.length > 0 && (
+                  <div className="bg-[#1c170d] p-1.5 rounded border border-[#2d2518]">
+                    <span className="text-[11px] text-[#8c7e6a] font-monospaced-technical block mb-1">
+                      Kenngruppen (Indicator Groups):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentEntry.kenngruppen.map((kg, idx) => (
+                        <span key={idx} className="bg-[#1b222c] text-[#61afef] px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-[#61afef]/40">
+                          {kg}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
