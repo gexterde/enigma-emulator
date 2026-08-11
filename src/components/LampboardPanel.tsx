@@ -6,6 +6,74 @@ const ENIGMA_KEYBOARD_ROWS = [
   ['P', 'Y', 'X', 'C', 'V', 'B', 'N', 'M', 'L']
 ];
 
+interface LampSocketProps {
+  char: string;
+  isLit: boolean;
+  isDimIdle: boolean;
+  batteryMode: string;
+  isCompact: boolean;
+}
+
+const LampSocket: React.FC<LampSocketProps> = ({ char, isLit, isDimIdle, batteryMode, isCompact }) => {
+  if (isCompact) {
+    let lampClass = '';
+    if (isLit) {
+      if (batteryMode === 'dkl') lampClass = 'lamp-on-dkl scale-102';
+      else if (batteryMode === 'sammler') lampClass = 'lamp-on-sammler scale-110';
+      else lampClass = 'lamp-on-hell scale-105';
+    }
+
+    let idleClass = '';
+    if (isDimIdle) {
+      if (batteryMode === 'dkl') idleClass = 'lamp-dim-glow-dkl';
+      else if (batteryMode === 'sammler') idleClass = 'lamp-dim-glow-sammler';
+      else idleClass = 'lamp-dim-glow';
+    }
+
+    return (
+      <div
+        className={`lamp-socket w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${lampClass}`}
+      >
+        <div
+          className={`lamp-glass w-6 h-6 xs:w-7 xs:h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-lamp-char text-[11px] xs:text-xs sm:text-sm font-bold ${idleClass}`}
+        >
+          {char}
+        </div>
+      </div>
+    );
+  }
+
+  let litStyle = 'bg-[#120e04] border-[#3b3426] text-[#83715d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]';
+
+  if (isLit) {
+    if (batteryMode === 'dkl') {
+      litStyle = 'bg-[#cba832] border-[#f1e09d] text-[#25190b] shadow-[0_0_12px_#d48800] font-bold scale-102 opacity-80';
+    } else if (batteryMode === 'sammler') {
+      litStyle = 'bg-[#ffea70] border-[#ffffff] text-[#1a0f00] shadow-[0_0_25px_#ffff80,0_0_50px_#ffc83b] font-bold scale-110';
+    } else {
+      litStyle = 'bg-[#ebc238] border-[#fff5d6] text-[#25190b] shadow-lamp-glow font-bold scale-105';
+    }
+  } else if (isDimIdle) {
+    if (batteryMode === 'dkl') {
+      litStyle = 'lamp-dim-glow-dkl border-[#ebc238]/30';
+    } else if (batteryMode === 'sammler') {
+      litStyle = 'lamp-dim-glow-sammler border-[#ffea70]/70';
+    } else {
+      litStyle = 'lamp-dim-glow border-[#ebc238]/50';
+    }
+  }
+
+  return (
+    <div
+      className={`w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-100 ${litStyle}`}
+    >
+      <span className="font-lamp-char text-xs xs:text-sm sm:text-lg md:text-xl font-bold">
+        {char}
+      </span>
+    </div>
+  );
+};
+
 interface LampboardPanelProps {
   isCompact: boolean;
   batteryMode: string;
@@ -48,37 +116,16 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
         <div className="space-y-2 sm:space-y-2.5 w-full max-w-lg">
           {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
             <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2.5">
-              {row.map((char) => {
-                const isLit = isPowerOn && litLamp === char;
-                const isDimIdle = isPowerOn && !litLamp && dimIdleLights;
-
-                let lampClass = '';
-                if (isLit) {
-                  if (batteryMode === 'dkl') lampClass = 'lamp-on-dkl scale-102';
-                  else if (batteryMode === 'sammler') lampClass = 'lamp-on-sammler scale-110';
-                  else lampClass = 'lamp-on-hell scale-105';
-                }
-
-                let idleClass = '';
-                if (isDimIdle) {
-                  if (batteryMode === 'dkl') idleClass = 'lamp-dim-glow-dkl';
-                  else if (batteryMode === 'sammler') idleClass = 'lamp-dim-glow-sammler';
-                  else idleClass = 'lamp-dim-glow';
-                }
-
-                return (
-                  <div
-                    key={char}
-                    className={`lamp-socket w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${lampClass}`}
-                  >
-                    <div
-                      className={`lamp-glass w-6 h-6 xs:w-7 xs:h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-lamp-char text-[11px] xs:text-xs sm:text-sm font-bold ${idleClass}`}
-                    >
-                      {char}
-                    </div>
-                  </div>
-                );
-              })}
+              {row.map((char) => (
+                <LampSocket
+                  key={char}
+                  char={char}
+                  isLit={isPowerOn && litLamp === char}
+                  isDimIdle={isPowerOn && !litLamp && dimIdleLights}
+                  batteryMode={batteryMode}
+                  isCompact={isCompact}
+                />
+              ))}
             </div>
           ))}
         </div>
@@ -112,41 +159,16 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
       <div className="space-y-2 sm:space-y-3 md:space-y-4 max-w-2xl w-full">
         {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
           <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2 md:gap-4">
-            {row.map((char) => {
-              const isLit = isPowerOn && litLamp === char;
-              const isDimIdle = isPowerOn && !litLamp && dimIdleLights;
-
-              let litStyle = 'bg-[#120e04] border-[#3b3426] text-[#83715d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]';
-
-              if (isLit) {
-                if (batteryMode === 'dkl') {
-                  litStyle = 'bg-[#cba832] border-[#f1e09d] text-[#25190b] shadow-[0_0_12px_#d48800] font-bold scale-102 opacity-80';
-                } else if (batteryMode === 'sammler') {
-                  litStyle = 'bg-[#ffea70] border-[#ffffff] text-[#1a0f00] shadow-[0_0_25px_#ffff80,0_0_50px_#ffc83b] font-bold scale-110';
-                } else {
-                  litStyle = 'bg-[#ebc238] border-[#fff5d6] text-[#25190b] shadow-lamp-glow font-bold scale-105';
-                }
-              } else if (isDimIdle) {
-                if (batteryMode === 'dkl') {
-                  litStyle = 'lamp-dim-glow-dkl border-[#ebc238]/30';
-                } else if (batteryMode === 'sammler') {
-                  litStyle = 'lamp-dim-glow-sammler border-[#ffea70]/70';
-                } else {
-                  litStyle = 'lamp-dim-glow border-[#ebc238]/50';
-                }
-              }
-
-              return (
-                <div
-                  key={char}
-                  className={`w-7 h-7 min-w-[28px] xs:w-8 xs:h-8 xs:min-w-[32px] sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-100 ${litStyle}`}
-                >
-                  <span className="font-lamp-char text-xs xs:text-sm sm:text-lg md:text-xl font-bold">
-                    {char}
-                  </span>
-                </div>
-              );
-            })}
+            {row.map((char) => (
+              <LampSocket
+                key={char}
+                char={char}
+                isLit={isPowerOn && litLamp === char}
+                isDimIdle={isPowerOn && !litLamp && dimIdleLights}
+                batteryMode={batteryMode}
+                isCompact={isCompact}
+              />
+            ))}
           </div>
         ))}
       </div>

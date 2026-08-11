@@ -28,6 +28,50 @@ export const CORD_COLORS = [
 const ROW1 = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
 const ROW2 = ['N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 
+interface PlugboardSocketProps {
+  char: string;
+  isConnected: boolean;
+  isSelected: boolean;
+  partner: string | undefined;
+  colorClassIndex: number;
+  onClick: (char: string) => void;
+  socketRef: (el: HTMLButtonElement | null) => void;
+}
+
+const PlugboardSocket: React.FC<PlugboardSocketProps> = ({ char, isConnected, isSelected, partner, colorClassIndex, onClick, socketRef }) => (
+  <div className="flex flex-col items-center gap-1 sm:gap-2 z-20">
+    <span className="text-[#f6dfc7] font-lamp-char font-bold text-xs sm:text-base drop-shadow-md">
+      {char}
+    </span>
+    <button
+      type="button"
+      ref={socketRef}
+      onClick={() => onClick(char)}
+      className={`bg-[#1a1510] border-2 rounded-full p-1 cursor-pointer flex flex-col gap-1 items-center justify-center transition-all min-w-[34px] min-h-[50px] sm:min-w-[44px] sm:min-h-[58px] ${
+        isSelected
+          ? 'border-[#ebc238] shadow-[0_0_12px_#ebc238] scale-110'
+          : isConnected && colorClassIndex !== -1
+          ? `cable-border-${colorClassIndex} shadow-md`
+          : 'border-[#2a221a] hover:border-[#9a8f83]'
+      }`}
+      aria-label={`Socket ${char}`}
+      title={partner ? `Plugged to ${partner}` : 'Click to connect'}
+    >
+      {/* Double pin holes (stecker sockets) */}
+      <div
+        className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border border-[#000] shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] ${
+          isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : 'bg-[#111]'
+        }`}
+      />
+      <div
+        className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border border-[#000] shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] ${
+          isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : 'bg-[#111]'
+        }`}
+      />
+    </button>
+  </div>
+);
+
 export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
   config,
   onUpdateConfig,
@@ -179,40 +223,18 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
         const partner = plugboard[char];
         const pairIndex = pairs.findIndex(([a, b]) => a === char || b === char);
         const colorClassIndex = pairIndex !== -1 ? (pairIndex % CORD_COLORS.length) : -1;
-        const color = pairIndex !== -1 ? CORD_COLORS[pairIndex % CORD_COLORS.length] : undefined;
 
         return (
-          <div key={char} className="flex flex-col items-center gap-1 sm:gap-2 z-20">
-            <span className="text-[#f6dfc7] font-lamp-char font-bold text-xs sm:text-base drop-shadow-md">
-              {char}
-            </span>
-            <button
-              type="button"
-              ref={(el) => { socketRefs.current[char] = el; }}
-              onClick={() => handleSocketClick(char)}
-              className={`bg-[#1a1510] border-2 rounded-full p-1 cursor-pointer flex flex-col gap-1 items-center justify-center transition-all min-w-[34px] min-h-[50px] sm:min-w-[44px] sm:min-h-[58px] ${
-                isSelected
-                  ? 'border-[#ebc238] shadow-[0_0_12px_#ebc238] scale-110'
-                  : isConnected && colorClassIndex !== -1
-                  ? `cable-border-${colorClassIndex} shadow-md`
-                  : 'border-[#2a221a] hover:border-[#9a8f83]'
-              }`}
-              aria-label={`Socket ${char}`}
-              title={partner ? `Plugged to ${partner}` : 'Click to connect'}
-            >
-              {/* Double pin holes (stecker sockets) */}
-              <div
-                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border border-[#000] shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] ${
-                  isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : 'bg-[#111]'
-                }`}
-              />
-              <div
-                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border border-[#000] shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] ${
-                  isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : 'bg-[#111]'
-                }`}
-              />
-            </button>
-          </div>
+          <PlugboardSocket
+            key={char}
+            char={char}
+            isConnected={isConnected}
+            isSelected={isSelected}
+            partner={partner}
+            colorClassIndex={colorClassIndex}
+            onClick={handleSocketClick}
+            socketRef={(el) => { socketRefs.current[char] = el; }}
+          />
         );
       })}
     </div>

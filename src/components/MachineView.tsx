@@ -22,6 +22,8 @@ import { BroadcastModal } from './BroadcastModal';
 import { MessageHeaderPanel } from './MessageHeaderPanel';
 import { LampboardPanel } from './LampboardPanel';
 import { KeyboardPanel } from './KeyboardPanel';
+import { RotorChamber } from './RotorChamber';
+import { RotorDial } from './RotorDial';
 
 function useLocalStorage<T>(key: string, initial: T): [T, (val: T) => void] {
   const [value, setValue] = useState<T>(() => {
@@ -276,15 +278,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
           const gsCandidate = alphaTokens[1].toUpperCase();
           setLocalGrundstellung(gsCandidate);
 
-          const isM4 = isM4Active;
-          const isUKWDualLocal = isUKWDual;
-
           let idx = 0;
-          if (isUKWDualLocal) {
+          if (isUKWDual) {
             const u = charToNum(gsCandidate[idx++]);
             currentConfig.reflector = { ...currentConfig.reflector, start: u, current: u };
           }
-          if (isM4) {
+          if (isM4Active) {
             const c4 = charToNum(gsCandidate[idx++]);
             currentConfig.fourthRotor = { ...currentConfig.fourthRotor, start: c4, current: c4 };
           }
@@ -640,79 +639,6 @@ export const MachineView: React.FC<MachineViewProps> = ({
       };
     }
     onUpdateConfig(newConfig);
-  };
-
-  const renderRotorView = (
-    label: string,
-    rotorKey: 'leftRotor' | 'middleRotor' | 'rightRotor' | 'fourthRotor',
-    typeDisplay: string,
-    isNotch: boolean
-  ) => {
-    const rotor = config[rotorKey];
-    const notchValue = ROTOR_SPECS[rotor.type]?.notch;
-    const turnoverAction = ROTOR_SPECS[rotor.type]?.turnoverAction;
-
-    return (
-      <div className="bg-[#18130b] rounded-lg p-1.5 sm:p-2 border border-[#3b3426] flex flex-col items-center max-w-[76px] sm:max-w-[105px] w-full mx-auto shadow-sm">
-        <span className="text-[7.5px] sm:text-[9px] text-[#d1c4b7] font-monospaced-technical mb-0.5 whitespace-nowrap">
-          {label} ({typeDisplay})
-        </span>
-        <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-9 sm:w-12 h-11 sm:h-13 flex items-center justify-center my-0.5 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => handleManualRotorStep(rotorKey, 1)}
-            className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-            title="Rotate Up"
-          >
-            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_less</span>
-          </button>
-          <span key={rotor.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-base sm:text-xl font-bold select-none animate-rotor-step">
-            {formatRotorPos(rotor.current, ringFormat)}
-          </span>
-          <button
-            type="button"
-            onClick={() => handleManualRotorStep(rotorKey, -1)}
-            className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-            title="Rotate Down"
-          >
-            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_more</span>
-          </button>
-        </div>
-        {isNotch ? (
-          <div className="flex flex-col items-center mt-0.5 w-full">
-            <span className="text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238]/80 whitespace-nowrap" title={turnoverAction}>
-              Notch: {notchValue}
-            </span>
-            <button
-              type="button"
-              onClick={() => randomizeRotorGrundstellung(rotorKey)}
-              className="mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none"
-              title="Randomize Grundstellung (Start Position)"
-            >
-              <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
-              <span className="hidden xs:inline">Rand</span>
-              <span className="inline xs:hidden">R</span>
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center mt-0.5 w-full">
-            <span className="text-[7px] sm:text-[8px] text-[#83715d] font-monospaced-technical whitespace-nowrap" title={turnoverAction}>
-              Fixed Stator
-            </span>
-            <button
-              type="button"
-              onClick={() => randomizeRotorGrundstellung(rotorKey)}
-              className="mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none"
-              title="Randomize Grundstellung (Start Position)"
-            >
-              <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
-              <span className="hidden xs:inline">Rand</span>
-              <span className="inline xs:hidden">R</span>
-            </button>
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -1098,71 +1024,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
               <div className="space-y-3 max-w-xl mx-auto pt-1">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2 sm:p-2.5 rounded-xl border border-[#3b3426]">
-                  <div className={`grid ${
-                    isUKWDual
-                      ? (isM4Active ? 'grid-cols-5 sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md')
-                      : (isM4Active ? 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md' : 'grid-cols-3 sm:grid-cols-3 max-w-xs sm:max-w-sm')
-                  } gap-1 sm:gap-2 w-full mx-auto`}>
-                    {/* ─── UKW-Dual-Dynamic─── */}
-                    {isUKWDual && (
-                      <div className="bg-[#18130b] rounded-lg p-1.5 sm:p-2 border border-[#3b3426] flex flex-col items-center max-w-[76px] sm:max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
-                        <span className="text-[7.5px] sm:text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider whitespace-nowrap">
-                          UKW-ROTOR
-                        </span>
-                        <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-9 sm:w-12 h-11 sm:h-13 flex items-center justify-center my-0.5 overflow-hidden">
-                          <button
-                            type="button"
-                            onClick={() => handleManualRotorStep('reflector', 1)}
-                            className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                            title="Rotate Reflector Up (manual)"
-                          >
-                            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_less</span>
-                          </button>
-                          <span key={config.reflector.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-base sm:text-xl font-bold select-none animate-rotor-step">
-                            {formatRotorPos(config.reflector.current, ringFormat)}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleManualRotorStep('reflector', -1)}
-                            className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                            title="Rotate Reflector Down (manual)"
-                          >
-                            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_more</span>
-                          </button>
-                        </div>
-                        <div className="flex flex-col items-center mt-0.5 w-full">
-                          <span className="text-[7px] sm:text-[8px] text-[#83715d] font-monospaced-technical whitespace-nowrap">
-                            Dynamic Stator
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => randomizeRotorGrundstellung('reflector')}
-                            className="mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none"
-                            title="Randomize Reflector Grundstellung"
-                          >
-                            <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
-                            <span className="hidden xs:inline">Rand</span>
-                            <span className="inline xs:hidden">R</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {/* ────────────────────────────────────────────────────── */}
-
-                    {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
-                    {isM4Active && (
-                      renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
-                    )}
-
-                    {/* Slow Rotor */}
-                    {renderRotorView('SLOW', 'leftRotor', config.leftRotor.type, true)}
-
-                    {/* Middle Rotor */}
-                    {renderRotorView('MID', 'middleRotor', config.middleRotor.type, true)}
-
-                    {/* Fast Rotor */}
-                    {renderRotorView('FAST', 'rightRotor', config.rightRotor.type, true)}
-                  </div>
+                  <RotorChamber
+                    config={config}
+                    ringFormat={ringFormat}
+                    isUKWDual={isUKWDual}
+                    isM4Active={isM4Active}
+                    onManualRotorStep={handleManualRotorStep}
+                    onRandomizeRotor={randomizeRotorGrundstellung}
+                  />
                 </div>
               </div>
             </div>
@@ -1300,71 +1169,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2 sm:p-2.5 rounded-xl border border-[#3b3426]">
-                  <div className={`grid ${
-                    isUKWDual
-                      ? (isM4Active ? 'grid-cols-5 sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md')
-                      : (isM4Active ? 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md' : 'grid-cols-3 sm:grid-cols-3 max-w-xs sm:max-w-sm')
-                  } gap-1 sm:gap-2 w-full mx-auto`}>
-                    {/* ─── UKW-Dual-Dynamic─── */}
-                    {isUKWDual && (
-                      <div className="bg-[#18130b] rounded-lg p-1.5 sm:p-2 border border-[#3b3426] flex flex-col items-center max-w-[76px] sm:max-w-[105px] w-full mx-auto shadow-sm animate-fade-in">
-                        <span className="text-[7.5px] sm:text-[9px] text-[#ebc238] font-bold font-monospaced-technical mb-0.5 tracking-wider whitespace-nowrap">
-                          UKW-ROTOR
-                        </span>
-                        <div className="relative bg-[#3b3426] border border-[#4e453b] rounded shadow-rotor-window w-9 sm:w-12 h-11 sm:h-13 flex items-center justify-center my-0.5 overflow-hidden">
-                          <button
-                            type="button"
-                            onClick={() => handleManualRotorStep('reflector', 1)}
-                            className="absolute top-0 w-full h-1/2 flex items-start justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                            title="Rotate Reflector Up (manual)"
-                          >
-                            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_less</span>
-                          </button>
-                          <span key={config.reflector.current} className="text-rotor-label font-rotor-label text-[#ebc238] text-base sm:text-xl font-bold select-none animate-rotor-step">
-                            {formatRotorPos(config.reflector.current, ringFormat)}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleManualRotorStep('reflector', -1)}
-                            className="absolute bottom-0 w-full h-1/2 flex items-end justify-center text-[#d1c4b7] hover:text-[#ebc238] cursor-pointer"
-                            title="Rotate Reflector Down (manual)"
-                          >
-                            <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_more</span>
-                          </button>
-                        </div>
-                        <div className="flex flex-col items-center mt-0.5 w-full">
-                          <span className="text-[7px] sm:text-[8px] text-[#83715d] font-monospaced-technical whitespace-nowrap">
-                            Dynamic Stator
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => randomizeRotorGrundstellung('reflector')}
-                            className="mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] font-monospaced-technical text-[#ebc238] bg-[#120e04] hover:bg-[#ebc238] hover:text-[#25190b] border border-[#3b3426] rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none"
-                            title="Randomize Reflector Grundstellung"
-                          >
-                            <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
-                            <span className="hidden xs:inline">Rand</span>
-                            <span className="inline xs:hidden">R</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {/* ────────────────────────────────────────────────────── */}
-
-                    {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
-                    {isM4Active && (
-                      renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
-                    )}
-
-                    {/* Slow Rotor */}
-                    {renderRotorView('SLOW', 'leftRotor', config.leftRotor.type, true)}
-
-                    {/* Middle Rotor */}
-                    {renderRotorView('MID', 'middleRotor', config.middleRotor.type, true)}
-
-                    {/* Fast Rotor */}
-                    {renderRotorView('FAST', 'rightRotor', config.rightRotor.type, true)}
-                  </div>
+                  <RotorChamber
+                    config={config}
+                    ringFormat={ringFormat}
+                    isUKWDual={isUKWDual}
+                    isM4Active={isM4Active}
+                    onManualRotorStep={handleManualRotorStep}
+                    onRandomizeRotor={randomizeRotorGrundstellung}
+                  />
                 </div>
               </div>
             </div>
