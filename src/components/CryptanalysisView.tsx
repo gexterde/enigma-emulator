@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { EnigmaConfig } from '../types';
 import {
   ROTOR_SPECS,
@@ -40,6 +40,20 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
   const [crib, setCrib] = useState<string>('');
   const [alignmentOffset, setAlignmentOffset] = useState<number>(0);
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll the comparison grid to follow the alignment offset
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const charWidth = 32; // 28px box width + 4px gap
+      const targetScrollLeft = Math.max(0, (alignmentOffset * charWidth) - 120);
+      scrollContainerRef.current.scrollTo({
+        left: targetScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  }, [alignmentOffset]);
+
   // Search parameters (defaults to current machine settings)
   const [leftRotorType, setLeftRotorType] = useState<string>(config.leftRotor.type);
   const [middleRotorType, setMiddleRotorType] = useState<string>(config.middleRotor.type);
@@ -58,11 +72,39 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
   const [plugboardMode, setPlugboardMode] = useState<'active' | 'none'>('active');
 
+  // Search scope (single selected, 3-rotor permutations, or 5/8 rotor pools)
+  const [rotorScanScope, setRotorScanScope] = useState<'selected' | 'permutations_3' | 'all_5' | 'all_8'>('selected');
+
+  // Crib alignment scan mode
+  const [alignmentScanMode, setAlignmentScanMode] = useState<'current' | 'all_viable'>('current');
+
+  // Ringstellung alignment mapper states (converts relative dial offsets to physical window starts for custom ring settings)
+  const [mapperLeftRing, setMapperLeftRing] = useState<number>(config.leftRotor.ring);
+  const [mapperMiddleRing, setMapperMiddleRing] = useState<number>(config.middleRotor.ring);
+  const [mapperRightRing, setMapperRightRing] = useState<number>(config.rightRotor.ring);
+
   // Search running states
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [currentScan, setCurrentScan] = useState<string[]>(['A', 'A', 'A']);
-  const [matches, setMatches] = useState<Array<{ left: string; middle: string; right: string; decrypted: string }>>([]);
+  const [matches, setMatches] = useState<Array<{
+    leftRotor: string;
+    middleRotor: string;
+    rightRotor: string;
+    left: string;
+    middle: string;
+    right: string;
+    offset: number;
+    decrypted: string;
+  }>>([]);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
+
+  // Sync results mapper rings to scan rings by default
+  useEffect(() => {
+    setMapperLeftRing(leftRotorRing);
+    setMapperMiddleRing(middleRotorRing);
+    setMapperRightRing(rightRotorRing);
+  }, [leftRotorRing, middleRotorRing, rightRotorRing]);
 
   // Sync with machine ciphertext on load if present
   useEffect(() => {
@@ -80,6 +122,31 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       setAlignmentOffset(maxOffset);
     }
   }, [ciphertext, crib, alignmentOffset, maxOffset]);
+
+  // Reset results when search configuration parameters are modified
+  useEffect(() => {
+    setMatches([]);
+    setHasSearched(false);
+  }, [
+    ciphertext,
+    crib,
+    alignmentOffset,
+    leftRotorType,
+    middleRotorType,
+    rightRotorType,
+    leftRotorRing,
+    middleRotorRing,
+    rightRotorRing,
+    fourthRotorType,
+    fourthRotorRing,
+    fourthRotorStart,
+    reflectorType,
+    reflectorRing,
+    reflectorStart,
+    plugboardMode,
+    rotorScanScope,
+    alignmentScanMode,
+  ]);
 
   // Slide alignment details
   const alignedSection = useMemo(() => {
@@ -110,13 +177,33 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     };
   }, [ciphertext, crib, alignmentOffset]);
 
+  // Find all possible alignment offsets with 0 overlaps
+  const viableOffsets = useMemo(() => {
+    if (!ciphertext || !crib || crib.length === 0) return [];
+    const offsets: number[] = [];
+    const max = ciphertext.length - crib.length;
+    for (let offset = 0; offset <= max; offset++) {
+      const alignedCipher = ciphertext.slice(offset, offset + crib.length);
+      let overlaps = 0;
+      for (let i = 0; i < crib.length; i++) {
+        if (alignedCipher[i] === crib[i].toUpperCase()) {
+          overlaps++;
+        }
+      }
+      if (overlaps === 0 && alignedCipher.length === crib.length) {
+        offsets.push(offset);
+      }
+    }
+    return offsets;
+  }, [ciphertext, crib]);
+
   // Load historical samples
   const loadTemplate = (type: 'navy_weather' | 'army_intercept') => {
     if (type === 'navy_weather') {
       // Setup Navy M3 keys: I-II-III, rings: 01-01-01, start positions scanned: Q-W-A
       // Plain: "WETTERVORHERSAGE"
-      // Cipher: "XMKPFYVJUPXQZDUW" (encrypted under I-II-III | 01-01-01 | QWA | no plugboard for simplicity)
-      setCiphertext('XMKPFYVJUPXQZDUW');
+      // Cipher: "VMOUDQTJEEVVQBVJ" (encrypted under I-II-III | 01-01-01 | QWA | no plugboard for simplicity)
+      setCiphertext('VMOUDQTJEEVVQBVJ');
       setCrib('WETTERVORHERSAGE');
       setAlignmentOffset(0);
       setLeftRotorType('I');
@@ -130,8 +217,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     } else if (type === 'army_intercept') {
       // Setup intercept: III-IV-V, rings: 02-14-20
       // Plain text: "HALTUNGSTRENGGEHEIM" (Hold strictly secret)
-      // Cipher: "IQLNDYVJZTXRUKMHPWQ" (under III-IV-V, rings: B-N-T, starts: D-O-G)
-      setCiphertext('IQLNDYVJZTXRUKMHPWQ');
+      // Cipher: "JFPKQAEXBUKIXRTCTLO" (under III-IV-V, rings: B-N-T, starts: D-O-G)
+      setCiphertext('JFPKQAEXBUKIXRTCTLO');
       setCrib('STRENGGEHEIM');
       setAlignmentOffset(7); // "STRENGGEHEIM" starts at offset 7
       setLeftRotorType('III');
@@ -305,18 +392,183 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     return decryptedText;
   };
 
+  // Full Decrypt helper to display previews with custom rotors and rings
+  const decryptFullMessageWithRotors = (
+    lType: string, mType: string, rType: string,
+    lStart: string, mStart: string, rStart: string,
+    tLeftRing: number = leftRotorRing,
+    tMiddleRing: number = middleRotorRing,
+    tRightRing: number = rightRotorRing
+  ): string => {
+    const testConfig: EnigmaConfig = {
+      leftRotor: { type: lType as any, ring: tLeftRing, start: charToNum(lStart), current: charToNum(lStart) },
+      middleRotor: { type: mType as any, ring: tMiddleRing, start: charToNum(mStart), current: charToNum(mStart) },
+      rightRotor: { type: rType as any, ring: tRightRing, start: charToNum(rStart), current: charToNum(rStart) },
+      fourthRotor: { type: fourthRotorType as any, ring: fourthRotorRing, start: fourthRotorStart, current: fourthRotorStart },
+      reflector: {
+        type: reflectorType as any,
+        ring: reflectorRing,
+        start: reflectorStart,
+        current: reflectorStart,
+      },
+      plugboard: plugboardMode === 'active' ? config.plugboard : {},
+    };
+
+    let currentTestConfig = testConfig;
+    let decryptedText = '';
+    
+    for (let i = 0; i < ciphertext.length; i++) {
+      const char = ciphertext[i];
+      if (char === ' ') {
+        decryptedText += ' ';
+      } else {
+        const { nextConfig, result } = encryptChar(char, currentTestConfig);
+        decryptedText += result.outputChar;
+        currentTestConfig = nextConfig;
+      }
+    }
+    
+    return decryptedText;
+  };
+
+  // Rollback function: Brute force which starting position at index 0 steps to (lEnd, mEnd, rEnd) after offset steps.
+  const findStartingPositionAt0 = (
+    lEnd: number, mEnd: number, rEnd: number,
+    offset: number,
+    leftType: string, middleType: string, rightType: string,
+    leftRing: number, middleRing: number, rightRing: number
+  ): { l0: number, m0: number, r0: number } => {
+    if (offset === 0) return { l0: lEnd, m0: mEnd, r0: rEnd };
+
+    const leftR = prepareRotor(leftType, leftRing);
+    const middleR = prepareRotor(middleType, middleRing);
+    const rightR = prepareRotor(rightType, rightRing);
+
+    // Brute force all 17576 starting positions at index 0
+    for (let l = 0; l < 26; l++) {
+      for (let m = 0; m < 26; m++) {
+        for (let r = 0; r < 26; r++) {
+          let leftCurrent = l;
+          let middleCurrent = m;
+          let rightCurrent = r;
+
+          for (let step = 0; step < offset; step++) {
+            const rightAtNotch = rightCurrent === rightR.notch;
+            const middleAtNotch = middleCurrent === middleR.notch;
+
+            rightCurrent = (rightCurrent + 1) % 26;
+            if (rightAtNotch || middleAtNotch) {
+              middleCurrent = (middleCurrent + 1) % 26;
+              if (middleAtNotch) {
+                leftCurrent = (leftCurrent + 1) % 26;
+              }
+            }
+          }
+
+          if (leftCurrent === lEnd && middleCurrent === mEnd && rightCurrent === rEnd) {
+            return { l0: l, m0: m, r0: r };
+          }
+        }
+      }
+    }
+
+    return { l0: lEnd, m0: mEnd, r0: rEnd };
+  };
+
+  // Map the rolled-back index 0 start positions to Target Rings
+  const findMappedStartingPositionAt0 = (
+    lEndChar: string, mEndChar: string, rEndChar: string,
+    offset: number,
+    leftType: string, middleType: string, rightType: string,
+    leftRingScan: number, middleRingScan: number, rightRingScan: number,
+    leftRingTarget: number, middleRingTarget: number, rightRingTarget: number
+  ): { l0Mapped: string, m0Mapped: string, r0Mapped: string } => {
+    const { l0, m0, r0 } = findStartingPositionAt0(
+      charToNum(lEndChar),
+      charToNum(mEndChar),
+      charToNum(rEndChar),
+      offset,
+      leftType,
+      middleType,
+      rightType,
+      leftRingScan,
+      middleRingScan,
+      rightRingScan
+    );
+
+    const l0Mapped = getMappedStartChar(numToChar(l0), leftRingScan, leftRingTarget);
+    const m0Mapped = getMappedStartChar(numToChar(m0), middleRingScan, middleRingTarget);
+    const r0Mapped = getMappedStartChar(numToChar(r0), rightRingScan, rightRingTarget);
+
+    return { l0Mapped, m0Mapped, r0Mapped };
+  };
+
+  // Helper to map relative offsets from 01-01-01 scan to custom physical Ring settings
+  const getMappedStartChar = (startChar: string, searchRing: number, targetRing: number): string => {
+    const startVal = charToNum(startChar);
+    const relativeOffset = (startVal - (searchRing - 1) + 26) % 26;
+    const targetStartVal = (relativeOffset + (targetRing - 1)) % 26;
+    return numToChar(targetStartVal);
+  };
+
   // Start electromechanical Bombe search
   const startBombeSearch = () => {
-    if (!alignedSection.isViable) return;
+    // 1. Build list of offsets to scan based on user alignment selection
+    const offsetsToScan = alignmentScanMode === 'all_viable' ? viableOffsets : [alignmentOffset];
+    if (offsetsToScan.length === 0) return;
 
     setIsSearching(true);
     setProgress(0);
     setMatches([]);
+    setHasSearched(false);
 
-    // Prepare rotor mappings
-    const leftR = prepareRotor(leftRotorType, leftRotorRing);
-    const middleR = prepareRotor(middleRotorType, middleRotorRing);
-    const rightR = prepareRotor(rightRotorType, rightRotorRing);
+    // 2. Build list of rotor combinations to scan based on user selection
+    const rotorCombs: Array<{ left: string; middle: string; right: string }> = [];
+    if (rotorScanScope === 'selected') {
+      rotorCombs.push({ left: leftRotorType, middle: middleRotorType, right: rightRotorType });
+    } else if (rotorScanScope === 'permutations_3') {
+      const selected = [leftRotorType, middleRotorType, rightRotorType];
+      const permute = (arr: string[]): Array<string[]> => {
+        if (arr.length === 0) return [[]];
+        const result: Array<string[]> = [];
+        for (let i = 0; i < arr.length; i++) {
+          const current = arr[i];
+          const remaining = arr.slice(0, i).concat(arr.slice(i + 1));
+          const subPerms = permute(remaining);
+          for (const sub of subPerms) {
+            result.push([current, ...sub]);
+          }
+        }
+        return result;
+      };
+      const uniqueStrings = Array.from(new Set(permute(selected).map(p => p.join('-'))));
+      uniqueStrings.forEach(s => {
+        const [l, m, r] = s.split('-');
+        rotorCombs.push({ left: l, middle: m, right: r });
+      });
+    } else if (rotorScanScope === 'all_5') {
+      const rotors5 = ['I', 'II', 'III', 'IV', 'V'];
+      for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 5; j++) {
+          if (i === j) continue;
+          for (let k = 0; k < 5; k++) {
+            if (i === k || j === k) continue;
+            rotorCombs.push({ left: rotors5[i], middle: rotors5[j], right: rotors5[k] });
+          }
+        }
+      }
+    } else if (rotorScanScope === 'all_8') {
+      const rotors8 = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          if (i === j) continue;
+          for (let k = 0; k < 8; k++) {
+            if (i === k || j === k) continue;
+            rotorCombs.push({ left: rotors8[i], middle: rotors8[j], right: rotors8[k] });
+          }
+        }
+      }
+    }
 
     const isM4 = fourthRotorType === 'Beta' || fourthRotorType === 'Gamma';
     const fourthR = isM4 ? prepareRotor(fourthRotorType, fourthRotorRing) : null;
@@ -337,20 +589,88 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       }
     }
 
-    // Sliced text targets for fast loop
-    const cipherTextSliced = ciphertext.toUpperCase().slice(alignmentOffset, alignmentOffset + crib.length);
-    const cipherNums = cipherTextSliced.split('').map(charToNum);
-    const cribNums = crib.toUpperCase().split('').map(charToNum);
+    // Precalculate sliced text targets for fast loop across all offsets
+    const precalculatedOffsets = offsetsToScan.map(offset => {
+      const cipherTextSliced = ciphertext.toUpperCase().slice(offset, offset + crib.length);
+      return {
+        offset,
+        cipherNums: cipherTextSliced.split('').map(charToNum),
+        cribNums: crib.toUpperCase().split('').map(charToNum),
+      };
+    });
 
-    const foundMatches: Array<{ left: string; middle: string; right: string; decrypted: string }> = [];
+    const foundMatches: Array<{
+      leftRotor: string;
+      middleRotor: string;
+      rightRotor: string;
+      left: string;
+      middle: string;
+      right: string;
+      offset: number;
+      decrypted: string;
+    }> = [];
 
+    let currentCombIndex = 0;
     let combinationIndex = 0;
-    const totalCombinations = 17576; // 26 * 26 * 26 starting positions for Left, Middle, Right
+    const totalCombinationsPerRotor = 17576; // 26 * 26 * 26 starting positions for Left, Middle, Right
+
+    // Pre-cache rotor states for speed
+    const rotorCache = new Map<string, any>();
+    const getCachedRotor = (type: string, ring: number) => {
+      const key = `${type}-${ring}`;
+      if (!rotorCache.has(key)) {
+        rotorCache.set(key, prepareRotor(type, ring));
+      }
+      return rotorCache.get(key);
+    };
 
     const runBatch = () => {
-      // Batch size of 1500 is optimal: keeps the page highly responsive while spinning the drums beautifully
-      const batchSize = 1500;
-      const limit = Math.min(combinationIndex + batchSize, totalCombinations);
+      if (currentCombIndex >= rotorCombs.length) {
+        // Complete! Roll back found starting positions to offset 0 and fill in decryptions
+        const finalized = foundMatches.map((match) => {
+          // 1. Find start position at index 0 under Scan Rings
+          const { l0, m0, r0 } = findStartingPositionAt0(
+            charToNum(match.left),
+            charToNum(match.middle),
+            charToNum(match.right),
+            match.offset,
+            match.leftRotor,
+            match.middleRotor,
+            match.rightRotor,
+            leftRotorRing,
+            middleRotorRing,
+            rightRotorRing
+          );
+
+          // 2. Decrypt message starting from index 0
+          const decrypted = decryptFullMessageWithRotors(
+            match.leftRotor, match.middleRotor, match.rightRotor,
+            numToChar(l0), numToChar(m0), numToChar(r0),
+            leftRotorRing, middleRotorRing, rightRotorRing
+          );
+
+          return {
+            ...match,
+            decrypted,
+          };
+        });
+
+        setIsSearching(false);
+        setMatches(finalized);
+        setHasSearched(true);
+        return;
+      }
+
+      const activeComb = rotorCombs[currentCombIndex];
+      const leftR = getCachedRotor(activeComb.left, leftRotorRing);
+      const middleR = getCachedRotor(activeComb.middle, middleRotorRing);
+      const rightR = getCachedRotor(activeComb.right, rightRotorRing);
+
+      // Multi-rotor scans can scan a full rotor set (17.5k start positions) in a single frame to remain fast and interactive.
+      // Single selected configuration scans in smaller chunks to let the user see the beautiful rotating dials simulation.
+      const isMultiRotor = rotorCombs.length > 1;
+      const batchSize = isMultiRotor ? totalCombinationsPerRotor : 1000;
+      const limit = Math.min(combinationIndex + batchSize, totalCombinationsPerRotor);
 
       for (let c = combinationIndex; c < limit; c++) {
         // Unpack composite index into 3 independent dial values (0-25)
@@ -358,87 +678,90 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
         const m = Math.floor(c / 26) % 26;
         const l = Math.floor(c / 676) % 26;
 
-        const isMatch = testStartPos(
-          l, m, r,
-          cipherNums,
-          cribNums,
-          leftR,
-          middleR,
-          rightR,
-          fourthR,
-          reflectorWiring,
-          hasDualReflector,
-          reflectorRing,
-          reflectorStart,
-          pMap
-        );
+        for (const precalc of precalculatedOffsets) {
+          const isMatch = testStartPos(
+            l, m, r,
+            precalc.cipherNums,
+            precalc.cribNums,
+            leftR,
+            middleR,
+            rightR,
+            fourthR,
+            reflectorWiring,
+            hasDualReflector,
+            reflectorRing,
+            reflectorStart,
+            pMap
+          );
 
-        if (isMatch) {
-          const foundLeftChar = numToChar(l);
-          const foundMiddleChar = numToChar(m);
-          const foundRightChar = numToChar(r);
-          
-          foundMatches.push({
-            left: foundLeftChar,
-            middle: foundMiddleChar,
-            right: foundRightChar,
-            decrypted: '', // Will populate full decryption previews below
-          });
+          if (isMatch) {
+            foundMatches.push({
+              leftRotor: activeComb.left,
+              middleRotor: activeComb.middle,
+              rightRotor: activeComb.right,
+              left: numToChar(l),
+              middle: numToChar(m),
+              right: numToChar(r),
+              offset: precalc.offset,
+              decrypted: '',
+            });
+          }
         }
       }
 
       combinationIndex = limit;
-      setProgress(Math.round((combinationIndex / totalCombinations) * 100));
+      const totalSteps = rotorCombs.length * totalCombinationsPerRotor;
+      const completedSteps = currentCombIndex * totalCombinationsPerRotor + combinationIndex;
+      setProgress(Math.round((completedSteps / totalSteps) * 100));
 
-      if (limit < totalCombinations) {
-        // Visual updates: show scanned position
-        setCurrentScan([
-          numToChar(Math.floor(limit / 676) % 26),
-          numToChar(Math.floor(limit / 26) % 26),
-          numToChar(limit % 26),
-        ]);
-        playRotorClickSound(soundEnabled);
-        requestAnimationFrame(runBatch);
-      } else {
-        // Complete! Fill in decryptions for the found keys
-        const finalized = foundMatches.map((match) => ({
-          ...match,
-          decrypted: decryptFullMessage(match.left, match.middle, match.right),
-        }));
-
-        setIsSearching(false);
-        setMatches(finalized);
+      if (combinationIndex >= totalCombinationsPerRotor) {
+        currentCombIndex++;
+        combinationIndex = 0;
       }
+
+      // Visual updates: show scanned position or active rotor combination names
+      const currentActiveComb = rotorCombs[Math.min(currentCombIndex, rotorCombs.length - 1)];
+      setCurrentScan([
+        isMultiRotor ? currentActiveComb.left : numToChar(Math.floor(limit / 676) % 26),
+        isMultiRotor ? currentActiveComb.middle : numToChar(Math.floor(limit / 26) % 26),
+        isMultiRotor ? currentActiveComb.right : numToChar(limit % 26),
+      ]);
+
+      playRotorClickSound(soundEnabled);
+      requestAnimationFrame(runBatch);
     };
 
     requestAnimationFrame(runBatch);
   };
 
-  // Apply cracked keys back to main Enigma machine
-  const handleApplyMatch = (match: typeof matches[0]) => {
-    // Overwrite the current active config with cracked settings
+  // Apply cracked keys back to main Enigma machine with mapped Ringstellung (Ring Settings)
+  const handleApplyMatchWithRings = (
+    match: typeof matches[0],
+    tLeftRing: number, tMiddleRing: number, tRightRing: number,
+    tLeftStart: string, tMiddleStart: string, tRightStart: string
+  ) => {
     const updatedConfig: EnigmaConfig = {
       ...config,
       leftRotor: {
         ...config.leftRotor,
-        type: leftRotorType as any,
-        ring: leftRotorRing,
-        start: charToNum(match.left),
-        current: charToNum(match.left),
+        type: match.leftRotor as any,
+        ring: tLeftRing,
+        start: charToNum(tLeftStart),
+        current: charToNum(tLeftStart),
       },
       middleRotor: {
         ...config.middleRotor,
-        type: middleRotorType as any,
-        ring: middleRotorRing,
-        start: charToNum(match.middle),
-        current: charToNum(match.middle),
+        type: match.middleRotor as any,
+        ring: tMiddleRing,
+        start: charToNum(tMiddleStart),
+        current: charToNum(tMiddleStart),
       },
       rightRotor: {
         ...config.rightRotor,
-        type: rightRotorType as any,
-        ring: rightRotorRing,
-        start: charToNum(match.right),
-        current: charToNum(match.right),
+        type: match.rightRotor as any,
+        ring: tRightRing,
+        start: charToNum(tRightStart),
+        current: charToNum(tRightStart),
       },
       plugboard: plugboardMode === 'active' ? config.plugboard : {},
     };
@@ -507,21 +830,196 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
             <div className="space-y-3 text-xs">
               {/* Rotor selection visualization */}
               <div className="grid grid-cols-3 gap-2">
-                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] text-center">
-                  <span className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical">Left Rotor</span>
-                  <span className="font-bold text-[#ede1cd]">{leftRotorType}</span>
-                  <span className="text-[10px] text-amber-500/80 block mt-0.5">Ring: {formatRotorRing(leftRotorRing)}</span>
+                {/* Left Rotor Selector */}
+                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] flex flex-col justify-between">
+                  <label className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-1 text-center font-bold">Left Rotor</label>
+                  <select
+                    value={leftRotorType}
+                    onChange={(e) => setLeftRotorType(e.target.value)}
+                    className="w-full bg-[#1b170e] text-[#ede1cd] font-bold text-xs border border-[#4e453b] rounded py-1 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                  >
+                    {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].map((type) => (
+                      <option key={type} value={type} className="bg-[#1b170e]">
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="mt-1.5">
+                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center mb-0.5">Ring</span>
+                    <select
+                      value={leftRotorRing}
+                      onChange={(e) => setLeftRotorRing(parseInt(e.target.value))}
+                      className="w-full bg-[#1b170e] text-amber-500/90 text-[11px] border border-[#4e453b] rounded py-0.5 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                    >
+                      {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
+                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                          {formatRotorRing(ring)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] text-center">
-                  <span className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical">Middle Rotor</span>
-                  <span className="font-bold text-[#ede1cd]">{middleRotorType}</span>
-                  <span className="text-[10px] text-amber-500/80 block mt-0.5">Ring: {formatRotorRing(middleRotorRing)}</span>
+
+                {/* Middle Rotor Selector */}
+                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] flex flex-col justify-between">
+                  <label className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-1 text-center font-bold">Middle Rotor</label>
+                  <select
+                    value={middleRotorType}
+                    onChange={(e) => setMiddleRotorType(e.target.value)}
+                    className="w-full bg-[#1b170e] text-[#ede1cd] font-bold text-xs border border-[#4e453b] rounded py-1 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                  >
+                    {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].map((type) => (
+                      <option key={type} value={type} className="bg-[#1b170e]">
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="mt-1.5">
+                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center mb-0.5">Ring</span>
+                    <select
+                      value={middleRotorRing}
+                      onChange={(e) => setMiddleRotorRing(parseInt(e.target.value))}
+                      className="w-full bg-[#1b170e] text-amber-500/90 text-[11px] border border-[#4e453b] rounded py-0.5 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                    >
+                      {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
+                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                          {formatRotorRing(ring)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] text-center">
-                  <span className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical">Right Rotor</span>
-                  <span className="font-bold text-[#ede1cd]">{rightRotorType}</span>
-                  <span className="text-[10px] text-amber-500/80 block mt-0.5">Ring: {formatRotorRing(rightRotorRing)}</span>
+
+                {/* Right Rotor Selector */}
+                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] flex flex-col justify-between">
+                  <label className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-1 text-center font-bold">Right Rotor</label>
+                  <select
+                    value={rightRotorType}
+                    onChange={(e) => setRightRotorType(e.target.value)}
+                    className="w-full bg-[#1b170e] text-[#ede1cd] font-bold text-xs border border-[#4e453b] rounded py-1 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                  >
+                    {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].map((type) => (
+                      <option key={type} value={type} className="bg-[#1b170e]">
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="mt-1.5">
+                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center mb-0.5">Ring</span>
+                    <select
+                      value={rightRotorRing}
+                      onChange={(e) => setRightRotorRing(parseInt(e.target.value))}
+                      className="w-full bg-[#1b170e] text-amber-500/90 text-[11px] border border-[#4e453b] rounded py-0.5 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                    >
+                      {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
+                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                          {formatRotorRing(ring)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+              </div>
+
+              {/* Optional 4th Rotor and Reflector config */}
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] flex flex-col justify-between">
+                  <div>
+                    <label className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-1 font-bold">4th Thin Rotor</label>
+                    <select
+                      value={fourthRotorType}
+                      onChange={(e) => setFourthRotorType(e.target.value)}
+                      className="w-full bg-[#1b170e] text-[#ede1cd] text-xs border border-[#4e453b] rounded py-1 px-1 focus:outline-none focus:border-[#ebc238] cursor-pointer"
+                    >
+                      {['I', 'Beta', 'Gamma'].map((type) => (
+                        <option key={type} value={type} className="bg-[#1b170e]">
+                          {type === 'I' ? 'None (3-Rotor)' : type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {fourthRotorType !== 'I' && (
+                    <div className="mt-1.5 flex gap-1">
+                      <div className="w-1/2">
+                        <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-0.5 text-center">Ring</span>
+                        <select
+                          value={fourthRotorRing}
+                          onChange={(e) => setFourthRotorRing(parseInt(e.target.value))}
+                          className="w-full bg-[#1b170e] text-amber-500/90 text-[10px] border border-[#4e453b] rounded py-0.5 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                        >
+                          {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
+                            <option key={ring} value={ring} className="bg-[#1b170e]">
+                              {formatRotorRing(ring)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="w-1/2">
+                        <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-0.5 text-center">Pos</span>
+                        <select
+                          value={fourthRotorStart}
+                          onChange={(e) => setFourthRotorStart(parseInt(e.target.value))}
+                          className="w-full bg-[#1b170e] text-amber-500/90 text-[10px] border border-[#4e453b] rounded py-0.5 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                        >
+                          {Array.from({ length: 26 }, (_, idx) => idx).map((pos) => (
+                            <option key={pos} value={pos} className="bg-[#1b170e]">
+                              {numToChar(pos)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] flex flex-col justify-between">
+                  <div>
+                    <label className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-1 font-bold">Reflector</label>
+                    <select
+                      value={reflectorType}
+                      onChange={(e) => setReflectorType(e.target.value)}
+                      className="w-full bg-[#1b170e] text-[#ede1cd] text-xs border border-[#4e453b] rounded py-1 px-1 focus:outline-none focus:border-[#ebc238] cursor-pointer"
+                    >
+                      {['Reflector A', 'Reflector B', 'Reflector C', 'Reflector B Thin', 'Reflector C Thin', 'UKW-Rocket', 'UKW-K'].map((ref) => (
+                        <option key={ref} value={ref} className="bg-[#1b170e]">
+                          {ref}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rotor Scan Scope Selector */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-[#d1c4b7] uppercase tracking-wider block font-monospaced-technical">
+                  Rotor Scan Scope (Search All?)
+                </label>
+                <select
+                  value={rotorScanScope}
+                  onChange={(e) => setRotorScanScope(e.target.value as any)}
+                  className="w-full bg-[#120e04] text-[#ede1cd] text-xs border border-[#3b3426] rounded py-2 px-2.5 focus:outline-none focus:border-[#ebc238] cursor-pointer font-ui-header"
+                >
+                  <option value="selected" className="bg-[#1b170e]">Selected Rotor Types Only (1 combination)</option>
+                  <option value="permutations_3" className="bg-[#1b170e]">All Permutations of Selected (up to 6 combinations)</option>
+                  <option value="all_5" className="bg-[#1b170e]">Search All Combinations of Rotors I-V (60 combinations)</option>
+                  <option value="all_8" className="bg-[#1b170e]">Search All Combinations of Rotors I-VIII (336 combinations)</option>
+                </select>
+              </div>
+
+              {/* Crib Alignment Scan Mode Select */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-[#d1c4b7] uppercase tracking-wider block font-monospaced-technical">
+                  Crib Alignment Scan Mode
+                </label>
+                <select
+                  value={alignmentScanMode}
+                  onChange={(e) => setAlignmentScanMode(e.target.value as any)}
+                  className="w-full bg-[#120e04] text-[#ede1cd] text-xs border border-[#3b3426] rounded py-2 px-2.5 focus:outline-none focus:border-[#ebc238] cursor-pointer font-ui-header"
+                >
+                  <option value="current" className="bg-[#1b170e]">Current Slider Position Only (Offset: {alignmentOffset})</option>
+                  <option value="all_viable" className="bg-[#1b170e]">Auto-Scan All Viable Positions ({viableOffsets.length} valid)</option>
+                </select>
               </div>
 
               {/* Plugboard Mode Switcher */}
@@ -550,6 +1048,33 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   >
                     No Plugboard (Bare)
                   </button>
+                </div>
+
+                {/* Display active plugboard connections */}
+                <div className="p-2 bg-[#120e04] rounded border border-[#3b3426] text-[10px] font-monospaced-technical">
+                  <div className="text-[#8c7e6a] uppercase font-bold text-[9px] mb-1">
+                    Active Stecker Connections ({Object.keys(config.plugboard).length / 2} pairs)
+                  </div>
+                  {Object.keys(config.plugboard).length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(config.plugboard)
+                        .filter(([k, v]) => k < v)
+                        .map(([a, b]) => (
+                          <span
+                            key={`${a}-${b}`}
+                            className={`px-1.5 py-0.5 rounded text-[10px] border ${
+                              plugboardMode === 'active'
+                                ? 'bg-amber-950/40 text-amber-300 border-amber-800/50'
+                                : 'bg-[#1b170e] text-[#8c7e6a] border-[#3b3426] line-through opacity-60'
+                            }`}
+                          >
+                            {a}↔{b}
+                          </span>
+                        ))}
+                    </div>
+                  ) : (
+                    <span className="text-[#8c7e6a] italic">No plugboard connections configured</span>
+                  )}
                 </div>
               </div>
 
@@ -622,12 +1147,32 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   onChange={(e) => setAlignmentOffset(Number(e.target.value))}
                   className="w-full h-1.5 bg-[#120e04] rounded-lg appearance-none cursor-pointer accent-[#ebc238] border border-[#3b3426]"
                 />
+                
+                {/* Viable Zero-Overlap Offsets Badges */}
+                {viableOffsets.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1.5 text-[10px] font-monospaced-technical text-[#8c7e6a]">
+                    <span className="font-bold text-[#d1c4b7]">Viable Zero-Overlap Offsets:</span>
+                    {viableOffsets.map((offset) => (
+                      <button
+                        key={offset}
+                        onClick={() => setAlignmentOffset(offset)}
+                        className={`px-2 py-0.5 rounded border cursor-pointer transition-all ${
+                          alignmentOffset === offset
+                            ? 'bg-green-950/80 border-green-500 text-green-300 font-bold shadow-[0_0_8px_rgba(34,197,94,0.3)]'
+                            : 'bg-[#120e04] border-[#3b3426] text-[#ede1cd]/80 hover:border-[#ebc238]/60 hover:text-[#ede1cd]'
+                        }`}
+                      >
+                        {offset}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {/* Slide Comparison Visual Grid */}
             {ciphertext && crib && (
-              <div className="bg-[#120e04] rounded border border-[#3b3426] p-4 overflow-x-auto select-none">
+              <div ref={scrollContainerRef} className="bg-[#120e04] rounded border border-[#3b3426] p-4 overflow-x-auto select-none">
                 <div className="flex flex-col gap-3 min-w-[500px]">
                   
                   {/* Full Ciphertext Row */}
@@ -639,7 +1184,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                         return (
                           <div
                             key={idx}
-                            className={`w-7 h-8 flex items-center justify-center rounded border font-bold transition-all duration-300 ${
+                            className={`w-7 h-8 flex items-center justify-center rounded border font-bold transition-all duration-300 shrink-0 ${
                               isAligned
                                 ? 'bg-[#ebc238]/10 text-[#ebc238] border-[#ebc238]/50 shadow-[0_0_8px_rgba(235,194,56,0.2)]'
                                 : 'text-[#8c7e6a]/40 border-[#3b3426]/30'
@@ -793,11 +1338,11 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
               <button
                 onClick={startBombeSearch}
-                disabled={isSearching || !alignedSection.isViable}
+                disabled={isSearching || (alignmentScanMode === 'current' ? !alignedSection.isViable : viableOffsets.length === 0)}
                 className={`w-full py-3.5 rounded border font-ui-header font-bold text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 transition-all ${
                   isSearching
                     ? 'bg-[#3b3426] border-[#4e453b] text-[#8c7e6a] cursor-wait'
-                    : alignedSection.isViable
+                    : (alignmentScanMode === 'current' ? alignedSection.isViable : viableOffsets.length > 0)
                     ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-500 shadow-amber-950/20 active:scale-[0.99] cursor-pointer'
                     : 'bg-[#1e1a12] border-[#3b3426] text-[#8c7e6a] cursor-not-allowed'
                 }`}
@@ -818,46 +1363,166 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 </h3>
               </div>
 
+              {/* Ring Settings Alignment Mapper Box */}
+              <div className="p-4 bg-[#120e04] rounded border border-[#3b3426] space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-amber-500 text-lg">ring_volume</span>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider font-monospaced-technical">
+                      Ringstellung (Ring Settings) Alignment Mapper
+                    </h4>
+                    <p className="text-[10px] text-[#8c7e6a] leading-normal font-monospaced-technical">
+                      Because short cribs (like WETTER) rarely trigger a middle rotor step, you can map the scan results to <strong>any custom Ring Settings</strong>. Adjust the target rings below to instantly calculate the corresponding Starting Positions!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 pt-1">
+                  {/* Left Ring */}
+                  <div className="space-y-1">
+                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center">Target Left Ring</span>
+                    <select
+                      value={mapperLeftRing}
+                      onChange={(e) => setMapperLeftRing(parseInt(e.target.value))}
+                      className="w-full bg-[#1b170e] text-[#ede1cd] text-xs border border-[#4e453b] rounded py-1 px-1.5 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer font-monospaced-technical"
+                    >
+                      {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
+                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                          {formatRotorRing(ring, 'number')} ({formatRotorRing(ring, 'letter')})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Middle Ring */}
+                  <div className="space-y-1">
+                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center">Target Middle Ring</span>
+                    <select
+                      value={mapperMiddleRing}
+                      onChange={(e) => setMapperMiddleRing(parseInt(e.target.value))}
+                      className="w-full bg-[#1b170e] text-[#ede1cd] text-xs border border-[#4e453b] rounded py-1 px-1.5 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer font-monospaced-technical"
+                    >
+                      {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
+                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                          {formatRotorRing(ring, 'number')} ({formatRotorRing(ring, 'letter')})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Right Ring */}
+                  <div className="space-y-1">
+                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center">Target Right Ring</span>
+                    <select
+                      value={mapperRightRing}
+                      onChange={(e) => setMapperRightRing(parseInt(e.target.value))}
+                      className="w-full bg-[#1b170e] text-[#ede1cd] text-xs border border-[#4e453b] rounded py-1 px-1.5 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer font-monospaced-technical"
+                    >
+                      {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
+                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                          {formatRotorRing(ring, 'number')} ({formatRotorRing(ring, 'letter')})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-4">
-                {matches.map((match, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-[#120e04] border border-green-900/50 p-4 rounded-md space-y-3 shadow-inner"
-                  >
-                    {/* Position Label Header */}
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] uppercase">Key Position:</span>
-                        <span className="font-rotor-label text-base font-bold text-green-400 tracking-wider">
-                          {match.left} - {match.middle} - {match.right}
-                        </span>
+                {matches.map((match, idx) => {
+                  const { l0Mapped, m0Mapped, r0Mapped } = findMappedStartingPositionAt0(
+                    match.left, match.middle, match.right,
+                    match.offset,
+                    match.leftRotor, match.middleRotor, match.rightRotor,
+                    leftRotorRing, middleRotorRing, rightRotorRing,
+                    mapperLeftRing, mapperMiddleRing, mapperRightRing
+                  );
+
+                  return (
+                    <div
+                      key={idx}
+                      className="bg-[#120e04] border border-green-900/40 p-4 rounded-md space-y-4 shadow-inner"
+                    >
+                      {/* Rotor Types & Mapping Grid */}
+                      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between pb-3 border-b border-[#3b3426]/60">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] uppercase font-bold">Rotor Set:</span>
+                            <span className="text-xs font-bold text-amber-500 bg-[#1b170e] px-2 py-0.5 rounded border border-[#3b3426]">
+                              {match.leftRotor} - {match.middleRotor} - {match.rightRotor}
+                            </span>
+                            {match.offset > 0 && (
+                              <span className="text-[9px] text-green-500 bg-green-950/40 border border-green-800/40 px-1.5 py-0.5 rounded font-bold font-monospaced-technical">
+                                Matched at Crib Offset: {match.offset}
+                              </span>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] uppercase">Raw Dial Scan:</span>
+                            <span className="text-xs font-mono text-[#ede1cd]/80">
+                              {match.left} - {match.middle} - {match.right} (at crib offset {match.offset} under scan rings {formatRotorRing(leftRotorRing)}-{formatRotorRing(middleRotorRing)}-{formatRotorRing(rightRotorRing)})
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Mapped Key Position */}
+                        <div className="bg-[#1b170e] px-4 py-2.5 rounded border-2 border-green-800/40 space-y-0.5 text-center shrink-0 min-w-[150px] w-full md:w-auto">
+                          <span className="text-[9px] font-monospaced-technical text-green-500 block uppercase font-bold tracking-wider">
+                            Mapped Start Position (at Offset 0)
+                          </span>
+                          <span className="font-rotor-label text-lg font-bold text-green-400 tracking-widest block">
+                            {l0Mapped} - {m0Mapped} - {r0Mapped}
+                          </span>
+                          <span className="text-[8px] font-monospaced-technical text-[#8c7e6a] block">
+                            Rings: {formatRotorRing(mapperLeftRing)}-{formatRotorRing(mapperMiddleRing)}-{formatRotorRing(mapperRightRing)}
+                          </span>
+                        </div>
                       </div>
+
+                      {/* Decryption Preview */}
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-monospaced-technical text-[#8c7e6a] block uppercase">
+                          Decrypted Output Message Segment:
+                        </span>
+                        <div className="bg-[#0b0802] border border-[#3b3426] p-3 rounded font-monospaced-technical text-xs tracking-wider text-[#ede1cd] max-h-24 overflow-y-auto uppercase select-text">
+                          {match.decrypted}
+                        </div>
+                      </div>
+
+                      {/* Apply Settings Button */}
                       <button
-                        onClick={() => handleApplyMatch(match)}
-                        className="text-xs bg-green-950/80 hover:bg-green-900 text-green-300 border border-green-800/80 px-3 py-1.5 rounded transition-all active:scale-95 cursor-pointer flex items-center gap-1 font-ui-header"
+                        onClick={() => handleApplyMatchWithRings(match, mapperLeftRing, mapperMiddleRing, mapperRightRing, l0Mapped, m0Mapped, r0Mapped)}
+                        className="w-full text-center text-xs bg-green-950/80 hover:bg-green-900 text-green-300 border border-green-800/80 px-3 py-2.5 rounded transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-1.5 font-ui-header"
                       >
                         <span className="material-symbols-outlined text-xs">logout</span>
-                        Apply Settings to Machine
+                        Apply Settings ({match.leftRotor}-{match.middleRotor}-{match.rightRotor} with Rings {formatRotorRing(mapperLeftRing)}-{formatRotorRing(mapperMiddleRing)}-{formatRotorRing(mapperRightRing)} & Start {l0Mapped}-{m0Mapped}-{r0Mapped}) to Machine
                       </button>
                     </div>
-
-                    {/* Decryption Preview */}
-                    <div className="space-y-1">
-                      <span className="text-[9px] font-monospaced-technical text-[#8c7e6a] block uppercase">
-                        Decrypted Output Message Segment:
-                      </span>
-                      <div className="bg-[#0b0802] border border-[#3b3426] p-3 rounded font-monospaced-technical text-xs tracking-wider text-[#ede1cd] max-h-24 overflow-y-auto uppercase select-text">
-                        {match.decrypted}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* No Matches Found Banner */}
-          {!isSearching && matches.length === 0 && ciphertext && crib && alignedSection.isViable && (
+          {!isSearching && hasSearched && matches.length === 0 && ciphertext && crib && alignedSection.isViable && (
+            <div className="bg-[#201b0f] border border-red-900/50 p-5 rounded-lg shadow-panel texture-metal text-center space-y-2 animate-fadeIn">
+              <span className="material-symbols-outlined text-red-500 text-3xl">error_outline</span>
+              <h4 className="text-xs font-ui-header font-bold text-red-400 uppercase tracking-wider">
+                No Matches Found
+              </h4>
+              <p className="text-[11px] text-[#d1c4b7] max-w-md mx-auto leading-normal">
+                Completed electromechanical scan of all <strong>17,576</strong> dial positions, but found no valid key configurations matching the crib alignment.
+              </p>
+              <p className="text-[10px] text-[#8c7e6a] max-w-sm mx-auto leading-normal">
+                This indicates that the rotor types, ring settings, reflector choice, or plugboard rules do not match the intercept's. Try loading a historical sample or verifying your current settings.
+              </p>
+            </div>
+          )}
+
+          {/* Waiting for Search Banner */}
+          {!isSearching && !hasSearched && matches.length === 0 && ciphertext && crib && alignedSection.isViable && (
             <div className="bg-[#201b0f] border border-[#4e453b] p-5 rounded-lg shadow-panel texture-metal text-center space-y-2">
               <span className="material-symbols-outlined text-amber-500 text-3xl">question_mark</span>
               <h4 className="text-xs font-ui-header font-bold text-[#ede1cd] uppercase tracking-wider">
