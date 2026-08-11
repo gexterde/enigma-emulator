@@ -561,17 +561,43 @@ export const MachineView: React.FC<MachineViewProps> = ({
     e.target.value = '';
   };
 
+  const configHistoryRef = useRef<EnigmaConfig[]>([]);
+  const lastMachineConfigRef = useRef<EnigmaConfig>(config);
+
+  useEffect(() => {
+    if (JSON.stringify(config) !== JSON.stringify(lastMachineConfigRef.current)) {
+      configHistoryRef.current = [];
+    }
+    lastMachineConfigRef.current = config;
+  }, [config]);
+
+  const handleBackspace = () => {
+    if (inputTape.length === 0) return;
+
+    if (mobileLampTimeoutRef.current) {
+      clearTimeout(mobileLampTimeoutRef.current);
+      mobileLampTimeoutRef.current = null;
+    }
+    setPressedKey(null);
+    setLitLamp(null);
+
+    if (configHistoryRef.current.length > 0) {
+      const popped = configHistoryRef.current.pop();
+      if (popped) {
+        lastMachineConfigRef.current = popped;
+        onUpdateConfig(popped);
+      }
+    }
+
+    playRotorClickSound(soundEnabled);
+    setInputTape((prev) => prev.slice(0, -1));
+    setCipherTape((prev) => prev.slice(0, -1));
+  };
+
   const handleMobileKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace') {
       e.preventDefault();
-      if (mobileLampTimeoutRef.current) {
-        clearTimeout(mobileLampTimeoutRef.current);
-        mobileLampTimeoutRef.current = null;
-      }
-      setPressedKey(null);
-      setLitLamp(null);
-      setInputTape((prev) => prev.slice(0, -1));
-      setCipherTape((prev) => prev.slice(0, -1));
+      handleBackspace();
     } else if (e.key === 'Enter') {
       e.preventDefault();
       handleCloseMobileKeyboard();
@@ -612,6 +638,10 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
     // Run cryptographic transformation
     const { nextConfig, result } = encryptChar(uppercaseChar, config);
+
+    // Save current config to history before updating
+    configHistoryRef.current.push(JSON.parse(JSON.stringify(config)));
+    lastMachineConfigRef.current = nextConfig;
 
     // Mechanical rotor stepping occurs regardless of electrical power
     onUpdateConfig(nextConfig);
@@ -676,8 +706,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
         }
       } else if (e.key === 'Backspace' && !e.repeat) {
         e.preventDefault();
-        setInputTape((prev) => prev.slice(0, -1));
-        setCipherTape((prev) => prev.slice(0, -1));
+        handleBackspace();
       } else if (e.key === ' ' && !e.repeat) {
         e.preventDefault();
         setInputTape((prev) => prev + ' ');
@@ -1260,14 +1289,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      if (mobileLampTimeoutRef.current) {
-                        clearTimeout(mobileLampTimeoutRef.current);
-                        mobileLampTimeoutRef.current = null;
-                      }
-                      setPressedKey(null);
-                      setLitLamp(null);
-                      setInputTape((prev) => prev.slice(0, -1));
-                      setCipherTape((prev) => prev.slice(0, -1));
+                      handleBackspace();
                       mobileInputRef.current?.focus();
                     }}
                     className="px-2 py-1 text-xs font-monospaced-technical rounded bg-[#93000a]/40 text-[#ffdad6] border border-red-800/50 hover:bg-[#93000a] cursor-pointer"
@@ -1513,14 +1535,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  if (mobileLampTimeoutRef.current) {
-                    clearTimeout(mobileLampTimeoutRef.current);
-                    mobileLampTimeoutRef.current = null;
-                  }
-                  setPressedKey(null);
-                  setLitLamp(null);
-                  setInputTape((prev) => prev.slice(0, -1));
-                  setCipherTape((prev) => prev.slice(0, -1));
+                  handleBackspace();
                   mobileInputRef.current?.focus();
                 }}
                 className="px-2 py-1 text-xs font-monospaced-technical rounded bg-[#93000a]/40 text-[#ffdad6] border border-red-800/50 hover:bg-[#93000a] cursor-pointer"

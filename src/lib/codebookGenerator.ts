@@ -1,17 +1,17 @@
 export interface EnigmaGeneratorConfig {
-  daysInMonth: number;           // Hány napos legyen a kódkönyv (pl. 30 vagy 31)
-  rotorsPool: string[];          // Választható hengerek (pl. ['I','II','III','IV','V','VI','VII','VIII'])
-  useTwoDayRule: boolean;        // Igaz esetén a belső beállítások csak a páratlan napokon változnak
-  plugboardPairsCount: number;   // Kapcsolótábla kábeleinek száma (általában 10, maximum 13)
-  kenngruppenCount: number;      // Napi azonosító csoportok száma (Kriegsmarine: 3, Luftwaffe: 4)
-  kenngruppenLength: number;     // Azonosító csoportok hossza (általában 3 betűs trigram)
-  // Opcionális beállítások a 4-hengeres (M4) változathoz:
-  fourthRotorsPool?: string[];   // Negyedik vékony henger készlet (pl. ['Beta', 'Gamma'])
-  fixedFourthRing?: number;      // Fixálja a 4. henger gyűrűjét (Kriegsmarine esetén szigorúan 1-es, azaz 'A')
-  // UKW-Dual-Dynamic fordítóhenger beállítások (Kísérleti/Speculatív mit-lett-volna funkció)
-  useDualDynamicReflector?: boolean; // Ha igaz, UKW-Dual-Dynamic fordítóhenger generálódik a napokhoz
-  fixedReflectorRing?: number;      // Fixálja a fordítóhenger gyűrűbeállítását (1-26)
-  fixedReflectorStart?: number;     // Fixálja a fordítóhenger kezdőpozícióját (1-26)
+  daysInMonth: number;           // Number of days in the codebook (e.g., 30 or 31)
+  rotorsPool: string[];          // Pool of selectable rotors (e.g., ['I','II','III','IV','V','VI','VII','VIII'])
+  useTwoDayRule: boolean;        // If true, internal settings only change on odd-numbered days
+  plugboardPairsCount: number;   // Number of plugboard cable pairs (typically 10, max 13)
+  kenngruppenCount: number;      // Number of daily identification groups (Kriegsmarine: 3, Luftwaffe: 4)
+  kenngruppenLength: number;     // Length of identification groups (typically 3-letter trigrams)
+  // Optional settings for the 4-rotor (M4) variant:
+  fourthRotorsPool?: string[];   // Pool of selectable thin fourth rotors (e.g., ['Beta', 'Gamma'])
+  fixedFourthRing?: number;      // Fixes the ring setting of the 4th rotor (always 1/'A' for historical Kriegsmarine M4)
+  // UKW-Dual-Dynamic reflector settings (Experimental/Speculative what-if feature)
+  useDualDynamicReflector?: boolean; // If true, UKW-Dual-Dynamic reflector is generated for the days
+  fixedReflectorRing?: number;      // Fixes the reflector ring setting (1-26)
+  fixedReflectorStart?: number;     // Fixes the reflector starting position (1-26)
 }
 
 export interface UniversalCodebookEntry {
@@ -20,18 +20,18 @@ export interface UniversalCodebookEntry {
   rings: number[];
   plugboardPairs: string[];
   kenngruppen: string[];
-  fourthRotor?: string;          // Csak ha a fourthRotorsPool meg van adva
-  fourthRing?: number;           // Csak ha a fourthRotorsPool meg van adva
-  reflectorType?: string;        // pl. 'UKW-Dual-Dynamic'
-  reflectorRing?: number;        // Fordítóhenger gyűrűbeállítás (1-26)
-  reflectorStart?: number;       // Fordítóhenger kezdőpozíció (1-26)
+  fourthRotor?: string;          // Only if fourthRotorsPool is provided
+  fourthRing?: number;           // Only if fourthRotorsPool is provided
+  reflectorType?: string;        // e.g., 'UKW-Dual-Dynamic'
+  reflectorRing?: number;        // Reflector ring setting (1-26)
+  reflectorStart?: number;       // Reflector starting position (1-26)
 }
 
 export function generateUniversalEnigmaCodebook(config: EnigmaGeneratorConfig): UniversalCodebookEntry[] {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   const entries: UniversalCodebookEntry[] = [];
 
-  // Fisher-Yates (Knuth) biztonságos és elfogulatlan keverő algoritmus
+  // Fisher-Yates (Knuth) secure and unbiased shuffle algorithm
   const shuffle = <T>(array: T[]): T[] => {
     const copy = [...array];
     for (let i = copy.length - 1; i > 0; i--) {
@@ -41,7 +41,7 @@ export function generateUniversalEnigmaCodebook(config: EnigmaGeneratorConfig): 
     return copy;
   };
 
-  // Átmeneti tárolók a kétnapos szabály (öröklődés) menedzseléséhez
+  // Temporaries to manage the two-day rule (inheritance)
   let lastOddRotors: string[] = [];
   let lastOddRings: number[] = [];
   let lastOddFourthRotor: string | undefined = undefined;
@@ -49,14 +49,14 @@ export function generateUniversalEnigmaCodebook(config: EnigmaGeneratorConfig): 
   let lastOddReflectorRing: number | undefined = undefined;
   let lastOddReflectorStart: number | undefined = undefined;
 
-  // A kódkönyveket a németek mindig a hónap utolsó napjától az első felé haladva nyomtatták
+  // Codebooks were historically printed from the last day of the month down to the first day
   for (let day = config.daysInMonth; day >= 1; day--) {
     const isOddDay = day % 2 !== 0;
     
-    // Akkor generálunk új belső kulcsot, ha:
-    // A) Nem él a kétnapos szabály (minden nap új kulcs kell)
-    // B) Páratlan nap van
-    // C) Ez a hónap legelsőnek legenerált (legutolsó naptári) napja
+    // We generate a new internal key if:
+    // A) The two-day rule is disabled (new key every day)
+    // B) It is an odd-numbered day
+    // C) This is the very first generated (calendar-last) day of the month
     const souldGenerateNewInternal = !config.useTwoDayRule || isOddDay || day === config.daysInMonth;
 
     let selectedRotors: string[];
@@ -68,18 +68,18 @@ export function generateUniversalEnigmaCodebook(config: EnigmaGeneratorConfig): 
     let reflectorStart: number | undefined = undefined;
 
     if (souldGenerateNewInternal) {
-      // 3 különböző törzshenger kiválasztása a medencéből
+      // Select 3 unique standard rotors from the pool
       const shuffledPool = shuffle(config.rotorsPool);
       selectedRotors = [shuffledPool[0], shuffledPool[1], shuffledPool[2]];
 
-      // 3 gyűrűbeállítás generálása (1-26)
+      // Generate 3 ring settings (1-26)
       rings = [
         Math.floor(Math.random() * 26) + 1,
         Math.floor(Math.random() * 26) + 1,
         Math.floor(Math.random() * 26) + 1
       ];
 
-      // Negyedik henger opcionális kezelése (Enigma M4)
+      // Handle optional fourth rotor (Enigma M4)
       if (config.fourthRotorsPool && config.fourthRotorsPool.length > 0) {
         const shuffledFourth = shuffle(config.fourthRotorsPool);
         fourthRotor = shuffledFourth[0];
@@ -88,7 +88,7 @@ export function generateUniversalEnigmaCodebook(config: EnigmaGeneratorConfig): 
           : Math.floor(Math.random() * 26) + 1;
       }
 
-      // Opcionális UKW-Dual-Dynamic fordítóhenger kezelése
+      // Handle optional UKW-Dual-Dynamic reflector
       if (config.useDualDynamicReflector) {
         reflectorType = 'UKW-Dual-Dynamic';
         reflectorRing = config.fixedReflectorRing !== undefined
@@ -99,7 +99,7 @@ export function generateUniversalEnigmaCodebook(config: EnigmaGeneratorConfig): 
           : Math.floor(Math.random() * 26) + 1;
       }
 
-      // Elmentjük a belső kulcsot az esetleges következő páros nap számára
+      // Save the internal key for potential inheritance on the following even day
       lastOddRotors = selectedRotors;
       lastOddRings = rings;
       lastOddFourthRotor = fourthRotor;
@@ -107,7 +107,7 @@ export function generateUniversalEnigmaCodebook(config: EnigmaGeneratorConfig): 
       lastOddReflectorRing = reflectorRing;
       lastOddReflectorStart = reflectorStart;
     } else {
-      // Páros napokon átvesszük a legutóbbi páratlan nap belső értékeit
+      // For even days, inherit internal key values from the preceding odd day
       selectedRotors = lastOddRotors;
       rings = lastOddRings;
       fourthRotor = lastOddFourthRotor;
@@ -119,19 +119,19 @@ export function generateUniversalEnigmaCodebook(config: EnigmaGeneratorConfig): 
       }
     }
 
-    // --- KÜLSŐ BEÁLLÍTÁSOK (Minden nap kötelezően egyedi és kaotikus) ---
+    // --- EXTERNAL SETTINGS (Unique and chaotic for every single day) ---
 
-    // Átfedés- és zárlatmentes kapcsolótábla-párok generálása a kért darabszám alapján
+    // Generate non-overlapping, short-circuit free plugboard connections based on count
     const availChars = shuffle(alphabet);
     const pairs: string[] = [];
     for (let p = 0; p < config.plugboardPairsCount; p++) {
-      if (availChars.length < 2) break; // Biztonsági fék, ha elfogynának a betűk
+      if (availChars.length < 2) break; // Safety check
       const c1 = availChars.pop()!;
       const c2 = availChars.pop()!;
-      pairs.push([c1, c2].sort().join('')); // Belső ábécé sorrend (pl. 'AF')
+      pairs.push([c1, c2].sort().join('')); // Sort alphabetically (e.g., 'AF')
     }
 
-    // Egyedi, nagybetűs Kenngruppen csoportok generálása a megadott darabszám és hossza szerint
+    // Generate unique, uppercase Kenngruppen identification groups based on count and length
     const kgList: string[] = [];
     while (kgList.length < config.kenngruppenCount) {
       const currentGroup: string[] = [];
@@ -140,13 +140,13 @@ export function generateUniversalEnigmaCodebook(config: EnigmaGeneratorConfig): 
       }
       const kgString = currentGroup.join('');
       
-      // Megakadályozzuk az üzenetfejek napon belüli duplikációját
+      // Prevent internal duplicate groups for the same day
       if (!kgList.includes(kgString)) {
         kgList.push(kgString);
       }
     }
 
-    // Az aktuális nap összeállítása és elhelyezése a tömbben
+    // Assemble and store current day entry
     const entry: UniversalCodebookEntry = {
       day,
       rotors: selectedRotors,
