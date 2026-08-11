@@ -947,6 +947,12 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     tLeftRing: number, tMiddleRing: number, tRightRing: number,
     tLeftStart: string, tMiddleStart: string, tRightStart: string
   ) => {
+    // Merge deduced steckers into plugboard if available
+    const newPlugboard: Record<string, string> = { ...config.plugboard };
+    if (match.deducedSteckers && Object.keys(match.deducedSteckers).length > 0) {
+      Object.assign(newPlugboard, match.deducedSteckers);
+    }
+
     const updatedConfig: EnigmaConfig = {
       ...config,
       leftRotor: {
@@ -970,7 +976,9 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
         start: charToNum(tRightStart),
         current: charToNum(tRightStart),
       },
-      plugboard: plugboardMode === 'active' ? config.plugboard : {},
+      plugboard: (plugboardMode === 'active' || (match.deducedSteckers && Object.keys(match.deducedSteckers).length > 0))
+        ? newPlugboard
+        : {},
     };
 
     onUpdateConfig(updatedConfig);
@@ -1212,6 +1220,13 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   <option value="all_5" className="bg-[#1b170e]">Search All Combinations of Rotors I-V (60 combinations)</option>
                   <option value="all_8" className="bg-[#1b170e]">Search All Combinations of Rotors I-VIII (336 combinations)</option>
                 </select>
+
+                {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
+                  <div className="p-1.5 bg-[#120e04] rounded border border-amber-800/40 text-[9px] text-amber-400 font-monospaced-technical flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs">info</span>
+                    <span>M4 Active: The 4th Greek rotor ({config.fourthRotor.type}) position is held fixed per daily codebook rules while scanning the 3 driving wheels.</span>
+                  </div>
+                )}
               </div>
 
               {/* Crib Alignment Scan Mode Select */}
