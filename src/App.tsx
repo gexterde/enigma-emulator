@@ -8,6 +8,8 @@ import { PlugboardView } from './components/PlugboardView';
 import { CodebookView } from './components/CodebookView';
 import { LogView } from './components/LogView';
 import { MorseTrainer } from './components/MorseTrainer';
+import { FrequencyAnalysisView } from './components/FrequencyAnalysisView';
+import { CryptanalysisView } from './components/CryptanalysisView';
 import { SettingsModal, InfoModal, ShareModal, ShortcutsModal } from './components/Modals';
 import { ActiveTab, EnigmaConfig, LogEntry } from './types';
 import { DEFAULT_ENIGMA_CONFIG } from './lib/enigmaEngine';
@@ -32,6 +34,19 @@ function isValidEnigmaConfig(obj: unknown): boolean {
   );
 }
 
+function isValidLogEntry(obj: unknown): boolean {
+  if (!obj || typeof obj !== 'object') return false;
+  const entry = obj as Record<string, unknown>;
+  return (
+    typeof entry.id === 'string' &&
+    typeof entry.timestamp === 'string' &&
+    typeof entry.inputChar === 'string' &&
+    typeof entry.outputChar === 'string' &&
+    typeof entry.configString === 'string' &&
+    Array.isArray(entry.trace)
+  );
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('machine');
   const [config, setConfig] = useState<EnigmaConfig>(() => {
@@ -48,7 +63,20 @@ export default function App() {
     }
     return DEFAULT_ENIGMA_CONFIG;
   });
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem('enigma_machine_logs');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.every(isValidLogEntry)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return [];
+  });
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [compactMode, setCompactMode] = useState<boolean>(false);
   const [inputTape, setInputTape] = useState<string>('');
@@ -61,6 +89,14 @@ export default function App() {
       // ignore
     }
   }, [config]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('enigma_machine_logs', JSON.stringify(logs));
+    } catch (e) {
+      // ignore
+    }
+  }, [logs]);
 
   // Modals and sidebar state
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -127,6 +163,14 @@ export default function App() {
         {
           match: () => e.key === 'F6' || (isCtrlOrCmd && e.key.toLowerCase() === 't'),
           action: () => setActiveTab('morseTrainer'),
+        },
+        {
+          match: () => e.key === 'F11' || (isCtrlOrCmd && e.key.toLowerCase() === 'y'),
+          action: () => setActiveTab('frequency'),
+        },
+        {
+          match: () => e.key === 'F12' || (isCtrlOrCmd && e.key.toLowerCase() === 'e'),
+          action: () => setActiveTab('cryptanalysis'),
         },
         {
           match: () => e.key === 'F7' || (isCtrlOrCmd && e.key.toLowerCase() === 's' && !e.shiftKey),
@@ -245,6 +289,25 @@ export default function App() {
 
           {activeTab === 'morseTrainer' && (
             <MorseTrainer />
+          )}
+
+          {activeTab === 'frequency' && (
+            <FrequencyAnalysisView
+              config={config}
+              inputTape={inputTape}
+              cipherTape={cipherTape}
+            />
+          )}
+
+          {activeTab === 'cryptanalysis' && (
+            <CryptanalysisView
+              config={config}
+              onUpdateConfig={setConfig}
+              cipherTape={cipherTape}
+              inputTape={inputTape}
+              setActiveTab={setActiveTab}
+              soundEnabled={soundEnabled}
+            />
           )}
         </main>
       </div>

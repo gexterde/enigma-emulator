@@ -89,4 +89,4 @@ export interface LogEntry {
   trace: StepTrace[];
 }
 
-export type ActiveTab = 'machine' | 'plugboard' | 'rotors' | 'log' | 'codebook' | 'morseTrainer';
+export type ActiveTab = 'machine' | 'plugboard' | 'rotors' | 'log' | 'codebook' | 'morseTrainer' | 'frequency' | 'cryptanalysis';

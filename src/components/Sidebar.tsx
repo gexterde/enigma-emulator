@@ -24,7 +24,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'plugboard', label: 'Plugboard', icon: 'settings_ethernet', shortcut: 'F3 / ^P' },
     { id: 'codebook', label: 'Codebook', icon: 'menu_book', shortcut: 'F4 / ^B' },
     { id: 'log', label: 'Log', icon: 'history_edu', shortcut: 'F5 / ^L' },
-    { id: 'morseTrainer', label: 'Morse Trainer', icon: 'school', shortcut: 'F6 / ^T' }
+    { id: 'morseTrainer', label: 'Morse Trainer', icon: 'school', shortcut: 'F6 / ^T' },
+    { id: 'frequency', label: 'Frequency Tool', icon: 'analytics', shortcut: 'F11 / ^Y' },
+    { id: 'cryptanalysis', label: 'Crib Cracking', icon: 'auto_fix', shortcut: 'F12 / ^E' }
   ];
 
   return (
