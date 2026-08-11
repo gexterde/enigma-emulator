@@ -378,7 +378,13 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.map((s: any) => ({
+            ...s,
+            entries: Array.isArray(s.entries) ? s.entries : []
+          }));
+        }
       }
     } catch (err) {
       console.error('Failed to load custom codebooks:', err);
@@ -396,6 +402,11 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
   // Share & Import Modal States
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
+
+  // In-app deletion confirmation modal states (replaces window.confirm for sandboxed iframe compatibility)
+  const [codebookToDelete, setCodebookToDelete] = useState<CodebookSheet | null>(null);
+  const [dayEntryToDelete, setDayEntryToDelete] = useState<number | null>(null);
+  const [notificationToast, setNotificationToast] = useState<string | null>(null);
 
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [importInputText, setImportInputText] = useState<string>('');
@@ -451,7 +462,11 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
   const [activeViewMode, setActiveViewMode] = useState<'view' | 'create_builder'>('view');
 
   // Currently active sheet
-  const currentSheet = allSheets.find((c) => c.id === selectedBookId) || HISTORICAL_CODEBOOKS[0];
+  const rawCurrentSheet = allSheets.find((c) => c.id === selectedBookId) || HISTORICAL_CODEBOOKS[0];
+  const currentSheet: CodebookSheet = {
+    ...rawCurrentSheet,
+    entries: Array.isArray(rawCurrentSheet.entries) ? rawCurrentSheet.entries : []
+  };
   const isCurrentHistorical = !!currentSheet.isHistorical;
   const hasFourthRotor = currentSheet.entries.some((e: CodebookEntry) => e.fourthRotor);
   const hasDualReflector = currentSheet.entries.some((e: CodebookEntry) => e.reflectorType !== undefined);
@@ -870,29 +885,69 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
     setIsAddDayModalOpen(false);
   };
 
-  // Delete a day entry from custom codebook
+  // Trigger delete day entry confirmation modal
   const handleDeleteDayEntry = (dayToDelete: number) => {
     if (isCurrentHistorical) return;
-    setCustomSheets((prev) =>
-      prev.map((sheet) => {
-        if (sheet.id === currentSheet.id) {
-          return {
-            ...sheet,
-            entries: sheet.entries.filter((e) => e.day !== dayToDelete)
-          };
-        }
-        return sheet;
-      })
-    );
+    setDayEntryToDelete(dayToDelete);
   };
 
-  // Delete an entire custom codebook
-  const handleDeleteCustomCodebook = () => {
-    if (isCurrentHistorical) return;
-    if (confirm(`Are you sure you want to delete the custom codebook "${currentSheet.title}"?`)) {
-      setCustomSheets((prev) => prev.filter((s) => s.id !== currentSheet.id));
+  // Perform confirmed deletion of a single day entry
+  const handleConfirmDeleteDayEntry = () => {
+    if (dayEntryToDelete === null || isCurrentHistorical) return;
+    const dayNum = dayEntryToDelete;
+    const updatedCustom = customSheets.map((sheet) => {
+      if (sheet.id === currentSheet.id) {
+        return {
+          ...sheet,
+          entries: sheet.entries.filter((e) => e.day !== dayNum)
+        };
+      }
+      return sheet;
+    });
+    setCustomSheets(updatedCustom);
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedCustom));
+    } catch (err) {
+      console.error('Failed to save to localStorage:', err);
+    }
+    window.dispatchEvent(new Event('enigma_codebooks_updated'));
+    setDayEntryToDelete(null);
+    setNotificationToast(`✓ Removed Day ${dayNum} from key table.`);
+    setTimeout(() => setNotificationToast(null), 3500);
+  };
+
+  // Trigger delete custom codebook confirmation modal
+  const handleDeleteCustomCodebook = (sheetOrEvent?: CodebookSheet | React.MouseEvent) => {
+    let target = currentSheet;
+    if (sheetOrEvent && typeof sheetOrEvent === 'object' && 'id' in sheetOrEvent && 'entries' in sheetOrEvent) {
+      target = sheetOrEvent as CodebookSheet;
+    }
+    if (!target || target.isHistorical) return;
+    setCodebookToDelete({
+      ...target,
+      entries: Array.isArray(target.entries) ? target.entries : []
+    });
+  };
+
+  // Perform confirmed deletion of custom codebook
+  const handleConfirmDeleteCodebook = () => {
+    if (!codebookToDelete || !codebookToDelete.id) return;
+    const targetId = codebookToDelete.id;
+    const targetTitle = codebookToDelete.title || 'Custom Codebook';
+    const updatedCustom = customSheets.filter((s) => s.id !== targetId);
+    setCustomSheets(updatedCustom);
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedCustom));
+    } catch (err) {
+      console.error('Failed to save to localStorage:', err);
+    }
+    window.dispatchEvent(new Event('enigma_codebooks_updated'));
+    if (selectedBookId === targetId) {
       setSelectedBookId(HISTORICAL_CODEBOOKS[0].id);
     }
+    setCodebookToDelete(null);
+    setNotificationToast(`✓ Deleted "${targetTitle}" successfully.`);
+    setTimeout(() => setNotificationToast(null), 3500);
   };
 
   // Filter entries
@@ -1561,7 +1616,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
 
                   <button
                     type="button"
-                    onClick={handleDeleteCustomCodebook}
+                    onClick={() => handleDeleteCustomCodebook(currentSheet)}
                     className="text-xs font-ui-header bg-[#801818] hover:bg-[#a12020] text-white px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow"
                   >
                     <span className="material-symbols-outlined text-sm">delete</span>
@@ -2267,6 +2322,107 @@ export const CodebookView: React.FC<CodebookViewProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* IN-APP CONFIRMATION MODAL: DELETE CUSTOM CODEBOOK */}
+      {codebookToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in print:hidden">
+          <div className="bg-[#1c170e] border border-[#801818] rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 border-b border-[#3b3426] pb-3 text-[#ff7070]">
+              <span className="material-symbols-outlined text-2xl text-[#e05252]">delete_forever</span>
+              <h3 className="text-base font-ui-header font-bold uppercase tracking-wider text-[#f5d0d0]">
+                Delete Custom Codebook
+              </h3>
+            </div>
+
+            <p className="text-xs text-[#d1c4b7] font-ui-body leading-relaxed">
+              Are you sure you want to permanently delete this custom Schlüsseltafel key table?
+            </p>
+
+            <div className="bg-[#120e04] border border-[#4e453b] rounded-lg p-3 space-y-1.5">
+              <div className="text-sm font-bold font-monospaced-technical text-[#ebc238]">
+                {codebookToDelete.title || 'Custom Codebook'}
+              </div>
+              {codebookToDelete.subtitle && (
+                <div className="text-[11px] text-[#9e8d78] font-ui-body">
+                  {codebookToDelete.subtitle}
+                </div>
+              )}
+              <div className="flex items-center gap-3 pt-1 text-[10px] text-[#e3c193] font-mono">
+                <span>Month: {codebookToDelete.monthYear || 'Custom'}</span>
+                <span>•</span>
+                <span>Entries: {codebookToDelete.entries?.length ?? 0} days</span>
+              </div>
+            </div>
+
+            <div className="bg-[#241010] border border-[#6b2222] text-[#f29191] text-[11px] p-2.5 rounded-lg flex items-center gap-2 font-medium">
+              <span className="material-symbols-outlined text-sm text-[#e05252]">warning</span>
+              <span>This action cannot be undone. It will be removed from your browser storage.</span>
+            </div>
+
+            <div className="pt-3 border-t border-[#3b3426] flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCodebookToDelete(null)}
+                className="px-4 py-2 rounded bg-[#3b3426] text-[#d1c4b7] hover:bg-[#4e453b] text-xs font-bold uppercase cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteCodebook}
+                className="px-5 py-2 rounded bg-[#801818] hover:bg-[#a12020] text-white text-xs font-bold uppercase flex items-center gap-1.5 shadow cursor-pointer transition-all active:scale-95"
+              >
+                <span className="material-symbols-outlined text-base">delete</span>
+                Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IN-APP CONFIRMATION MODAL: DELETE SINGLE DAY ENTRY */}
+      {dayEntryToDelete !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in print:hidden">
+          <div className="bg-[#1c170e] border border-[#801818] rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 border-b border-[#3b3426] pb-3 text-[#ff7070]">
+              <span className="material-symbols-outlined text-2xl text-[#e05252]">delete</span>
+              <h3 className="text-base font-ui-header font-bold uppercase tracking-wider text-[#f5d0d0]">
+                Delete Day {dayEntryToDelete} Entry
+              </h3>
+            </div>
+
+            <p className="text-xs text-[#d1c4b7] font-ui-body leading-relaxed">
+              Are you sure you want to remove the key settings for <strong className="text-[#ebc238]">Day {dayEntryToDelete}</strong> from <span className="text-[#e3c193]">"{currentSheet.title}"</span>?
+            </p>
+
+            <div className="pt-3 border-t border-[#3b3426] flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDayEntryToDelete(null)}
+                className="px-4 py-2 rounded bg-[#3b3426] text-[#d1c4b7] hover:bg-[#4e453b] text-xs font-bold uppercase cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteDayEntry}
+                className="px-5 py-2 rounded bg-[#801818] hover:bg-[#a12020] text-white text-xs font-bold uppercase flex items-center gap-1.5 shadow cursor-pointer transition-all active:scale-95"
+              >
+                <span className="material-symbols-outlined text-base">delete</span>
+                Remove Day
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FLOATING ACTION NOTIFICATION TOAST */}
+      {notificationToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#120e04] border border-[#ebc238] text-[#ebc238] font-monospaced-technical text-xs font-bold px-4 py-3 rounded-lg shadow-2xl flex items-center gap-2 animate-fade-in print:hidden">
+          <span className="material-symbols-outlined text-sm">info</span>
+          <span>{notificationToast}</span>
         </div>
       )}
     </div>

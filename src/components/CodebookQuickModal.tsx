@@ -22,18 +22,39 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
   const [customSheets, setCustomSheets] = useState<CodebookSheet[]>([]);
 
   useEffect(() => {
-    if (isOpen) {
+    const loadCustom = () => {
       try {
         const saved = localStorage.getItem('enigma_custom_codebooks_v1');
         if (saved) {
-          setCustomSheets(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setCustomSheets(
+              parsed.map((s: any) => ({
+                ...s,
+                entries: Array.isArray(s.entries) ? s.entries : []
+              }))
+            );
+          } else {
+            setCustomSheets([]);
+          }
         } else {
           setCustomSheets([]);
         }
       } catch (e) {
         setCustomSheets([]);
       }
+    };
+
+    if (isOpen) {
+      loadCustom();
     }
+
+    window.addEventListener('storage', loadCustom);
+    window.addEventListener('enigma_codebooks_updated', loadCustom);
+    return () => {
+      window.removeEventListener('storage', loadCustom);
+      window.removeEventListener('enigma_codebooks_updated', loadCustom);
+    };
   }, [isOpen]);
 
   const allSheets = [...HISTORICAL_CODEBOOKS, ...customSheets];

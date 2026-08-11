@@ -79,6 +79,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
   showTitle = true
 }) => {
   const [selectedSocket, setSelectedSocket] = useState<string | null>(null);
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const socketRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [cablePaths, setCablePaths] = useState<Array<{ a: string; b: string; path: string; color: string }>>([]);
@@ -105,6 +106,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
 
   const handleSocketClick = (char: string) => {
     playPlugConnectSound(soundEnabled);
+    setWarningMessage(null);
 
     // If letter is already plugged, unplug it!
     if (plugboard[char]) {
@@ -131,7 +133,8 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
 
     // Enforce 13 pairs maximum rule
     if (pairs.length >= 13) {
-      alert('Maximum 13 plugboard pairs allowed for Enigma.');
+      setWarningMessage('Maximum 13 plugboard pairs allowed for Enigma (all 26 sockets connected).');
+      setTimeout(() => setWarningMessage(null), 3500);
       setSelectedSocket(null);
       return;
     }
@@ -271,6 +274,13 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
           </button>
         </div>
       </div>
+
+      {warningMessage && (
+        <div className="bg-[#241010] border border-[#801818] text-[#f5d0d0] text-xs px-3 py-2 rounded-lg flex items-center gap-2 animate-fade-in">
+          <span className="material-symbols-outlined text-sm text-[#e05252]">warning</span>
+          <span>{warningMessage}</span>
+        </div>
+      )}
 
       {/* Physical Wooden Steckerbrett Housing with SVG Patch Cables */}
       <div className="w-full overflow-x-auto pb-2 rounded-xl focus:outline-none">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { EnigmaConfig } from '../types';
 import { generateConfigString } from '../lib/enigmaEngine';
 
@@ -253,10 +253,12 @@ export const ShortcutsModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, config }) => {
   const configStr = generateConfigString(config);
+  const [copied, setCopied] = useState<boolean>(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(configStr);
-    alert('Configuration string copied to clipboard!');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   return (
@@ -265,13 +267,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, config 
         <p>You can share your current Enigma machine rotor setup and starting positions with fellow cryptographers to allow them to decrypt your messages.</p>
 
         <div className="bg-[#120e04] p-3 rounded border border-[#3b3426] flex items-center justify-between font-monospaced-technical text-sm text-[#ebc238]">
-          <span>{configStr}</span>
+          <span className="break-all pr-2">{configStr}</span>
           <button
             onClick={handleCopy}
-            className="px-2.5 py-1 bg-[#8b6f47] text-[#fffaf8] hover:bg-[#8b6f47]/90 rounded text-xs font-ui-header cursor-pointer flex items-center gap-1"
+            className={`px-3 py-1.5 rounded text-xs font-ui-header font-bold cursor-pointer flex items-center gap-1 transition-all ${
+              copied
+                ? 'bg-[#2b6121] text-white'
+                : 'bg-[#8b6f47] text-[#fffaf8] hover:bg-[#a68656]'
+            }`}
           >
-            <span className="material-symbols-outlined text-xs">content_copy</span>
-            Copy Key
+            <span className="material-symbols-outlined text-xs">
+              {copied ? 'check' : 'content_copy'}
+            </span>
+            {copied ? 'Copied!' : 'Copy Key'}
           </button>
         </div>
       </div>
