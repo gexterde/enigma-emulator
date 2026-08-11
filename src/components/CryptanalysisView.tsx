@@ -83,6 +83,9 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
   // Search scope (single selected, 3-rotor permutations, or 5/8 rotor pools)
   const [rotorScanScope, setRotorScanScope] = useState<'selected' | 'permutations_3' | 'all_5' | 'all_8'>('selected');
 
+  // Ringstellung search scope (find rings AAA-AAZ, AAA-AZZ, AAA-ZZZ)
+  const [ringScanMode, setRingScanMode] = useState<'fixed' | 'right_26' | 'mid_right_676' | 'all_17576'>('fixed');
+
   // Crib alignment scan mode
   const [alignmentScanMode, setAlignmentScanMode] = useState<'current' | 'all_viable'>('current');
 
@@ -95,6 +98,19 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [currentScan, setCurrentScan] = useState<string[]>(['A', 'A', 'A']);
+
+  // Async loop control refs
+  const stopSearchRef = useRef<boolean>(false);
+  const animFrameIdRef = useRef<number | null>(null);
+
+  const stopBombeSearch = () => {
+    stopSearchRef.current = true;
+    if (animFrameIdRef.current !== null) {
+      cancelAnimationFrame(animFrameIdRef.current);
+      animFrameIdRef.current = null;
+    }
+    setIsSearching(false);
+  };
   const [matches, setMatches] = useState<Array<{
     leftRotor: string;
     middleRotor: string;
@@ -102,6 +118,9 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     left: string;
     middle: string;
     right: string;
+    leftRing?: number;
+    middleRing?: number;
+    rightRing?: number;
     offset: number;
     decrypted: string;
     deducedSteckers?: Record<string, string>;
@@ -665,6 +684,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     const offsetsToScan = alignmentScanMode === 'all_viable' ? viableOffsets : [alignmentOffset];
     if (offsetsToScan.length === 0) return;
 
+    stopSearchRef.current = false;
     setIsSearching(true);
     setProgress(0);
     setMatches([]);
@@ -801,35 +821,123 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     };
 
     const runBatch = () => {
+      if (stopSearchRef.current) {
+        // Search aborted by operator! Process any matches found up to cancellation
+        if (foundMatches.length > 0) {
+          const finalized: typeof matches = [];
+          for (const match of foundMatches) {
+            const lR_start = ringScanMode === 'all_17576' ? 1 : leftRotorRing;
+            const lR_end   = ringScanMode === 'all_17576' ? 26 : leftRotorRing;
+
+            const mR_start = (ringScanMode === 'mid_right_676' || ringScanMode === 'all_17576') ? 1 : middleRotorRing;
+            const mR_end   = (ringScanMode === 'mid_right_676' || ringScanMode === 'all_17576') ? 26 : middleRotorRing;
+
+            const rR_start = ringScanMode !== 'fixed' ? 1 : rightRotorRing;
+            const rR_end   = ringScanMode !== 'fixed' ? 26 : rightRotorRing;
+
+            const refLVal = charToNum(match.left);
+            const refMVal = charToNum(match.middle);
+            const refRVal = charToNum(match.right);
+
+            for (let lR = lR_start; lR <= lR_end; lR++) {
+              for (let mR = mR_start; mR <= mR_end; mR++) {
+                for (let rR = rR_start; rR <= rR_end; rR++) {
+                  const { l0, m0, r0 } = findStartingPositionAt0(
+                    refLVal, refMVal, refRVal,
+                    match.offset,
+                    match.leftRotor, match.middleRotor, match.rightRotor,
+                    lR, mR, rR
+                  );
+
+                  const decrypted = decryptFullMessageWithRotors(
+                    match.leftRotor, match.middleRotor, match.rightRotor,
+                    numToChar(l0), numToChar(m0), numToChar(r0),
+                    lR, mR, rR
+                  );
+
+                  const decSegment = decrypted.slice(match.offset, match.offset + crib.length);
+                  if (decSegment === crib.toUpperCase()) {
+                    finalized.push({
+                      ...match,
+                      left: numToChar(l0),
+                      middle: numToChar(m0),
+                      right: numToChar(r0),
+                      leftRing: lR,
+                      middleRing: mR,
+                      rightRing: rR,
+                      decrypted,
+                    });
+                  }
+                }
+              }
+            }
+          }
+          setMatches(finalized);
+          setHasSearched(true);
+        }
+        setIsSearching(false);
+        return;
+      }
+
       if (currentCombIndex >= rotorCombs.length) {
-        // Complete! Roll back found starting positions to offset 0 and fill in decryptions
-        const finalized = foundMatches.map((match) => {
-          // 1. Find start position at index 0 under Scan Rings
-          const { l0, m0, r0 } = findStartingPositionAt0(
-            charToNum(match.left),
-            charToNum(match.middle),
-            charToNum(match.right),
-            match.offset,
-            match.leftRotor,
-            match.middleRotor,
-            match.rightRotor,
-            leftRotorRing,
-            middleRotorRing,
-            rightRotorRing
-          );
+        // Complete! Roll back found starting positions to offset 0 and fill in decryptions across requested Ring search scope
+        const finalized: typeof matches = [];
 
-          // 2. Decrypt message starting from index 0
-          const decrypted = decryptFullMessageWithRotors(
-            match.leftRotor, match.middleRotor, match.rightRotor,
-            numToChar(l0), numToChar(m0), numToChar(r0),
-            leftRotorRing, middleRotorRing, rightRotorRing
-          );
+        for (const match of foundMatches) {
+          const lR_start = ringScanMode === 'all_17576' ? 1 : leftRotorRing;
+          const lR_end   = ringScanMode === 'all_17576' ? 26 : leftRotorRing;
 
-          return {
-            ...match,
-            decrypted,
-          };
-        });
+          const mR_start = (ringScanMode === 'mid_right_676' || ringScanMode === 'all_17576') ? 1 : middleRotorRing;
+          const mR_end   = (ringScanMode === 'mid_right_676' || ringScanMode === 'all_17576') ? 26 : middleRotorRing;
+
+          const rR_start = ringScanMode !== 'fixed' ? 1 : rightRotorRing;
+          const rR_end   = ringScanMode !== 'fixed' ? 26 : rightRotorRing;
+
+          const refLVal = charToNum(match.left);
+          const refMVal = charToNum(match.middle);
+          const refRVal = charToNum(match.right);
+
+          for (let lR = lR_start; lR <= lR_end; lR++) {
+            for (let mR = mR_start; mR <= mR_end; mR++) {
+              for (let rR = rR_start; rR <= rR_end; rR++) {
+                // Find start position at index 0 under candidate ring setting
+                const { l0, m0, r0 } = findStartingPositionAt0(
+                  refLVal,
+                  refMVal,
+                  refRVal,
+                  match.offset,
+                  match.leftRotor,
+                  match.middleRotor,
+                  match.rightRotor,
+                  lR,
+                  mR,
+                  rR
+                );
+
+                const decrypted = decryptFullMessageWithRotors(
+                  match.leftRotor, match.middleRotor, match.rightRotor,
+                  numToChar(l0), numToChar(m0), numToChar(r0),
+                  lR, mR, rR
+                );
+
+                // Verify decryption matches crib segment at match.offset
+                const decSegment = decrypted.slice(match.offset, match.offset + crib.length);
+                if (decSegment === crib.toUpperCase()) {
+                  finalized.push({
+                    ...match,
+                    left: numToChar(l0),
+                    middle: numToChar(m0),
+                    right: numToChar(r0),
+                    leftRing: lR,
+                    middleRing: mR,
+                    rightRing: rR,
+                    decrypted,
+                  });
+                }
+              }
+            }
+          }
+        }
 
         setIsSearching(false);
         setMatches(finalized);
@@ -935,10 +1043,10 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       ]);
 
       playRotorClickSound(soundEnabled);
-      requestAnimationFrame(runBatch);
+      animFrameIdRef.current = requestAnimationFrame(runBatch);
     };
 
-    requestAnimationFrame(runBatch);
+    animFrameIdRef.current = requestAnimationFrame(runBatch);
   };
 
   // Apply cracked keys back to main Enigma machine with mapped Ringstellung (Ring Settings)
@@ -1227,6 +1335,29 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                     <span>M4 Active: The 4th Greek rotor ({config.fourthRotor.type}) position is held fixed per daily codebook rules while scanning the 3 driving wheels.</span>
                   </div>
                 )}
+              </div>
+
+              {/* Ringstellung Search Scope (Find Rings) Selector */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-[#d1c4b7] uppercase tracking-wider block font-monospaced-technical flex items-center justify-between">
+                  <span>Ringstellung Search Scope (Find Rings)</span>
+                  <span className="text-[9px] text-amber-500 font-bold font-monospaced-technical">
+                    {ringScanMode === 'fixed' && 'Fixed Rings'}
+                    {ringScanMode === 'right_26' && 'AAA - AAZ (26 Rings)'}
+                    {ringScanMode === 'mid_right_676' && 'AAA - AZZ (676 Rings)'}
+                    {ringScanMode === 'all_17576' && 'AAA - ZZZ (17,576 Rings)'}
+                  </span>
+                </label>
+                <select
+                  value={ringScanMode}
+                  onChange={(e) => setRingScanMode(e.target.value as any)}
+                  className="w-full bg-[#120e04] text-[#ede1cd] text-xs border border-[#3b3426] rounded py-2 px-2.5 focus:outline-none focus:border-[#ebc238] cursor-pointer font-ui-header"
+                >
+                  <option value="fixed" className="bg-[#1b170e]">Fixed Selected Ring Settings (1 combination)</option>
+                  <option value="right_26" className="bg-[#1b170e]">Find Right Ring: AAA - AAZ (26 ring combinations)</option>
+                  <option value="mid_right_676" className="bg-[#1b170e]">Find Middle & Right Rings: AAA - AZZ (676 ring combinations)</option>
+                  <option value="all_17576" className="bg-[#1b170e]">Find All 3 Rings: AAA - ZZZ (17,576 ring combinations)</option>
+                </select>
               </div>
 
               {/* Crib Alignment Scan Mode Select */}
@@ -1615,20 +1746,36 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 </div>
               )}
 
-              <button
-                onClick={startBombeSearch}
-                disabled={isSearching || (alignmentScanMode === 'current' ? !alignedSection.isViable : viableOffsets.length === 0)}
-                className={`w-full py-3.5 rounded border font-ui-header font-bold text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 transition-all ${
-                  isSearching
-                    ? 'bg-[#3b3426] border-[#4e453b] text-[#8c7e6a] cursor-wait'
-                    : (alignmentScanMode === 'current' ? alignedSection.isViable : viableOffsets.length > 0)
-                    ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-500 shadow-amber-950/20 active:scale-[0.99] cursor-pointer'
-                    : 'bg-[#1e1a12] border-[#3b3426] text-[#8c7e6a] cursor-not-allowed'
-                }`}
-              >
-                <span className="material-symbols-outlined text-lg">electric_bolt</span>
-                {isSearching ? `Cracking... (Pos: ${currentScan.join('-')})` : 'Initiate Bombe Search'}
-              </button>
+              {!isSearching ? (
+                <button
+                  onClick={startBombeSearch}
+                  disabled={alignmentScanMode === 'current' ? !alignedSection.isViable : viableOffsets.length === 0}
+                  className={`w-full py-3.5 rounded border font-ui-header font-bold text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 transition-all ${
+                    (alignmentScanMode === 'current' ? alignedSection.isViable : viableOffsets.length > 0)
+                      ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-500 shadow-amber-950/20 active:scale-[0.99] cursor-pointer'
+                      : 'bg-[#1e1a12] border-[#3b3426] text-[#8c7e6a] cursor-not-allowed'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-lg">electric_bolt</span>
+                  Initiate Bombe Search
+                </button>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 py-3.5 px-4 bg-[#19140b] border border-amber-800/60 text-amber-300 font-ui-header font-bold text-xs sm:text-sm rounded flex items-center justify-center gap-2.5 shadow-inner">
+                    <span className="material-symbols-outlined text-lg animate-spin text-amber-400">sync</span>
+                    <span className="truncate">Cracking... (Pos: {currentScan.join('-')})</span>
+                  </div>
+
+                  <button
+                    onClick={stopBombeSearch}
+                    title="Stop Bombe Cracking Operation"
+                    className="py-3.5 px-5 bg-red-950/90 hover:bg-red-900 text-red-200 border-2 border-red-700 hover:border-red-500 rounded font-ui-header font-bold text-xs sm:text-sm tracking-wider flex items-center justify-center gap-2 shadow-lg hover:shadow-red-950/60 active:scale-95 cursor-pointer transition-all shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-lg text-red-400">stop_circle</span>
+                    <span>STOP</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1717,6 +1864,14 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                     mapperLeftRing, mapperMiddleRing, mapperRightRing
                   );
 
+                  const matchLeftRing = match.leftRing ?? mapperLeftRing;
+                  const matchMiddleRing = match.middleRing ?? mapperMiddleRing;
+                  const matchRightRing = match.rightRing ?? mapperRightRing;
+
+                  const displayStartLeft = match.leftRing !== undefined ? match.left : l0Mapped;
+                  const displayStartMiddle = match.middleRing !== undefined ? match.middle : m0Mapped;
+                  const displayStartRight = match.rightRing !== undefined ? match.right : r0Mapped;
+
                   return (
                     <div
                       key={idx}
@@ -1730,6 +1885,11 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                             <span className="text-xs font-bold text-amber-500 bg-[#1b170e] px-2 py-0.5 rounded border border-[#3b3426]">
                               {match.leftRotor} - {match.middleRotor} - {match.rightRotor}
                             </span>
+                            {match.leftRing !== undefined && (
+                              <span className="text-[9px] text-amber-400 bg-amber-950/50 border border-amber-800/50 px-1.5 py-0.5 rounded font-bold font-monospaced-technical">
+                                Discovered Rings: {formatRotorRing(match.leftRing)}-{formatRotorRing(match.middleRing)}-{formatRotorRing(match.rightRing)}
+                              </span>
+                            )}
                             {match.offset > 0 && (
                               <span className="text-[9px] text-green-500 bg-green-950/40 border border-green-800/40 px-1.5 py-0.5 rounded font-bold font-monospaced-technical">
                                 Matched at Crib Offset: {match.offset}
@@ -1748,13 +1908,13 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                         {/* Mapped Key Position */}
                         <div className="bg-[#1b170e] px-4 py-2.5 rounded border-2 border-green-800/40 space-y-0.5 text-center shrink-0 min-w-[150px] w-full md:w-auto">
                           <span className="text-[9px] font-monospaced-technical text-green-500 block uppercase font-bold tracking-wider">
-                            Mapped Start Position (at Offset 0)
+                            {match.leftRing !== undefined ? 'Discovered Start Position (Offset 0)' : 'Mapped Start Position (Offset 0)'}
                           </span>
                           <span className="font-rotor-label text-lg font-bold text-green-400 tracking-widest block">
-                            {l0Mapped} - {m0Mapped} - {r0Mapped}
+                            {displayStartLeft} - {displayStartMiddle} - {displayStartRight}
                           </span>
                           <span className="text-[8px] font-monospaced-technical text-[#8c7e6a] block">
-                            Rings: {formatRotorRing(mapperLeftRing)}-{formatRotorRing(mapperMiddleRing)}-{formatRotorRing(mapperRightRing)}
+                            Rings: {formatRotorRing(matchLeftRing)}-{formatRotorRing(matchMiddleRing)}-{formatRotorRing(matchRightRing)} ({numToChar(matchLeftRing - 1)}{numToChar(matchMiddleRing - 1)}{numToChar(matchRightRing - 1)})
                           </span>
                         </div>
                       </div>
@@ -1798,11 +1958,11 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
                       {/* Apply Settings Button */}
                       <button
-                        onClick={() => handleApplyMatchWithRings(match, mapperLeftRing, mapperMiddleRing, mapperRightRing, l0Mapped, m0Mapped, r0Mapped)}
+                        onClick={() => handleApplyMatchWithRings(match, matchLeftRing, matchMiddleRing, matchRightRing, displayStartLeft, displayStartMiddle, displayStartRight)}
                         className="w-full text-center text-xs bg-green-950/80 hover:bg-green-900 text-green-300 border border-green-800/80 px-3 py-2.5 rounded transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-1.5 font-ui-header"
                       >
                         <span className="material-symbols-outlined text-xs">logout</span>
-                        Apply Settings ({match.leftRotor}-{match.middleRotor}-{match.rightRotor} with Rings {formatRotorRing(mapperLeftRing)}-{formatRotorRing(mapperMiddleRing)}-{formatRotorRing(mapperRightRing)} & Start {l0Mapped}-{m0Mapped}-{r0Mapped}) to Machine
+                        Apply Settings ({match.leftRotor}-{match.middleRotor}-{match.rightRotor} with Rings {formatRotorRing(matchLeftRing)}-{formatRotorRing(matchMiddleRing)}-{formatRotorRing(matchRightRing)} & Start {displayStartLeft}-{displayStartMiddle}-{displayStartRight}) to Machine
                       </button>
                     </div>
                   );
