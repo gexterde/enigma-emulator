@@ -472,6 +472,112 @@ export const MachineView: React.FC<MachineViewProps> = ({
     setDimIdleLights(!dimIdleLights);
   };
 
+  // Key and Lamp Touch Size ('normal' | 'large')
+  const [keySize, setKeySize] = useLocalStorage<'normal' | 'large'>('enigma_key_size', 'normal');
+  const handleToggleKeySize = () => {
+    setKeySize(keySize === 'normal' ? 'large' : 'normal');
+  };
+
+  // Mobile virtual keyboard state and input ref
+  const [isMobileKeyboardOpen, setIsMobileKeyboardOpen] = useState<boolean>(false);
+  const [mobileLampDuration, setMobileLampDuration] = useLocalStorage<string>('enigma_mobile_lamp_duration', '800');
+  const mobileLampTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mobileInputRef = useRef<HTMLInputElement>(null);
+
+  // Clean up any pending mobile lamp timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (mobileLampTimeoutRef.current) {
+        clearTimeout(mobileLampTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleOpenMobileKeyboard = () => {
+    setIsMobileKeyboardOpen(true);
+    setTimeout(() => {
+      mobileInputRef.current?.focus();
+    }, 50);
+  };
+
+  const handleCloseMobileKeyboard = () => {
+    if (mobileLampTimeoutRef.current) {
+      clearTimeout(mobileLampTimeoutRef.current);
+      mobileLampTimeoutRef.current = null;
+    }
+    setPressedKey(null);
+    setLitLamp(null);
+    setIsMobileKeyboardOpen(false);
+    mobileInputRef.current?.blur();
+  };
+
+  // Normalize Hungarian and international accented characters to A-Z for Enigma typing
+  const normalizeToEnigmaChar = (char: string): string => {
+    const map: Record<string, string> = {
+      'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ö': 'O', 'Ő': 'O', 'Ú': 'U', 'Ü': 'U', 'Ű': 'U',
+      'á': 'A', 'é': 'E', 'í': 'I', 'ó': 'O', 'ö': 'O', 'ő': 'O', 'ú': 'U', 'ü': 'U', 'ű': 'U',
+      'Ä': 'A', 'ä': 'A', 'ẞ': 'S', 'ß': 'S', 'À': 'A', 'È': 'E', 'Ì': 'I', 'Ò': 'O', 'Ù': 'U',
+      'à': 'A', 'è': 'E', 'ì': 'I', 'ò': 'O', 'ù': 'U', 'Â': 'A', 'Ê': 'E', 'Î': 'I', 'Ô': 'O',
+      'Û': 'U', 'â': 'A', 'ê': 'E', 'î': 'I', 'ô': 'O', 'û': 'U', 'Ç': 'C', 'ç': 'C', 'Ñ': 'N', 'ñ': 'N'
+    };
+    const upper = char.toUpperCase();
+    return map[char] || map[upper] || upper;
+  };
+
+  // Handle live typing from mobile virtual keyboard input field
+  const handleMobileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!val) return;
+
+    // Clear any previous timeout
+    if (mobileLampTimeoutRef.current) {
+      clearTimeout(mobileLampTimeoutRef.current);
+      mobileLampTimeoutRef.current = null;
+    }
+
+    // Get the character typed
+    const rawChar = val.slice(-1);
+    const normalized = normalizeToEnigmaChar(rawChar);
+
+    if (ALPHABET.includes(normalized)) {
+      handleKeyPressStart(normalized);
+      
+      // If latch mode, bulb stays illuminated until next keypress
+      if (mobileLampDuration !== 'latch') {
+        const durationMs = parseInt(mobileLampDuration, 10) || 800;
+        mobileLampTimeoutRef.current = setTimeout(() => {
+          handleKeyPressEnd(normalized);
+          mobileLampTimeoutRef.current = null;
+        }, durationMs);
+      }
+    } else if (rawChar === ' ') {
+      setInputTape((prev) => prev + ' ');
+      if (batteryMode !== 'aus') {
+        setCipherTape((prev) => prev + ' ');
+      }
+    }
+
+    // Clear input so next keystroke triggers input event reliably on all mobile devices
+    e.target.value = '';
+  };
+
+  const handleMobileKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      if (mobileLampTimeoutRef.current) {
+        clearTimeout(mobileLampTimeoutRef.current);
+        mobileLampTimeoutRef.current = null;
+      }
+      setPressedKey(null);
+      setLitLamp(null);
+      setInputTape((prev) => prev.slice(0, -1));
+      setCipherTape((prev) => prev.slice(0, -1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      handleCloseMobileKeyboard();
+    }
+  };
+
   // Battery rotary power switch mode ('hell' | 'dkl' | 'aus' | 'sammler')
   const [batteryMode, setBatteryMode] = useLocalStorage<BatterySwitchMode>('enigma_battery_mode', 'hell');
 
@@ -557,6 +663,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
       const target = e.target as HTMLElement;
+      if (target === mobileInputRef.current) return;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
         return;
       }
@@ -582,6 +689,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
     const handleKeyUp = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
+      if (target === mobileInputRef.current) return;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
         return;
       }
@@ -656,6 +764,34 @@ export const MachineView: React.FC<MachineViewProps> = ({
         
         {/* Quick View Toggles & Config String */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Mobile Keyboard Trigger Button */}
+          <button
+            type="button"
+            onClick={handleOpenMobileKeyboard}
+            className="text-xs font-ui-header px-2.5 py-1.5 rounded border border-[#ebc238]/60 bg-[#251b0a] text-[#ebc238] hover:bg-[#ebc238] hover:text-[#181307] transition-all flex items-center gap-1.5 font-bold shadow-[0_0_10px_rgba(235,194,56,0.25)] cursor-pointer"
+            title="Open phone native virtual keyboard"
+          >
+            <span className="material-symbols-outlined text-sm">smartphone</span>
+            Mobile Keyboard
+          </button>
+
+          {/* Touch Size Toggle Button */}
+          <button
+            type="button"
+            onClick={handleToggleKeySize}
+            className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-colors gap-1.5 cursor-pointer ${
+              keySize === 'large'
+                ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
+                : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+            }`}
+            title="Toggle between normal and large key/lamp sizes"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {keySize === 'large' ? 'zoom_out' : 'zoom_in'}
+            </span>
+            {keySize === 'large' ? 'Keys: Large' : 'Keys: Normal'}
+          </button>
+
           <button
             type="button"
             onClick={handleToggleCompactMode}
@@ -1049,12 +1185,116 @@ export const MachineView: React.FC<MachineViewProps> = ({
             </div>
           )}
 
+          {/* Mobile Phone Native Keyboard Active Bar & Hidden Input */}
+          <div className="w-full">
+            <input
+              ref={mobileInputRef}
+              type="text"
+              autoCapitalize="characters"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              inputMode="text"
+              onChange={handleMobileInput}
+              onKeyDown={handleMobileKeyDown}
+              className="opacity-0 absolute -z-10 pointer-events-none h-0 w-0"
+              aria-label="Mobile Keyboard Input Buffer"
+            />
+
+            {isMobileKeyboardOpen && (
+              <div className="bg-[#181307] border-2 border-[#ebc238] rounded-xl p-3 shadow-[0_0_20px_rgba(235,194,56,0.3)] animate-fade-in flex flex-col sm:flex-row items-center justify-between gap-2.5 my-1">
+                <div
+                  onClick={() => mobileInputRef.current?.focus()}
+                  className="flex items-center gap-2.5 cursor-pointer flex-1 w-full"
+                >
+                  <div className="w-3 h-3 rounded-full bg-[#34ace0] animate-ping shrink-0" />
+                  <div>
+                    <div className="text-xs sm:text-sm font-ui-header text-[#ede1cd] flex items-center gap-1.5 font-bold">
+                      <span className="material-symbols-outlined text-sm text-[#ebc238]">smartphone</span>
+                      Mobile Keyboard Active
+                    </div>
+                    <div className="text-[11px] font-monospaced-technical text-[#d1c4b7]">
+                      Type on your device keyboard (A–Z) • Tap here to refocus keyboard
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto justify-end">
+                  {/* Lamp hold duration switcher */}
+                  <div className="flex items-center gap-1 bg-[#120e04] px-1.5 py-0.5 rounded border border-[#3b3426] text-[10px] font-monospaced-technical text-[#8c7e6a]">
+                    <span>Light:</span>
+                    {(['400', '800', '1500', 'latch'] as const).map((dur) => (
+                      <button
+                        key={dur}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMobileLampDuration(dur);
+                          mobileInputRef.current?.focus();
+                        }}
+                        className={`px-1 py-0.5 rounded text-[9px] font-bold cursor-pointer transition-all ${
+                          mobileLampDuration === dur
+                            ? 'bg-[#ebc238] text-[#1c170d]'
+                            : 'text-[#8c7e6a] hover:text-[#ede1cd]'
+                        }`}
+                        title={dur === 'latch' ? 'Stays lit until next keypress' : `Lit for ${dur} milliseconds`}
+                      >
+                        {dur === '400' ? '0.4s' : dur === '800' ? '0.8s' : dur === '1500' ? '1.5s' : 'Latch'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInputTape((prev) => prev + ' ');
+                      if (batteryMode !== 'aus') {
+                        setCipherTape((prev) => prev + ' ');
+                      }
+                      mobileInputRef.current?.focus();
+                    }}
+                    className="px-2 py-1 text-xs font-monospaced-technical rounded bg-[#2a2215] text-[#ede1cd] border border-[#4e453b] hover:border-[#ebc238] cursor-pointer"
+                  >
+                    Space
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (mobileLampTimeoutRef.current) {
+                        clearTimeout(mobileLampTimeoutRef.current);
+                        mobileLampTimeoutRef.current = null;
+                      }
+                      setPressedKey(null);
+                      setLitLamp(null);
+                      setInputTape((prev) => prev.slice(0, -1));
+                      setCipherTape((prev) => prev.slice(0, -1));
+                      mobileInputRef.current?.focus();
+                    }}
+                    className="px-2 py-1 text-xs font-monospaced-technical rounded bg-[#93000a]/40 text-[#ffdad6] border border-red-800/50 hover:bg-[#93000a] cursor-pointer"
+                  >
+                    Backspace (⌫)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCloseMobileKeyboard}
+                    className="px-3 py-1 text-xs font-monospaced-technical rounded bg-[#ebc238] text-[#1c170d] font-bold shadow hover:bg-[#f5cf47] cursor-pointer flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-xs">keyboard_hide</span>
+                    <span>Close</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Lampboard (Lampenfeld) */}
           <LampboardPanel
             isCompact={true}
             batteryMode={batteryMode}
             litLamp={litLamp}
             dimIdleLights={dimIdleLights}
+            keySize={keySize}
+            onToggleKeySize={handleToggleKeySize}
           />
 
           {/* Bakelite Keyboard (Tastatur) */}
@@ -1063,6 +1303,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
             pressedKey={pressedKey}
             handleKeyPressStart={handleKeyPressStart}
             handleKeyPressEnd={handleKeyPressEnd}
+            keySize={keySize}
+            onToggleKeySize={handleToggleKeySize}
+            onOpenMobileKeyboard={handleOpenMobileKeyboard}
           />
         </div>
       ) : (
@@ -1195,12 +1438,116 @@ export const MachineView: React.FC<MachineViewProps> = ({
         </div>
       )}
 
+      {/* Mobile Phone Native Keyboard Active Bar & Hidden Input in Standard View */}
+      {isMobileKeyboardOpen && (
+        <div className="w-full">
+          <input
+            ref={mobileInputRef}
+            type="text"
+            autoCapitalize="characters"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            inputMode="text"
+            onChange={handleMobileInput}
+            onKeyDown={handleMobileKeyDown}
+            className="opacity-0 absolute -z-10 pointer-events-none h-0 w-0"
+            aria-label="Mobile Keyboard Input Buffer"
+          />
+
+          <div className="bg-[#181307] border-2 border-[#ebc238] rounded-xl p-3 shadow-[0_0_20px_rgba(235,194,56,0.3)] animate-fade-in flex flex-col sm:flex-row items-center justify-between gap-2.5 my-2">
+            <div
+              onClick={() => mobileInputRef.current?.focus()}
+              className="flex items-center gap-2.5 cursor-pointer flex-1 w-full"
+            >
+              <div className="w-3 h-3 rounded-full bg-[#34ace0] animate-ping shrink-0" />
+              <div>
+                <div className="text-xs sm:text-sm font-ui-header text-[#ede1cd] flex items-center gap-1.5 font-bold">
+                  <span className="material-symbols-outlined text-sm text-[#ebc238]">smartphone</span>
+                  Mobile Keyboard Active
+                </div>
+                <div className="text-[11px] font-monospaced-technical text-[#d1c4b7]">
+                  Type on your device keyboard (A–Z) • Tap here to refocus keyboard
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto justify-end">
+              {/* Lamp hold duration switcher */}
+              <div className="flex items-center gap-1 bg-[#120e04] px-1.5 py-0.5 rounded border border-[#3b3426] text-[10px] font-monospaced-technical text-[#8c7e6a]">
+                <span>Light:</span>
+                {(['400', '800', '1500', 'latch'] as const).map((dur) => (
+                  <button
+                    key={dur}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMobileLampDuration(dur);
+                      mobileInputRef.current?.focus();
+                    }}
+                    className={`px-1 py-0.5 rounded text-[9px] font-bold cursor-pointer transition-all ${
+                      mobileLampDuration === dur
+                        ? 'bg-[#ebc238] text-[#1c170d]'
+                        : 'text-[#8c7e6a] hover:text-[#ede1cd]'
+                    }`}
+                    title={dur === 'latch' ? 'Stays lit until next keypress' : `Lit for ${dur} milliseconds`}
+                  >
+                    {dur === '400' ? '0.4s' : dur === '800' ? '0.8s' : dur === '1500' ? '1.5s' : 'Latch'}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setInputTape((prev) => prev + ' ');
+                  if (batteryMode !== 'aus') {
+                    setCipherTape((prev) => prev + ' ');
+                  }
+                  mobileInputRef.current?.focus();
+                }}
+                className="px-2 py-1 text-xs font-monospaced-technical rounded bg-[#2a2215] text-[#ede1cd] border border-[#4e453b] hover:border-[#ebc238] cursor-pointer"
+              >
+                Space
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (mobileLampTimeoutRef.current) {
+                    clearTimeout(mobileLampTimeoutRef.current);
+                    mobileLampTimeoutRef.current = null;
+                  }
+                  setPressedKey(null);
+                  setLitLamp(null);
+                  setInputTape((prev) => prev.slice(0, -1));
+                  setCipherTape((prev) => prev.slice(0, -1));
+                  mobileInputRef.current?.focus();
+                }}
+                className="px-2 py-1 text-xs font-monospaced-technical rounded bg-[#93000a]/40 text-[#ffdad6] border border-red-800/50 hover:bg-[#93000a] cursor-pointer"
+              >
+                Backspace (⌫)
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseMobileKeyboard}
+                className="px-3 py-1 text-xs font-monospaced-technical rounded bg-[#ebc238] text-[#1c170d] font-bold shadow hover:bg-[#f5cf47] cursor-pointer flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-xs">keyboard_hide</span>
+                <span>Close</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Middle Section: Lampboard (Glühlampenfeld) */}
       <LampboardPanel
         isCompact={false}
         batteryMode={batteryMode}
         litLamp={litLamp}
         dimIdleLights={dimIdleLights}
+        keySize={keySize}
+        onToggleKeySize={handleToggleKeySize}
       />
 
       {/* Bottom Section: Physical Bakelite Keyboard (Tastatur) */}
@@ -1209,6 +1556,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
         pressedKey={pressedKey}
         handleKeyPressStart={handleKeyPressStart}
         handleKeyPressEnd={handleKeyPressEnd}
+        keySize={keySize}
+        onToggleKeySize={handleToggleKeySize}
+        onOpenMobileKeyboard={handleOpenMobileKeyboard}
       />
 
       {/* Paper Tape Strip Display */}
