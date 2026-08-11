@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { EnigmaConfig } from '../types';
 import { playRotorClickSound } from '../lib/audio';
+import { encryptChar, charToNum, numToChar } from '../lib/enigmaEngine';
 
 interface MessageHeaderPanelProps {
   isCompact: boolean;
@@ -28,6 +29,7 @@ interface MessageHeaderPanelProps {
   handleCopyFullMessage: () => void;
   setShowImportModal: (val: boolean) => void;
   setShowBroadcastModal: (val: boolean) => void;
+  onApplyRotorGrundstellung?: (newGrundstellung: string) => void;
 }
 
 export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
@@ -56,8 +58,75 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
   handleCopyFullMessage,
   setShowImportModal,
   setShowBroadcastModal,
+  onApplyRotorGrundstellung,
 }) => {
   const lettersCount = inputTape.replace(/[^A-Z]/gi, '').length;
+
+  // Historical Indicator (Spruchschlüssel) Encryption Assistant Modal state
+  const [showIndicatorModal, setShowIndicatorModal] = useState<boolean>(false);
+  const [indicatorMode, setIndicatorMode] = useState<'double' | 'single'>('double'); // Pre-May 1940 (Double XQFXQF) vs Post-May 1940 (Single XQF)
+  const [messageKeyInput, setMessageKeyInput] = useState<string>('XQF');
+  const [encryptedIndicatorResult, setEncryptedIndicatorResult] = useState<string>('');
+  const [indicatorStep, setIndicatorStep] = useState<number>(1);
+
+  // Compute active Grundstellung from current config
+  const currentDailyGrundstellung = useMemo(() => {
+    const isM4Active = config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma';
+    const isUKWDual = config.reflector?.type === 'UKW-Dual-Dynamic';
+    const r1 = numToChar(config.rightRotor.start);
+    const r2 = numToChar(config.middleRotor.start);
+    const r3 = numToChar(config.leftRotor.start);
+    const u = isUKWDual ? numToChar(config.reflector?.start || 0) : '';
+    if (isM4Active) {
+      const r4 = numToChar(config.fourthRotor.start);
+      return `${u}${r4}${r3}${r2}${r1}`;
+    }
+    return `${u}${r3}${r2}${r1}`;
+  }, [config]);
+
+  // Execute procedure calculation
+  const handleCalculateIndicator = () => {
+    const rawKey = messageKeyInput.toUpperCase().replace(/[^A-Z]/g, '');
+    if (!rawKey) return;
+
+    // Set machine rotors to daily Grundstellung
+    let workingConfig: EnigmaConfig = JSON.parse(JSON.stringify(config));
+    workingConfig.leftRotor.current = workingConfig.leftRotor.start;
+    workingConfig.middleRotor.current = workingConfig.middleRotor.start;
+    workingConfig.rightRotor.current = workingConfig.rightRotor.start;
+    workingConfig.fourthRotor.current = workingConfig.fourthRotor.start;
+    if (workingConfig.reflector) workingConfig.reflector.current = workingConfig.reflector.start;
+
+    // Double (XQFXQF) or Single (XQF)
+    const pattern = indicatorMode === 'double' ? rawKey + rawKey : rawKey;
+    let encrypted = '';
+
+    for (const ch of pattern) {
+      const { nextConfig, result } = encryptChar(ch, workingConfig);
+      encrypted += result.outputChar;
+      workingConfig = nextConfig;
+    }
+
+    setEncryptedIndicatorResult(encrypted);
+    playRotorClickSound(soundEnabled);
+  };
+
+  const handleApplyEncryptedIndicator = (indicatorStr: string) => {
+    // Apply encrypted indicator to local Grundstellung field
+    if (onApplyRotorGrundstellung) {
+      onApplyRotorGrundstellung(indicatorStr);
+    }
+    setShowIndicatorModal(false);
+  };
+
+  const handleApplyMessageKeyToMachine = () => {
+    // Receiver sets machine rotors to the decrypted message key position
+    const rawKey = messageKeyInput.toUpperCase().replace(/[^A-Z]/g, '');
+    if (rawKey && onApplyRotorGrundstellung) {
+      onApplyRotorGrundstellung(rawKey);
+    }
+    setShowIndicatorModal(false);
+  };
 
   return (
     <div
@@ -236,7 +305,18 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                 <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
                   3. Indicators (Spruchschlüssel)
                 </span>
-                <span className="text-[9px] text-[#8c7e6a] font-mono">Grundstellung</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleCalculateIndicator();
+                    setShowIndicatorModal(true);
+                  }}
+                  className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono flex items-center gap-1"
+                  title="Open Authentic Message Key Indicator Procedural Assistant"
+                >
+                  <span className="material-symbols-outlined text-[11px]">key_visualizer</span>
+                  <span>Indicator Assistant</span>
+                </button>
               </div>
               <div className="flex gap-1.5 items-center">
                 <div className="relative flex items-center gap-1 flex-1">
@@ -279,11 +359,23 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                   </div>
                 </div>
               </div>
-              <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1">
-                Start position:{' '}
-                <span className="text-[#ebc238] font-bold font-monospaced-technical">
-                  {localGrundstellung || '—'}
+              <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1 flex justify-between items-center">
+                <span>
+                  Start position:{' '}
+                  <span className="text-[#ebc238] font-bold font-monospaced-technical">
+                    {localGrundstellung || '—'}
+                  </span>
                 </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleCalculateIndicator();
+                    setShowIndicatorModal(true);
+                  }}
+                  className="text-[8px] text-[#ebc238] hover:text-amber-300 underline font-mono cursor-pointer"
+                >
+                  Encrypted Indicator Workflow
+                </button>
               </div>
             </div>
           </div>
@@ -354,6 +446,205 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
             </button>
           </div>
         </>
+      )}
+
+      {/* Indicator Procedure Modal (Spruchschlüssel Double Encryption) */}
+      {showIndicatorModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#1b170e] border border-[#4e453b] rounded-lg max-w-xl w-full p-6 space-y-4 shadow-2xl relative texture-metal max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => setShowIndicatorModal(false)}
+              className="absolute top-4 right-4 text-[#8c7e6a] hover:text-[#ede1cd] transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+
+            <div className="flex items-center gap-2 border-b border-[#3b3426] pb-3">
+              <span className="material-symbols-outlined text-amber-500">key_visualizer</span>
+              <h3 className="text-sm font-bold text-[#e3c193] font-ui-header uppercase tracking-wider">
+                Authentic Indicator Procedure (Spruchschlüssel Workflow)
+              </h3>
+            </div>
+
+            <p className="text-xs text-[#d1c4b7] leading-relaxed font-monospaced-technical">
+              Historically, transmitting raw Grundstellung settings directly violated security protocols. Operators chose a random message key (<span className="text-amber-400 font-bold">Spruchschlüssel</span>) and encrypted it at the daily key position before transmitting it in the preamble.
+            </p>
+
+            {/* Mode Switcher: Double Encryption (Pre-May 1940) vs Single Encryption (Post-May 1940) */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] text-[#8c7e6a] uppercase font-monospaced-technical block font-bold">
+                Procedure Variant
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIndicatorMode('double');
+                    playRotorClickSound(soundEnabled);
+                  }}
+                  className={`py-2 px-2 text-[11px] rounded border transition-colors cursor-pointer font-ui-header flex flex-col items-center gap-0.5 ${
+                    indicatorMode === 'double'
+                      ? 'bg-[#ebc238]/15 border-[#ebc238] text-[#ede1cd] font-bold'
+                      : 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]'
+                  }`}
+                >
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs text-amber-400 font-bold">repeat</span>
+                    Double Encryption (Pre-May 1940)
+                  </span>
+                  <span className="text-[8px] opacity-75 font-mono">Repeat Key: XQFXQF → 6 Letters</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIndicatorMode('single');
+                    playRotorClickSound(soundEnabled);
+                  }}
+                  className={`py-2 px-2 text-[11px] rounded border transition-colors cursor-pointer font-ui-header flex flex-col items-center gap-0.5 ${
+                    indicatorMode === 'single'
+                      ? 'bg-[#ebc238]/15 border-[#ebc238] text-[#ede1cd] font-bold'
+                      : 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]'
+                  }`}
+                >
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs text-amber-400 font-bold">looks_one</span>
+                    Single Encryption (Post-May 1940)
+                  </span>
+                  <span className="text-[8px] opacity-75 font-mono">Single Key: XQF → 3 Letters</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Interactive Steps Visualizer */}
+            <div className="bg-[#120e04] border border-[#3b3426] rounded-lg p-3 space-y-3 font-monospaced-technical text-xs">
+              <div className="flex items-center justify-between border-b border-[#3b3426] pb-2">
+                <span className="text-amber-400 font-bold uppercase text-[10px] tracking-wider">
+                  Step-by-Step Procedure Steps
+                </span>
+                <span className="text-[10px] text-[#8c7e6a]">
+                  Daily Key: <span className="text-amber-300 font-bold">{currentDailyGrundstellung}</span>
+                </span>
+              </div>
+
+              <div className="space-y-2 text-[#ede1cd]">
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-amber-950 border border-amber-600/60 text-amber-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                    1
+                  </span>
+                  <div>
+                    <span className="font-bold text-amber-300">Set Daily Machine Key:</span> Rotors & Plugboard set per codebook sheet (Grundstellung: <span className="text-amber-400 font-bold">{currentDailyGrundstellung}</span>).
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-amber-950 border border-amber-600/60 text-amber-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                    2
+                  </span>
+                  <div className="flex-1 space-y-1">
+                    <span className="font-bold text-amber-300">Choose Random Message Key (Spruchschlüssel):</span>
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="text"
+                        value={messageKeyInput}
+                        onChange={(e) => setMessageKeyInput(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 3))}
+                        className="w-24 bg-[#1b160e] text-amber-400 border border-[#4e453b] rounded px-2 py-1 text-center font-bold tracking-widest focus:outline-none focus:border-amber-400"
+                        placeholder="XQF"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                          let rnd = '';
+                          for (let i = 0; i < 3; i++) rnd += letters[Math.floor(Math.random() * 26)];
+                          setMessageKeyInput(rnd);
+                          playRotorClickSound(soundEnabled);
+                        }}
+                        className="px-2 py-1 bg-[#221c11] hover:bg-amber-600/20 text-amber-400 border border-[#4e453b] rounded text-[10px] font-bold cursor-pointer"
+                      >
+                        🎲 Random Key
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-amber-950 border border-amber-600/60 text-amber-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                    3
+                  </span>
+                  <div className="flex-1 space-y-1">
+                    <span className="font-bold text-amber-300">Encrypt Message Key via Machine:</span>
+                    <div className="flex items-center justify-between bg-[#1b170e] p-2 rounded border border-[#3b3426] text-xs">
+                      <span>Pattern: <span className="font-bold text-amber-300">{indicatorMode === 'double' ? `${messageKeyInput}${messageKeyInput}` : messageKeyInput}</span></span>
+                      <button
+                        type="button"
+                        onClick={handleCalculateIndicator}
+                        className="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold cursor-pointer"
+                      >
+                        Calculate Encrypted Indicator
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-amber-950 border border-amber-600/60 text-amber-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                    4
+                  </span>
+                  <div className="flex-1 space-y-1">
+                    <span className="font-bold text-amber-300">Encrypted Indicator Output (transmitted in header):</span>
+                    <div className="bg-[#1b170e] p-2 rounded border border-amber-600/50 flex items-center justify-between">
+                      <span className="font-bold text-amber-400 tracking-widest text-sm">
+                        {encryptedIndicatorResult || '—'}
+                      </span>
+                      {encryptedIndicatorResult && (
+                        <button
+                          type="button"
+                          onClick={() => handleApplyEncryptedIndicator(encryptedIndicatorResult)}
+                          className="px-2 py-1 bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-600/50 rounded text-[10px] font-bold cursor-pointer transition-colors"
+                        >
+                          Use in Funktelegramm Header
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-amber-950 border border-amber-600/60 text-amber-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                    5
+                  </span>
+                  <div>
+                    <span className="font-bold text-amber-300">Decrypt & Set Rotors for Message Body:</span>
+                    <p className="text-[10px] text-[#8c7e6a] mt-0.5 leading-snug">
+                      Receiver decrypts <span className="text-amber-300">{encryptedIndicatorResult || 'indicator'}</span> at daily key position back to secret key <span className="text-amber-300">{messageKeyInput}</span>, then resets machine rotors to <span className="text-amber-400 font-bold">{messageKeyInput}</span> to encipher/decipher the actual message text!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-2">
+              <button
+                type="button"
+                onClick={handleApplyMessageKeyToMachine}
+                className="px-3 py-1.5 bg-[#221c11] hover:bg-amber-600/20 text-amber-400 border border-[#4e453b] hover:border-amber-600/60 rounded text-xs font-bold font-ui-header cursor-pointer flex items-center gap-1"
+                title="Set machine rotors to secret message key position"
+              >
+                <span className="material-symbols-outlined text-sm">precision_manufacturing</span>
+                <span>Set Machine Rotors to Message Key ({messageKeyInput})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowIndicatorModal(false)}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold font-ui-header cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

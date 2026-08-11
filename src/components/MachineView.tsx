@@ -1659,6 +1659,37 @@ export const MachineView: React.FC<MachineViewProps> = ({
               handleCopyFullMessage={handleCopyFullMessage}
               setShowImportModal={setShowImportModal}
               setShowBroadcastModal={setShowBroadcastModal}
+              onApplyRotorGrundstellung={(newGrundstellung) => {
+                setLocalGrundstellung(newGrundstellung);
+                let idx = 0;
+                let currentConfig = { ...config };
+                if (isUKWDual && newGrundstellung.length > idx) {
+                  const u = charToNum(newGrundstellung[idx++]);
+                  currentConfig.reflector = { ...currentConfig.reflector, start: u, current: u };
+                }
+                if (isM4Active && newGrundstellung.length > idx) {
+                  const c4 = charToNum(newGrundstellung[idx++]);
+                  currentConfig.fourthRotor = { ...currentConfig.fourthRotor, start: c4, current: c4 };
+                }
+                if (idx < newGrundstellung.length) {
+                  const c3 = charToNum(newGrundstellung[idx++]);
+                  if (idx < newGrundstellung.length) {
+                    const c2 = charToNum(newGrundstellung[idx++]);
+                    if (idx < newGrundstellung.length) {
+                      const c1 = charToNum(newGrundstellung[idx++]);
+                      currentConfig.leftRotor = { ...currentConfig.leftRotor, start: c3, current: c3 };
+                      currentConfig.middleRotor = { ...currentConfig.middleRotor, start: c2, current: c2 };
+                      currentConfig.rightRotor = { ...currentConfig.rightRotor, start: c1, current: c1 };
+                    } else {
+                      currentConfig.middleRotor = { ...currentConfig.middleRotor, start: c3, current: c3 };
+                      currentConfig.rightRotor = { ...currentConfig.rightRotor, start: c2, current: c2 };
+                    }
+                  } else {
+                    currentConfig.rightRotor = { ...currentConfig.rightRotor, start: c3, current: c3 };
+                  }
+                }
+                onUpdateConfig(currentConfig);
+              }}
             />
           )}
 

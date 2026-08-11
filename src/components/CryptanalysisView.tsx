@@ -72,6 +72,13 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
   const [plugboardMode, setPlugboardMode] = useState<'active' | 'none'>('active');
 
+  // Bombe Cryptanalysis Engine Mode
+  const [bombeEngineMode, setBombeEngineMode] = useState<'welchman_diagonal' | 'direct_scan'>('welchman_diagonal');
+
+  // Interactive Inspector Drawers
+  const [showMenuGraphModal, setShowMenuGraphModal] = useState<boolean>(false);
+  const [showDiagonalBoardModal, setShowDiagonalBoardModal] = useState<boolean>(false);
+
   // Search scope (single selected, 3-rotor permutations, or 5/8 rotor pools)
   const [rotorScanScope, setRotorScanScope] = useState<'selected' | 'permutations_3' | 'all_5' | 'all_8'>('selected');
 
@@ -96,6 +103,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     right: string;
     offset: number;
     decrypted: string;
+    deducedSteckers?: Record<string, string>;
+    stopHypothesis?: string;
   }>>([]);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
 
@@ -357,6 +366,144 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     return true;
   };
 
+  // Gordon Welchman's Diagonal Board Electrical Circuit Test for candidate start position
+  const testWelchmanDiagonalBoardPos = (
+    leftStart: number,
+    middleStart: number,
+    rightStart: number,
+    menuEdges: Array<{ i: number; p: number; c: number }>,
+    testNode: number,
+    leftR: RotorStateFast,
+    middleR: RotorStateFast,
+    rightR: RotorStateFast,
+    fourthR: RotorStateFast | null,
+    reflectorWiring: number[],
+    hasDualReflector: boolean,
+    reflectorRingSetting: number,
+    reflectorStartVal: number
+  ): { isStop: boolean; deducedSteckers: Record<string, string>; stopHypothesis: string } => {
+    // 1. Calculate stepped scrambler mappings for each menu edge
+    const scramblers = menuEdges.map((e) => {
+      let lc = leftStart;
+      let mc = middleStart;
+      let rc = rightStart;
+      let reflectorCurr = reflectorStartVal;
+
+      // Step rotors (e.i + 1) times because character at offset e.i steps before electrical key contact
+      for (let step = 0; step <= e.i; step++) {
+        const rightAtNotch = rc === rightR.notch;
+        const middleAtNotch = mc === middleR.notch;
+        rc = (rc + 1) % 26;
+        if (rightAtNotch || middleAtNotch) {
+          mc = (mc + 1) % 26;
+          if (middleAtNotch) {
+            lc = (lc + 1) % 26;
+            if (hasDualReflector) {
+              reflectorCurr = (reflectorCurr + 1) % 26;
+            }
+          }
+        }
+      }
+
+      // Compute forward 26x26 mapping for this scrambler stack
+      const map = new Array(26);
+      for (let inChar = 0; inChar < 26; inChar++) {
+        let currentNum = inChar;
+        currentNum = passRotorForwardFast(currentNum, rc, rightR.ring, rightR.wiringFwd);
+        currentNum = passRotorForwardFast(currentNum, mc, middleR.ring, middleR.wiringFwd);
+        currentNum = passRotorForwardFast(currentNum, lc, leftR.ring, leftR.wiringFwd);
+        if (fourthR) {
+          currentNum = passRotorForwardFast(currentNum, fourthRotorStart, fourthR.ring, fourthR.wiringFwd);
+        }
+        if (hasDualReflector) {
+          const shift = (reflectorCurr - (reflectorRingSetting - 1) + 26) % 26;
+          const indexWithShift = (currentNum + shift) % 26;
+          const forwardNum = reflectorWiring[indexWithShift];
+          currentNum = (forwardNum - shift + 26) % 26;
+        } else {
+          currentNum = reflectorWiring[currentNum];
+        }
+        if (fourthR) {
+          currentNum = passRotorBackwardFast(currentNum, fourthRotorStart, fourthR.ring, fourthR.wiringBwd);
+        }
+        currentNum = passRotorBackwardFast(currentNum, lc, leftR.ring, leftR.wiringBwd);
+        currentNum = passRotorBackwardFast(currentNum, mc, middleR.ring, middleR.wiringBwd);
+        currentNum = passRotorBackwardFast(currentNum, rc, rightR.ring, rightR.wiringBwd);
+        map[inChar] = currentNum;
+      }
+
+      return { pNode: e.p, cNode: e.c, map };
+    });
+
+    // 2. Test candidate stecker hypotheses for testNode (k = 0..25)
+    for (let k = 0; k < 26; k++) {
+      const energized = new Uint8Array(676); // 26 nodes x 26 stecker wires
+      const queue = [testNode * 26 + k];
+      energized[testNode * 26 + k] = 1;
+
+      let head = 0;
+      while (head < queue.length) {
+        const wire = queue[head++];
+        const node = Math.floor(wire / 26);
+        const stecker = wire % 26;
+
+        // a) Gordon Welchman's Diagonal Board: connect (node, stecker) <-> (stecker, node)
+        const diagWire = stecker * 26 + node;
+        if (!energized[diagWire]) {
+          energized[diagWire] = 1;
+          queue.push(diagWire);
+        }
+
+        // b) Scrambler Menu propagation across all edges
+        for (let sIdx = 0; sIdx < scramblers.length; sIdx++) {
+          const sc = scramblers[sIdx];
+          if (sc.pNode === node) {
+            const targetWire = sc.cNode * 26 + sc.map[stecker];
+            if (!energized[targetWire]) {
+              energized[targetWire] = 1;
+              queue.push(targetWire);
+            }
+          }
+          if (sc.cNode === node) {
+            const targetWire = sc.pNode * 26 + sc.map[stecker];
+            if (!energized[targetWire]) {
+              energized[targetWire] = 1;
+              queue.push(targetWire);
+            }
+          }
+        }
+      }
+
+      // Count how many wires for testNode were energized
+      let testNodeEnergizedCount = 0;
+      for (let s = 0; s < 26; s++) {
+        if (energized[testNode * 26 + s]) testNodeEnergizedCount++;
+      }
+
+      // If less than 26 wires energized (specifically < 26), we hit a BOMBE STOP!
+      if (testNodeEnergizedCount < 26) {
+        const deducedSteckers: Record<string, string> = {};
+        for (let n = 0; n < 26; n++) {
+          const energizedForNode: string[] = [];
+          for (let s = 0; s < 26; s++) {
+            if (energized[n * 26 + s]) energizedForNode.push(numToChar(s));
+          }
+          if (energizedForNode.length === 1) {
+            deducedSteckers[numToChar(n)] = energizedForNode[0];
+          }
+        }
+
+        return {
+          isStop: true,
+          deducedSteckers,
+          stopHypothesis: numToChar(k),
+        };
+      }
+    }
+
+    return { isStop: false, deducedSteckers: {}, stopHypothesis: '' };
+  };
+
   // Full Decrypt helper to display previews
   const decryptFullMessage = (lStart: string, mStart: string, rStart: string): string => {
     // Build temporary Enigma config
@@ -592,10 +739,36 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     // Precalculate sliced text targets for fast loop across all offsets
     const precalculatedOffsets = offsetsToScan.map(offset => {
       const cipherTextSliced = ciphertext.toUpperCase().slice(offset, offset + crib.length);
+      const cipherNums = cipherTextSliced.split('').map(charToNum);
+      const cribNums = crib.toUpperCase().split('').map(charToNum);
+
+      // Build menu graph edges for Welchman's Diagonal Board search
+      const menuEdges: Array<{ i: number; p: number; c: number }> = [];
+      for (let i = 0; i < cribNums.length; i++) {
+        menuEdges.push({ i, p: cribNums[i], c: cipherNums[i] });
+      }
+
+      // Calculate node degrees to pick optimal testNode (highest degree node)
+      const degree = new Array(26).fill(0);
+      for (let i = 0; i < menuEdges.length; i++) {
+        degree[menuEdges[i].p]++;
+        degree[menuEdges[i].c]++;
+      }
+      let testNode = 0;
+      let maxDeg = -1;
+      for (let ch = 0; ch < 26; ch++) {
+        if (degree[ch] > maxDeg) {
+          maxDeg = degree[ch];
+          testNode = ch;
+        }
+      }
+
       return {
         offset,
-        cipherNums: cipherTextSliced.split('').map(charToNum),
-        cribNums: crib.toUpperCase().split('').map(charToNum),
+        cipherNums,
+        cribNums,
+        menuEdges,
+        testNode,
       };
     });
 
@@ -608,6 +781,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       right: string;
       offset: number;
       decrypted: string;
+      deducedSteckers?: Record<string, string>;
+      stopHypothesis?: string;
     }> = [];
 
     let currentCombIndex = 0;
@@ -679,32 +854,63 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
         const l = Math.floor(c / 676) % 26;
 
         for (const precalc of precalculatedOffsets) {
-          const isMatch = testStartPos(
-            l, m, r,
-            precalc.cipherNums,
-            precalc.cribNums,
-            leftR,
-            middleR,
-            rightR,
-            fourthR,
-            reflectorWiring,
-            hasDualReflector,
-            reflectorRing,
-            reflectorStart,
-            pMap
-          );
+          if (bombeEngineMode === 'welchman_diagonal') {
+            const result = testWelchmanDiagonalBoardPos(
+              l, m, r,
+              precalc.menuEdges,
+              precalc.testNode,
+              leftR,
+              middleR,
+              rightR,
+              fourthR,
+              reflectorWiring,
+              hasDualReflector,
+              reflectorRing,
+              reflectorStart
+            );
 
-          if (isMatch) {
-            foundMatches.push({
-              leftRotor: activeComb.left,
-              middleRotor: activeComb.middle,
-              rightRotor: activeComb.right,
-              left: numToChar(l),
-              middle: numToChar(m),
-              right: numToChar(r),
-              offset: precalc.offset,
-              decrypted: '',
-            });
+            if (result.isStop) {
+              foundMatches.push({
+                leftRotor: activeComb.left,
+                middleRotor: activeComb.middle,
+                rightRotor: activeComb.right,
+                left: numToChar(l),
+                middle: numToChar(m),
+                right: numToChar(r),
+                offset: precalc.offset,
+                decrypted: '',
+                deducedSteckers: result.deducedSteckers,
+                stopHypothesis: result.stopHypothesis,
+              });
+            }
+          } else {
+            const isMatch = testStartPos(
+              l, m, r,
+              precalc.cipherNums,
+              precalc.cribNums,
+              leftR,
+              middleR,
+              rightR,
+              fourthR,
+              reflectorWiring,
+              hasDualReflector,
+              reflectorRing,
+              reflectorStart,
+              pMap
+            );
+
+            if (isMatch) {
+              foundMatches.push({
+                leftRotor: activeComb.left,
+                middleRotor: activeComb.middle,
+                rightRotor: activeComb.right,
+                left: numToChar(l),
+                middle: numToChar(m),
+                right: numToChar(r),
+                offset: precalc.offset,
+                decrypted: '',
+              });
+            }
           }
         }
       }
@@ -1020,6 +1226,63 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   <option value="current" className="bg-[#1b170e]">Current Slider Position Only (Offset: {alignmentOffset})</option>
                   <option value="all_viable" className="bg-[#1b170e]">Auto-Scan All Viable Positions ({viableOffsets.length} valid)</option>
                 </select>
+              </div>
+
+              {/* Plugboard Mode Switcher */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-[#d1c4b7] uppercase tracking-wider block font-monospaced-technical">
+                  Bombe Cryptanalysis Algorithm
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setBombeEngineMode('welchman_diagonal')}
+                    className={`py-1.5 px-2 text-[11px] rounded border transition-colors cursor-pointer font-ui-header flex flex-col items-center gap-0.5 ${
+                      bombeEngineMode === 'welchman_diagonal'
+                        ? 'bg-[#ebc238]/10 border-[#ebc238] text-[#ede1cd]'
+                        : 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]'
+                    }`}
+                  >
+                    <span className="font-bold flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs text-amber-400">grid_4x4</span>
+                      Welchman Diagonal Board
+                    </span>
+                    <span className="text-[8px] opacity-75">Full Reciprocity Circuit</span>
+                  </button>
+                  <button
+                    onClick={() => setBombeEngineMode('direct_scan')}
+                    className={`py-1.5 px-2 text-[11px] rounded border transition-colors cursor-pointer font-ui-header flex flex-col items-center gap-0.5 ${
+                      bombeEngineMode === 'direct_scan'
+                        ? 'bg-[#ebc238]/10 border-[#ebc238] text-[#ede1cd]'
+                        : 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]'
+                    }`}
+                  >
+                    <span className="font-bold flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs">tune</span>
+                      Direct Character Scan
+                    </span>
+                    <span className="text-[8px] opacity-75">Known Stecker Rules</span>
+                  </button>
+                </div>
+
+                {/* Welchman Circuit Inspector Trigger Buttons */}
+                {bombeEngineMode === 'welchman_diagonal' && crib && ciphertext && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      onClick={() => setShowMenuGraphModal(true)}
+                      className="py-1 px-2 bg-[#120e04] hover:bg-[#252015] border border-[#3b3426] hover:border-amber-600/50 rounded text-[10px] text-amber-400/90 font-monospaced-technical flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-xs">hub</span>
+                      Inspect Menu Graph
+                    </button>
+                    <button
+                      onClick={() => setShowDiagonalBoardModal(true)}
+                      className="py-1 px-2 bg-[#120e04] hover:bg-[#252015] border border-[#3b3426] hover:border-amber-600/50 rounded text-[10px] text-amber-400/90 font-monospaced-technical flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-xs">grid_on</span>
+                      26×26 Diagonal Matrix
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Plugboard Mode Switcher */}
@@ -1490,6 +1753,33 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                         </div>
                       </div>
 
+                      {/* Welchman Diagonal Board Deduced Steckers */}
+                      {match.deducedSteckers && Object.keys(match.deducedSteckers).length > 0 && (
+                        <div className="p-3 bg-amber-950/30 border border-amber-800/40 rounded space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-monospaced-technical font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-xs">grid_4x4</span>
+                              Welchman Diagonal Board Deduced Steckers ({Object.keys(match.deducedSteckers).length} self-reciprocal mappings)
+                            </span>
+                            {match.stopHypothesis && (
+                              <span className="text-[9px] font-monospaced-technical text-amber-300 bg-amber-900/50 px-1.5 py-0.5 rounded border border-amber-700/50">
+                                Stop Hypothesis: {match.stopHypothesis}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-1.5 font-monospaced-technical text-xs">
+                            {Object.entries(match.deducedSteckers).map(([node, stecker]) => (
+                              <span
+                                key={`${node}-${stecker}`}
+                                className="px-2 py-0.5 rounded bg-[#1b170e] text-amber-300 border border-amber-800/50 font-bold"
+                              >
+                                {node}↔{stecker}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Apply Settings Button */}
                       <button
                         onClick={() => handleApplyMatchWithRings(match, mapperLeftRing, mapperMiddleRing, mapperRightRing, l0Mapped, m0Mapped, r0Mapped)}
@@ -1537,6 +1827,137 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
         </div>
 
       </div>
+
+      {/* 1. Modal: Menu Graph Visualizer */}
+      {showMenuGraphModal && crib && ciphertext && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#1b170e] border border-[#4e453b] rounded-lg max-w-2xl w-full p-6 space-y-4 shadow-2xl relative texture-metal">
+            <button
+              onClick={() => setShowMenuGraphModal(false)}
+              className="absolute top-4 right-4 text-[#8c7e6a] hover:text-[#ede1cd] transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+
+            <div className="flex items-center gap-2 border-b border-[#3b3426] pb-3">
+              <span className="material-symbols-outlined text-amber-500">hub</span>
+              <h3 className="text-sm font-bold text-[#e3c193] font-ui-header uppercase tracking-wider">
+                Crib Menu Graph (Electrical Scrambler Circuit)
+              </h3>
+            </div>
+
+            <p className="text-xs text-[#d1c4b7] leading-relaxed font-monospaced-technical">
+              In Alan Turing's Bombe design, each letter pairing in the aligned crib forms a menu edge connecting two character nodes. Closed loops (cycles) in this graph enable the electrical voltage to propagate across multiple scramblers simultaneously, eliminating false hypotheses.
+            </p>
+
+            {/* Menu Graph Edges Table */}
+            <div className="bg-[#120e04] border border-[#3b3426] rounded p-3 max-h-60 overflow-y-auto font-monospaced-technical text-xs space-y-2">
+              <div className="grid grid-cols-4 text-[#8c7e6a] uppercase text-[10px] font-bold border-b border-[#3b3426] pb-1">
+                <span>Pos (Step)</span>
+                <span>Crib Letter</span>
+                <span>Cipher Letter</span>
+                <span>Circuit Edge</span>
+              </div>
+              {crib.split('').map((cribChar, i) => {
+                const cipherChar = ciphertext[alignmentOffset + i] || '?';
+                return (
+                  <div key={i} className="grid grid-cols-4 text-[#ede1cd] py-1 border-b border-[#3b3426]/40 items-center">
+                    <span className="text-amber-500 font-bold">Step {i + 1}</span>
+                    <span>{cribChar}</span>
+                    <span>{cipherChar}</span>
+                    <span className="text-green-400 font-bold bg-[#1b170e] px-2 py-0.5 rounded border border-[#3b3426] w-max">
+                      {cribChar} ↔ {cipherChar}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowMenuGraphModal(false)}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold font-ui-header cursor-pointer"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Modal: 26x26 Welchman Diagonal Board Matrix */}
+      {showDiagonalBoardModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#1b170e] border border-[#4e453b] rounded-lg max-w-3xl w-full p-6 space-y-4 shadow-2xl relative texture-metal max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowDiagonalBoardModal(false)}
+              className="absolute top-4 right-4 text-[#8c7e6a] hover:text-[#ede1cd] transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+
+            <div className="flex items-center gap-2 border-b border-[#3b3426] pb-3">
+              <span className="material-symbols-outlined text-amber-500">grid_on</span>
+              <h3 className="text-sm font-bold text-[#e3c193] font-ui-header uppercase tracking-wider">
+                Gordon Welchman's 26×26 Diagonal Board Matrix
+              </h3>
+            </div>
+
+            <p className="text-xs text-[#d1c4b7] leading-relaxed font-monospaced-technical">
+              Welchman's genius innovation (introduced in late 1939) connected plugboard wire (node X, stecker Y) directly to wire (node Y, stecker X). This symmetric reciprocity matrix enforces $X \leftrightarrow Y \iff Y \leftrightarrow X$, vastly accelerating voltage flow and reducing false stops by over 95%!
+            </p>
+
+            {/* 26x26 Visual Matrix grid preview */}
+            <div className="bg-[#120e04] border border-[#3b3426] rounded p-3 overflow-x-auto">
+              <div className="min-w-[600px] font-monospaced-technical text-[9px]">
+                {/* Header Row */}
+                <div className="flex gap-0.5 mb-1 font-bold text-amber-500">
+                  <div className="w-5 h-5 flex items-center justify-center text-center">/</div>
+                  {Array.from({ length: 26 }, (_, i) => (
+                    <div key={i} className="w-5 h-5 flex items-center justify-center text-center">
+                      {numToChar(i)}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Rows */}
+                {Array.from({ length: 26 }, (_, rIdx) => (
+                  <div key={rIdx} className="flex gap-0.5 mb-0.5">
+                    <div className="w-5 h-5 flex items-center justify-center font-bold text-amber-500 shrink-0">
+                      {numToChar(rIdx)}
+                    </div>
+                    {Array.from({ length: 26 }, (_, cIdx) => {
+                      const isSelf = rIdx === cIdx;
+                      return (
+                        <div
+                          key={cIdx}
+                          className={`w-5 h-5 rounded flex items-center justify-center font-mono border text-[8px] ${
+                            isSelf
+                              ? 'bg-red-950/40 border-red-800 text-red-500 font-bold'
+                              : 'bg-[#1b170e] border-[#3b3426] text-[#8c7e6a]'
+                          }`}
+                          title={`Wire connection (${numToChar(rIdx)}, ${numToChar(cIdx)})`}
+                        >
+                          {isSelf ? '×' : '•'}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowDiagonalBoardModal(false)}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold font-ui-header cursor-pointer"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

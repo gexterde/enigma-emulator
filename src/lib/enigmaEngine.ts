@@ -2,7 +2,7 @@ import { EnigmaConfig, RotorType, ReflectorType, EncryptionResult, StepTrace } f
 
 export interface RotorSpec {
   wiring: string;
-  notch: string;
+  notch: string; // May contain single char 'Q' or multiple 'ZM' for naval rotors VI, VII, VIII
   turnoverAction?: string;
   modelName: string;
   year: string;
@@ -16,9 +16,9 @@ export const ROTOR_SPECS: Record<RotorType, RotorSpec> = {
   'III':  { wiring: 'BDFHJLCPRTXVZNYEIWGAKMUSQO', notch: 'V', turnoverAction: 'Moving from V → W steps the next rotor.', modelName: 'Enigma I / M3', year: '1930' },
   'IV':   { wiring: 'ESOVPZJAYQUIRHXLNFTGKDCMWB', notch: 'J', turnoverAction: 'Moving from J → K steps the next rotor.', modelName: 'M3 Army', year: 'Dec 1938' },
   'V':    { wiring: 'VZBRGITYUPSDNHLXAWMJQOFECK', notch: 'Z', turnoverAction: 'Moving from Z → A steps the next rotor.', modelName: 'M3 Army', year: 'Dec 1938' },
-  'VI':   { wiring: 'JPGVOUMFYQBENHZRDKASXLICTW', notch: 'Z', turnoverAction: 'Two notches: Z → A and M → N step next rotor.', modelName: 'M3 & M4 Naval', year: '1939' },
-  'VII':  { wiring: 'NZJHGRCXMYSWBOUFAIVLPEKQDT', notch: 'Z', turnoverAction: 'Two notches: Z → A and M → N step next rotor.', modelName: 'M3 & M4 Naval', year: '1939' },
-  'VIII': { wiring: 'FKQHTLXOCBJSPDZRAMEWNIUYGV', notch: 'Z', turnoverAction: 'Two notches: Z → A and M → N step next rotor.', modelName: 'M3 & M4 Naval', year: '1939' },
+  'VI':   { wiring: 'JPGVOUMFYQBENHZRDKASXLICTW', notch: 'ZM', turnoverAction: 'Two notches: Z → A and M → N step next rotor.', modelName: 'M3 & M4 Naval', year: '1939' },
+  'VII':  { wiring: 'NZJHGRCXMYSWBOUFAIVLPEKQDT', notch: 'ZM', turnoverAction: 'Two notches: Z → A and M → N step next rotor.', modelName: 'M3 & M4 Naval', year: '1939' },
+  'VIII': { wiring: 'FKQHTLXOCBJSPDZRAMEWNIUYGV', notch: 'ZM', turnoverAction: 'Two notches: Z → A and M → N step next rotor.', modelName: 'M3 & M4 Naval', year: '1939' },
 
   // M4 Naval Greek Rotors (Thin)
   'Beta':  { wiring: 'LEYJVCNIXWPBQMDRTAKZGFUHOS', notch: 'Z', turnoverAction: 'Fixed stator (does not step or turn next rotor)', modelName: 'M4 R2', year: 'Spring 1941' },
@@ -85,8 +85,21 @@ export function formatRotorRing(ring: number, format: 'number' | 'letter' = 'num
   return ring < 10 ? `0${ring}` : `${ring}`;
 }
 
+export function isRotorAtNotch(type: RotorType, currentPos: number): boolean {
+  const spec = ROTOR_SPECS[type];
+  if (!spec || !spec.notch) return false;
+  // Naval rotors VI, VII, VIII have two notches (e.g., 'ZM' -> 'Z' and 'M')
+  for (let i = 0; i < spec.notch.length; i++) {
+    if (charToNum(spec.notch[i]) === currentPos) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function getRotorNotchPos(type: RotorType): number {
-  return charToNum(ROTOR_SPECS[type].notch);
+  const spec = ROTOR_SPECS[type];
+  return spec && spec.notch ? charToNum(spec.notch[0]) : 0;
 }
 
 // Formats string preview like: "UKW-B | I-II-III | 01-01-01 | 01-01-01" or "UKW-B | I-II-III-β | 01-01-01-01 | 01-01-01-01"
@@ -138,12 +151,13 @@ export function generateConfigString(config: EnigmaConfig, ringFormat: 'number' 
 export function stepRotors(config: EnigmaConfig): EnigmaConfig {
   const newConfig: EnigmaConfig = JSON.parse(JSON.stringify(config));
 
-  const rightNotch = getRotorNotchPos(newConfig.rightRotor.type);
-  const middleNotch = getRotorNotchPos(newConfig.middleRotor.type);
-
   // Check turnover conditions BEFORE stepping
-  const rightAtNotch = newConfig.rightRotor.current === rightNotch;
-  const middleAtNotch = newConfig.middleRotor.current === middleNotch;
+  // In standard Enigma mechanics:
+  // - Right (Fast) rotor always steps on every keypress.
+  // - Middle rotor steps if right rotor is at its notch OR if middle rotor is at its notch (Double Stepping).
+  // - Left (Slow) rotor steps if middle rotor is at its notch.
+  const rightAtNotch = isRotorAtNotch(newConfig.rightRotor.type, newConfig.rightRotor.current);
+  const middleAtNotch = isRotorAtNotch(newConfig.middleRotor.type, newConfig.middleRotor.current);
 
   // 1. Right (Fast) rotor ALWAYS steps
   newConfig.rightRotor.current = (newConfig.rightRotor.current + 1) % 26;
