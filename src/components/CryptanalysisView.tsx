@@ -8,6 +8,7 @@ import {
   formatRotorPos,
   formatRotorRing,
   encryptChar,
+  getRotorNotchPositions,
 } from '../lib/enigmaEngine';
 import { playRotorClickSound } from '../lib/audio';
 
@@ -23,7 +24,7 @@ interface CryptanalysisViewProps {
 interface RotorStateFast {
   wiringFwd: number[];
   wiringBwd: number[];
-  notch: number;
+  notches: number[];
   ring: number;
 }
 
@@ -249,8 +250,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     for (let idx = 0; idx < 26; idx++) {
       wiringBwd[wiringFwd[idx]] = idx;
     }
-    const notch = charToNum(spec.notch);
-    return { wiringFwd, wiringBwd, notch, ring };
+    const notches = getRotorNotchPositions(type as any);
+    return { wiringFwd, wiringBwd, notches, ring };
   };
 
   const passRotorForwardFast = (charNum: number, current: number, ring: number, wiringFwd: number[]): number => {
@@ -297,8 +298,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       const targetCribNum = cribNums[i];
 
       // 1. Step Rotors BEFORE key electrical contact
-      const rightAtNotch = rightCurrent === rightR.notch;
-      const middleAtNotch = middleCurrent === middleR.notch;
+      const rightAtNotch = rightR.notches.includes(rightCurrent);
+      const middleAtNotch = middleR.notches.includes(middleCurrent);
 
       rightCurrent = (rightCurrent + 1) % 26;
       if (rightAtNotch || middleAtNotch) {
@@ -391,8 +392,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
       // Step rotors (e.i + 1) times because character at offset e.i steps before electrical key contact
       for (let step = 0; step <= e.i; step++) {
-        const rightAtNotch = rc === rightR.notch;
-        const middleAtNotch = mc === middleR.notch;
+        const rightAtNotch = rightR.notches.includes(rc);
+        const middleAtNotch = middleR.notches.includes(mc);
         rc = (rc + 1) % 26;
         if (rightAtNotch || middleAtNotch) {
           mc = (mc + 1) % 26;
@@ -600,8 +601,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
           let rightCurrent = r;
 
           for (let step = 0; step < offset; step++) {
-            const rightAtNotch = rightCurrent === rightR.notch;
-            const middleAtNotch = middleCurrent === middleR.notch;
+            const rightAtNotch = rightR.notches.includes(rightCurrent);
+            const middleAtNotch = middleR.notches.includes(middleCurrent);
 
             rightCurrent = (rightCurrent + 1) % 26;
             if (rightAtNotch || middleAtNotch) {

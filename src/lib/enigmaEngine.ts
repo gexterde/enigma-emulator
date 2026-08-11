@@ -85,21 +85,19 @@ export function formatRotorRing(ring: number, format: 'number' | 'letter' = 'num
   return ring < 10 ? `0${ring}` : `${ring}`;
 }
 
-export function isRotorAtNotch(type: RotorType, currentPos: number): boolean {
+export function getRotorNotchPositions(type: RotorType): number[] {
   const spec = ROTOR_SPECS[type];
-  if (!spec || !spec.notch) return false;
-  // Naval rotors VI, VII, VIII have two notches (e.g., 'ZM' -> 'Z' and 'M')
-  for (let i = 0; i < spec.notch.length; i++) {
-    if (charToNum(spec.notch[i]) === currentPos) {
-      return true;
-    }
-  }
-  return false;
+  if (!spec || !spec.notch) return [0];
+  return Array.from(spec.notch).map((ch) => charToNum(ch));
+}
+
+export function isRotorAtNotch(type: RotorType, currentPos: number): boolean {
+  const notches = getRotorNotchPositions(type);
+  return notches.includes(currentPos);
 }
 
 export function getRotorNotchPos(type: RotorType): number {
-  const spec = ROTOR_SPECS[type];
-  return spec && spec.notch ? charToNum(spec.notch[0]) : 0;
+  return getRotorNotchPositions(type)[0] || 0;
 }
 
 // Formats string preview like: "UKW-B | I-II-III | 01-01-01 | 01-01-01" or "UKW-B | I-II-III-β | 01-01-01-01 | 01-01-01-01"
