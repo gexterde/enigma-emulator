@@ -218,6 +218,45 @@ export interface ThemeProduct {
   bgAccentHover: string;
   circleIndicator: string;
   headerPreviewBadge: string;
+
+  // Radio Transceiver Color & Design Properties
+  radioChassisBg: string;
+  radioRivets: string;
+  radioHeaderBorder: string;
+  radioPowerSwitchBg: string;
+  radioPowerOffText: string;
+  radioPowerOnText: string;
+  radioPowerKnobBg: string;
+  radioGlassDialBgOn: string;
+  radioGlassDialBgOff: string;
+  radioGlassDialBorder: string;
+  radioDialText: string;
+  radioDialTick: string;
+  radioNeedle: string;
+  radioNeedleGlow: string;
+  radioSMeterBg: string;
+  radioSMeterText: string;
+  radioSMeterNeedle: string;
+  radioDisplayBoxBg: string;
+  radioDisplayReadoutOn: string;
+  radioDisplayReadoutOff: string;
+  radioDisplayTextAccent: string;
+  radioDisplayInputBg: string;
+  radioStationBadge: string;
+  radioRotaryModuleBg: string;
+  radioRotaryModuleBorder: string;
+  radioRotaryKnobBg: string;
+  radioRotaryKnobBorder: string;
+  radioRotaryKnobNotch: string;
+  radioRotaryCap: string;
+  radioSpeedBtnActive: string;
+  radioSpeedBtnInactive: string;
+  radioPresetBtnActive: string;
+  radioPresetBtnInactive: string;
+  radioScopeBg: string;
+  radioScopeGrid: string;
+  radioScopeWaveActive: string;
+  radioScopeWaveIdle: string;
 }
 
 /**

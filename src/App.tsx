@@ -10,6 +10,7 @@ import { PlugboardView } from './components/PlugboardView';
 import { CodebookView } from './components/CodebookView';
 import { LogView } from './components/LogView';
 import { MorseTrainer } from './components/MorseTrainer';
+import { RadioStationView } from './components/RadioStationView';
 import { FrequencyAnalysisView } from './components/FrequencyAnalysisView';
 import { CryptanalysisView } from './components/CryptanalysisView';
 import { SettingsModal, InfoModal, ShareModal, ShortcutsModal } from './components/Modals';
@@ -179,6 +180,8 @@ export default function App() {
   const [compactMode, setCompactMode] = useState<boolean>(false);
   const [inputTape, setInputTape] = useState<string>('');
   const [cipherTape, setCipherTape] = useState<string>('');
+  const [cipherHeader, setCipherHeader] = useState<string>('');
+  const [pendingAutoTransmit, setPendingAutoTransmit] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -261,6 +264,10 @@ export default function App() {
         {
           match: () => e.key === 'F6' || (isCtrlOrCmd && e.key.toLowerCase() === 't'),
           action: () => setActiveTab('morseTrainer'),
+        },
+        {
+          match: () => (isCtrlOrCmd && e.key.toLowerCase() === 'x'),
+          action: () => setActiveTab('radio'),
         },
         {
           match: () => e.key === 'F11' || (isCtrlOrCmd && e.key.toLowerCase() === 'y'),
@@ -371,6 +378,12 @@ export default function App() {
               onConsumePower={handleConsumePower}
               senderCallSign={senderCallSign}
               onUpdateSenderCallSign={handleUpdateSenderCallSign}
+              onBroadcastOverRadio={(header, ciphertext) => {
+                setCipherHeader(header);
+                setCipherTape(ciphertext);
+                setActiveTab('radio');
+                setPendingAutoTransmit(true);
+              }}
             />
           )}
 
@@ -396,6 +409,23 @@ export default function App() {
 
           {activeTab === 'morseTrainer' && (
             <MorseTrainer />
+          )}
+
+          {activeTab === 'radio' && (
+            <RadioStationView
+              senderCallSign={senderCallSign}
+              onUpdateSenderCallSign={handleUpdateSenderCallSign}
+              config={config}
+              onLoadCiphertextToMachine={(header, ciphertext) => {
+                setCipherTape(ciphertext);
+                setActiveTab('machine');
+              }}
+              onSelectTab={setActiveTab}
+              incomingCiphertext={cipherTape}
+              incomingHeader={cipherHeader}
+              autoTransmitPending={pendingAutoTransmit}
+              onAutoTransmitComplete={() => setPendingAutoTransmit(false)}
+            />
           )}
 
           {activeTab === 'frequency' && (

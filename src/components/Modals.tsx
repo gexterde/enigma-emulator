@@ -288,6 +288,8 @@ export const ShortcutsModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
         { key: 'F3 or Ctrl + P', desc: 'Plugboard View' },
         { key: 'F4 or Ctrl + B', desc: 'Codebook / Key Sheets' },
         { key: 'F5 or Ctrl + L', desc: 'Log & History View' },
+        { key: 'F6 or Ctrl + T', desc: 'Morse Code Trainer' },
+        { key: 'F7 or Ctrl + X', desc: 'Radio Transceiver (Live Multi-User CW)' },
       ]
     },
     {

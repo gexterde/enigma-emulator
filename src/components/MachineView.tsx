@@ -77,6 +77,7 @@ interface MachineViewProps {
   onConsumePower: () => void;
   senderCallSign?: string;
   onUpdateSenderCallSign?: (newSender: string) => void;
+  onBroadcastOverRadio?: (header: string, ciphertext: string) => void;
 }
 
 // Authentic Enigma M3/M4 Lampboard/Keyboard Layout (3 rows: 9, 8, 9 keys)
@@ -99,7 +100,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
   onSetBatteryMode,
   onConsumePower,
   senderCallSign: propSenderCallSign,
-  onUpdateSenderCallSign
+  onUpdateSenderCallSign,
+  onBroadcastOverRadio
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
@@ -264,7 +266,6 @@ export const MachineView: React.FC<MachineViewProps> = ({
   };
 
   const [showImportModal, setShowImportModal] = useState<boolean>(false);
-  const [showBroadcastModal, setShowBroadcastModal] = useState<boolean>(false);
   const [importText, setImportText] = useState<string>('');
   const [importIncludeHeader, setImportIncludeHeader] = useState<boolean>(true);
 
@@ -1125,7 +1126,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
               fullMessageCopied={fullMessageCopied}
               handleCopyFullMessage={handleCopyFullMessage}
               setShowImportModal={setShowImportModal}
-              setShowBroadcastModal={setShowBroadcastModal}
+              setShowBroadcastModal={(val) => {
+                if (val && onBroadcastOverRadio) {
+                  onBroadcastOverRadio(getHeaderString(), formatTapeText(cipherTape) || '');
+                }
+              }}
             />
           )}
 
@@ -1683,7 +1688,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
               fullMessageCopied={fullMessageCopied}
               handleCopyFullMessage={handleCopyFullMessage}
               setShowImportModal={setShowImportModal}
-              setShowBroadcastModal={setShowBroadcastModal}
+              setShowBroadcastModal={(val) => {
+                if (val && onBroadcastOverRadio) {
+                  onBroadcastOverRadio(getHeaderString(), formatTapeText(cipherTape) || '');
+                }
+              }}
               onApplyRotorGrundstellung={(newGrundstellung) => {
                 setLocalGrundstellung(newGrundstellung);
                 let idx = 0;
@@ -1792,16 +1801,6 @@ export const MachineView: React.FC<MachineViewProps> = ({
         onUpdateConfig={onUpdateConfig}
         soundEnabled={soundEnabled}
         ringFormat={ringFormat}
-      />
-
-      {/* Broadcast Message Modal */}
-      <BroadcastModal
-        isOpen={showBroadcastModal}
-        onClose={() => setShowBroadcastModal(false)}
-        plaintext={inputTape}
-        ciphertext={formatTapeText(cipherTape) || ''}
-        headerString={getHeaderString()}
-        soundEnabled={soundEnabled}
       />
 
       {/* Import Message Modal */}
