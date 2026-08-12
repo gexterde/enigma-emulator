@@ -43,15 +43,15 @@ const PlugboardSocket: React.FC<PlugboardSocketProps> = ({ char, isConnected, is
   const { theme } = useTheme();
   const t = getTheme(theme);
   return (
-    <div className="flex flex-col items-center gap-1 sm:gap-2 z-20">
-      <span className={`${t.textPrimary} font-lamp-char font-bold text-xs sm:text-base drop-shadow-md`}>
+    <div className="flex flex-col items-center gap-1 z-20">
+      <span className={`${t.textPrimary} font-lamp-char font-bold text-sm drop-shadow-md`}>
         {char}
       </span>
       <button
         type="button"
         ref={socketRef}
         onClick={() => onClick(char)}
-        className={`${t.lampSocketBg} border-2 rounded-full p-1 cursor-pointer flex flex-col gap-1 items-center justify-center transition-all min-w-[34px] min-h-[50px] sm:min-w-[44px] sm:min-h-[58px] ${
+        className={`${t.lampSocketBg} border-2 rounded-full p-0.5 cursor-pointer flex flex-col gap-1 items-center justify-center transition-all min-w-[38px] min-h-[52px] ${
           isSelected
             ? `${t.borderAccent} shadow-[0_0_12px_rgba(235,194,56,0.6)] scale-110`
             : isConnected && colorClassIndex !== -1
@@ -63,12 +63,12 @@ const PlugboardSocket: React.FC<PlugboardSocketProps> = ({ char, isConnected, is
       >
         {/* Double pin holes (stecker sockets) */}
         <div
-          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border ${t.borderBase} shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] ${
+          className={`w-2 h-2 rounded-full border ${t.borderBase} shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] ${
             isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : t.lampSocketInnerBg
           }`}
         />
         <div
-          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border ${t.borderBase} shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] ${
+          className={`w-2 h-2 rounded-full border ${t.borderBase} shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] ${
             isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : t.lampSocketInnerBg
           }`}
         />
@@ -91,6 +91,29 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
   const socketRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [cablePaths, setCablePaths] = useState<Array<{ a: string; b: string; path: string; color: string }>>([]);
 
+  const parentRef = useRef<HTMLDivElement>(null);
+  const [parentWidth, setParentWidth] = useState<number>(620);
+  const [unscaledHeight, setUnscaledHeight] = useState<number>(280);
+
+  useEffect(() => {
+    if (!parentRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setParentWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(parentRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const scale = useMemo(() => {
+    if (!parentWidth) return 1;
+    // Base width of the completely static layout is exactly 760px to maximize desktop screen space.
+    const s = parentWidth / 760;
+    // Don't allow it to go too small on mobile (min 0.46), and allow scaling up on large screens (max 1.15).
+    return Math.max(0.46, Math.min(1.15, s));
+  }, [parentWidth]);
+
   const plugboard = config.plugboard || {};
 
   const plugboardKey = JSON.stringify(plugboard);
@@ -110,6 +133,12 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
     }
     return res;
   }, [plugboardKey]);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      setUnscaledHeight(containerRef.current.offsetHeight + 10);
+    }
+  }, [pairs, scale]);
 
   const handleSocketClick = (char: string) => {
     playPlugConnectSound(soundEnabled);
@@ -181,6 +210,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
     if (!containerRef.current) return;
     const containerRect = containerRef.current.getBoundingClientRect();
     const newPaths: Array<{ a: string; b: string; path: string; color: string }> = [];
+    const scaleFactor = scale || 1;
 
     pairs.forEach(([a, b], idx) => {
       const elA = socketRefs.current[a];
@@ -190,10 +220,10 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
       const rectA = elA.getBoundingClientRect();
       const rectB = elB.getBoundingClientRect();
 
-      const startX = rectA.left + rectA.width / 2 - containerRect.left;
-      const startY = rectA.top + rectA.height / 2 - containerRect.top;
-      const endX = rectB.left + rectB.width / 2 - containerRect.left;
-      const endY = rectB.top + rectB.height / 2 - containerRect.top;
+      const startX = (rectA.left + rectA.width / 2 - containerRect.left) / scaleFactor;
+      const startY = (rectA.top + rectA.height / 2 - containerRect.top) / scaleFactor;
+      const endX = (rectB.left + rectB.width / 2 - containerRect.left) / scaleFactor;
+      const endY = (rectB.top + rectB.height / 2 - containerRect.top) / scaleFactor;
 
       const dx = endX - startX;
       const dy = endY - startY;
@@ -213,7 +243,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
     });
 
     setCablePaths(newPaths);
-  }, [pairs]);
+  }, [pairs, scale]);
 
   useEffect(() => {
     updateCables();
@@ -226,7 +256,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
   }, [updateCables]);
 
   const renderSocketGroup = (letters: string[]) => (
-    <div className="flex justify-between sm:justify-around px-1 sm:px-4 gap-1 sm:gap-2">
+    <div className="flex justify-between px-2.5 gap-1.5">
       {letters.map((char) => {
         const isConnected = !!plugboard[char];
         const isSelected = selectedSocket === char;
@@ -290,67 +320,87 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
       )}
 
       {/* Physical Wooden Steckerbrett Housing with SVG Patch Cables */}
-      <div className="w-full overflow-x-auto pb-2 rounded-xl focus:outline-none">
-        <div className={`sm:hidden text-center text-[10px] font-monospaced-technical ${t.textAccent} flex items-center justify-center gap-1 mb-1.5 opacity-90`}>
-          <span className="material-symbols-outlined text-xs">swap_horiz</span>
-          Scroll horizontally to view all plugboard sockets (A–Z)
-        </div>
+      <div ref={parentRef} className="w-full overflow-x-auto pb-2 rounded-xl focus:outline-none scrollbar-thin">
+        {scale <= 0.48 && (
+          <div className="text-center text-[10px] font-monospaced-technical text-amber-500/80 flex items-center justify-center gap-1 mb-1 opacity-90 animate-pulse">
+            <span className="material-symbols-outlined text-xs">swap_horiz</span>
+            Scroll horizontally to view remaining plugboard sockets
+          </div>
+        )}
         <div
-          ref={containerRef}
-          className={`relative rounded-xl p-3 sm:p-6 border-[6px] min-w-[620px] ${t.panelBg} ${t.borderBase} shadow-panel`}
+          style={{
+            width: `${Math.max(760 * scale, 350)}px`,
+            height: `${unscaledHeight * scale}px`,
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+          className="transition-all duration-300 ease-out mx-auto"
         >
-          {/* SVG Cable Overlay Canvas */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
-            <defs>
-              <filter id="cableShadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="8" stdDeviation="4" floodColor="#000000" floodOpacity="0.7" />
-              </filter>
-            </defs>
-            {cablePaths.map(({ a, b, path, color }) => (
-              <g key={`${a}-${b}`}>
-                {/* Outer Shadow Cable */}
-                <path
-                  d={path}
-                  fill="none"
-                  stroke="#000000"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  opacity="0.4"
-                  transform="translate(0, 4)"
-                />
-                {/* Cable Outer / Base */}
-                <path
-                  d={path}
-                  fill="none"
-                  stroke={t.batteryHubStroke}
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                />
-                {/* Colored Cable Wire (Twin / Dual Strand Effect) */}
-                <path
-                  d={path}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  filter="url(#cableShadow)"
-                />
-                {/* Center Highlight */}
-                <path
-                  d={path}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.3)"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </g>
-            ))}
-          </svg>
+          <div
+            ref={containerRef}
+            style={{
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              width: '760px',
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}
+            className={`relative rounded-xl pt-4 px-4 pb-20 border-[6px] ${t.panelBg} ${t.borderBase} shadow-panel`}
+          >
+            {/* SVG Cable Overlay Canvas */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
+              <defs>
+                <filter id="cableShadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="8" stdDeviation="4" floodColor="#000000" floodOpacity="0.7" />
+                </filter>
+              </defs>
+              {cablePaths.map(({ a, b, path, color }) => (
+                <g key={`${a}-${b}`}>
+                  {/* Outer Shadow Cable */}
+                  <path
+                    d={path}
+                    fill="none"
+                    stroke="#000000"
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                    opacity="0.4"
+                    transform="translate(0, 4)"
+                  />
+                  {/* Cable Outer / Base */}
+                  <path
+                    d={path}
+                    fill="none"
+                    stroke={t.batteryHubStroke}
+                    strokeWidth="7"
+                    strokeLinecap="round"
+                  />
+                  {/* Colored Cable Wire (Twin / Dual Strand Effect) */}
+                  <path
+                    d={path}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    filter="url(#cableShadow)"
+                  />
+                  {/* Center Highlight */}
+                  <path
+                    d={path}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.3)"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </g>
+              ))}
+            </svg>
 
-          {/* 2-Row Socket Layout */}
-          <div className="flex flex-col gap-6 sm:gap-10 py-2 sm:py-4">
-            {renderSocketGroup(ROW1)}
-            {renderSocketGroup(ROW2)}
+            {/* 2-Row Socket Layout */}
+            <div className="flex flex-col gap-8 py-3">
+              {renderSocketGroup(ROW1)}
+              {renderSocketGroup(ROW2)}
+            </div>
           </div>
         </div>
       </div>
