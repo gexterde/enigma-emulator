@@ -474,7 +474,8 @@ export const DEFAULT_ENIGMA_CONFIG: EnigmaConfig = {
     start: 0,
     current: 0
   },
-  plugboard: {}
+  plugboard: {},
+  senderCallSign: 'DFS'
 };
 
 export const ENIGMA_KEYBOARD_ROWS = [

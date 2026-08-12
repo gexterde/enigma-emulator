@@ -63,6 +63,8 @@ interface SettingsModalProps {
   soundEnabled: boolean;
   onToggleSound: (enabled: boolean) => void;
   onResetMachine: () => void;
+  senderCallSign: string;
+  onUpdateSenderCallSign: (newSender: string) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -70,16 +72,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   soundEnabled,
   onToggleSound,
-  onResetMachine
+  onResetMachine,
+  senderCallSign,
+  onUpdateSenderCallSign,
 }) => {
   const { theme, setTheme } = useTheme();
   const t = getTheme(theme);
 
-
-
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title="Emulator Settings" icon="settings">
       <div className="space-y-4">
+        {/* Audio Feedback */}
         <div className={`flex justify-between items-center ${t.panelBg} p-3 rounded ${t.borderBase}`}>
           <div>
             <span className={`font-bold ${t.textPrimary} block`}>Audio Feedback</span>
@@ -93,6 +96,63 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           />
         </div>
 
+        {/* Customizable Sender Call Sign (Absender) */}
+        <div className={`p-3.5 rounded ${t.panelBg} border ${t.borderBase} space-y-2.5`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className={`font-bold ${t.textPrimary} flex items-center gap-1.5 text-sm`}>
+                <span className={`material-symbols-outlined text-base ${t.textAccent}`}>badge</span>
+                <span>Sender Call Sign (Absender)</span>
+              </span>
+              <span className={`text-[10px] ${t.textMuted} block mt-0.5`}>
+                Station call sign used in Funktelegramm Preamble (Präambel) headers
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={senderCallSign}
+                onChange={(e) =>
+                  onUpdateSenderCallSign(
+                    e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5)
+                  )
+                }
+                placeholder="DFS"
+                maxLength={5}
+                className={`w-20 ${t.inputBg} ${t.textAccent} border ${t.borderBase} font-monospaced-technical font-bold text-sm text-center px-2 py-1 rounded focus:outline-none focus:${t.borderAccent}`}
+              />
+            </div>
+          </div>
+
+          {/* Presets */}
+          <div className="flex items-center gap-1.5 pt-1">
+            <span className={`text-[9px] ${t.textMuted} font-mono uppercase font-bold`}>Presets:</span>
+            {['DFS', 'J3K', 'X9W', 'G7A', 'R5T'].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => onUpdateSenderCallSign(preset)}
+                className={`px-2 py-0.5 rounded text-[10px] ${t.fontMono} font-bold border transition-all cursor-pointer ${
+                  senderCallSign === preset
+                    ? t.activeBadge
+                    : t.inactiveBadge
+                }`}
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+
+          {/* Live Preamble Header Preview */}
+          <div className={`${t.wellBg} p-2 rounded border ${t.borderBase}/60 text-[10px] ${t.fontMono} flex items-center justify-between`}>
+            <span className={t.textMuted}>Preamble Format Preview:</span>
+            <span className={`${t.textAccent} font-bold tracking-wider`}>
+              {senderCallSign || '???'} 1200 15 UIO AAA
+            </span>
+          </div>
+        </div>
+
+        {/* Theme & Appearance */}
         <div className={`flex justify-between items-center ${t.panelBg} p-3 rounded ${t.borderBase}`}>
           <div>
             <span className={`font-bold ${t.textPrimary} block`}>Theme & Appearance</span>

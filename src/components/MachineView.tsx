@@ -75,6 +75,8 @@ interface MachineViewProps {
   batteryMode: BatterySwitchMode;
   onSetBatteryMode: (mode: BatterySwitchMode) => void;
   onConsumePower: () => void;
+  senderCallSign?: string;
+  onUpdateSenderCallSign?: (newSender: string) => void;
 }
 
 // Authentic Enigma M3/M4 Lampboard/Keyboard Layout (3 rows: 9, 8, 9 keys)
@@ -95,7 +97,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
   batteryLevel,
   batteryMode,
   onSetBatteryMode,
-  onConsumePower
+  onConsumePower,
+  senderCallSign: propSenderCallSign,
+  onUpdateSenderCallSign
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
@@ -185,7 +189,22 @@ export const MachineView: React.FC<MachineViewProps> = ({
   const [showBatterySwitch, setShowBatterySwitch] = useLocalStorage<boolean>('enigma_show_battery_switch', true);
 
   // Message Header / Funktelegramm States
-  const [senderCallSign, setSenderCallSign] = useState<string>('DFS');
+  const [localSenderCallSign, setLocalSenderCallSign] = useLocalStorage<string>(
+    'enigma_sender_callsign',
+    config.senderCallSign || 'DFS'
+  );
+
+  const senderCallSign = propSenderCallSign || config.senderCallSign || localSenderCallSign || 'DFS';
+
+  const setSenderCallSign = (val: string) => {
+    const clean = val.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5);
+    setLocalSenderCallSign(clean);
+    if (onUpdateSenderCallSign) {
+      onUpdateSenderCallSign(clean);
+    } else {
+      onUpdateConfig({ ...config, senderCallSign: clean });
+    }
+  };
   const [transmissionTime, setTransmissionTime] = useState<string>(() => {
     const d = new Date();
     const hours = String(d.getHours()).padStart(2, '0');
@@ -1812,7 +1831,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 <textarea
                   value={importText}
                   onChange={(e) => setImportText(e.target.value)}
-                  placeholder={`DFS 1200 15 UIO ABCDE\nHELLOWORLD...`}
+                  placeholder={`${senderCallSign || 'DFS'} 1200 15 UIO ABCDE\nHELLOWORLD...`}
                   rows={6}
                   className={`w-full ${t.inputBg} ${t.textPrimary} border ${t.borderBase} rounded p-2 text-xs ${t.fontMono} focus:outline-none focus:border-blue-500 resize-y`}
                 />

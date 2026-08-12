@@ -62,6 +62,7 @@ export interface EnigmaConfig {
   fourthRotor: RotorState; // Position 4 (M4 Naval fixed 4th rotor: Beta/Gamma)
   reflector: ReflectorState;
   plugboard: Record<string, string>; // e.g. { 'A': 'B', 'B': 'A' }
+  senderCallSign?: string; // Customizable Station Sender ID / Call Sign (e.g. 'DFS')
 }
 
 export interface StepTrace {

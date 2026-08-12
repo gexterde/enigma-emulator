@@ -82,6 +82,28 @@ export default function App() {
   });
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
+  // Customizable Sender Call Sign (Absender)
+  const [senderCallSign, setSenderCallSign] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('enigma_sender_callsign');
+      if (saved) return saved;
+    } catch (e) {
+      // ignore
+    }
+    return config.senderCallSign || 'DFS';
+  });
+
+  const handleUpdateSenderCallSign = (newSender: string) => {
+    const clean = newSender.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5);
+    setSenderCallSign(clean);
+    try {
+      localStorage.setItem('enigma_sender_callsign', clean);
+    } catch (e) {
+      // ignore
+    }
+    setConfig((prev) => ({ ...prev, senderCallSign: clean }));
+  };
+
   // Simulated Battery Level (0 to 100)
   const [batteryLevel, setBatteryLevel] = useState<number>(() => {
     try {
@@ -347,6 +369,8 @@ export default function App() {
               batteryMode={batteryMode}
               onSetBatteryMode={handleSetBatteryMode}
               onConsumePower={handleConsumePower}
+              senderCallSign={senderCallSign}
+              onUpdateSenderCallSign={handleUpdateSenderCallSign}
             />
           )}
 
@@ -410,6 +434,8 @@ export default function App() {
         soundEnabled={soundEnabled}
         onToggleSound={setSoundEnabled}
         onResetMachine={handleResetMachine}
+        senderCallSign={senderCallSign}
+        onUpdateSenderCallSign={handleUpdateSenderCallSign}
       />
 
       <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
