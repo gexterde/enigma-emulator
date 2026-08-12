@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { EnigmaConfig } from '../types';
 import { generateConfigString } from '../lib/enigmaEngine';
-import { useTheme, getTheme, ThemeName } from '../lib/theme';
+import { useTheme, getTheme, ThemeName, AVAILABLE_THEMES } from '../lib/theme';
 
 interface ModalProps {
   isOpen: boolean;
@@ -103,8 +103,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             onChange={(e) => setTheme(e.target.value as ThemeName)}
             className={`${t.inputBg} ${t.fontMono} text-xs px-2 py-1 rounded border outline-none cursor-pointer`}
           >
-            <option value="vintage">Vintage</option>
-            <option value="modern">Modern</option>
+            {AVAILABLE_THEMES.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.name}
+              </option>
+            ))}
           </select>
         </div>
 
