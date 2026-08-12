@@ -249,7 +249,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className={`w-8 h-8 flex items-center justify-center ${t.textMuted} hover:${t.textAccent} ${theme === 'vintage' ? 'bg-[#221c11]' : t.panelBg} rounded-full border ${t.borderBase} transition-colors cursor-pointer`}
+            className={`w-8 h-8 flex items-center justify-center ${t.textMuted} hover:${t.textAccent} ${theme === 'vintage' ? 'bg-[#221c11]' : 'bg-slate-100'} rounded-full border ${t.borderBase} transition-colors cursor-pointer`}
             title="Close"
           >
             <span className="material-symbols-outlined text-sm">close</span>
@@ -392,7 +392,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   });
                 }}
                 className={`flex-1 py-1 px-2 text-xs rounded border cursor-pointer font-bold transition-all ${
-                  config.fourthRotor.type === 'Beta' ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#201b0f] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600') : (theme === 'vintage' ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426] hover:text-[#ebc238]' : 'bg-white text-slate-500 border-slate-300 hover:text-blue-500')
+                  config.fourthRotor.type === 'Beta' ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#201b0f] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600') : (theme === 'vintage' ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426] hover:text-[#ebc238]' : 'bg-white text-slate-500 border-slate-300 hover:text-blue-500 shadow-sm')
                 }`}
               >
                 M4 (Beta)
@@ -413,7 +413,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   });
                 }}
                 className={`flex-1 py-1 px-2 text-xs rounded border cursor-pointer font-bold transition-all ${
-                  config.fourthRotor.type === 'Gamma' ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#201b0f] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600') : (theme === 'vintage' ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426] hover:text-[#ebc238]' : 'bg-white text-slate-500 border-slate-300 hover:text-blue-500')
+                  config.fourthRotor.type === 'Gamma' ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#201b0f] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600') : (theme === 'vintage' ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426] hover:text-[#ebc238]' : 'bg-white text-slate-500 border-slate-300 hover:text-blue-500 shadow-sm')
                 }`}
               >
                 M4 (Gamma)
@@ -727,7 +727,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className={`px-5 py-1.5 text-xs ${theme === 'vintage' ? 'text-[#201b0f] bg-[#ebc238] hover:bg-[#ffd700]' : 'text-white bg-blue-600 hover:bg-blue-700'} rounded font-bold cursor-pointer transition-colors shadow-md`}
+            className={`px-5 py-1.5 text-xs ${theme === 'vintage' ? 'text-[#201b0f] bg-[#ebc238] hover:bg-[#ffd700]' : 'text-white bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'} rounded font-bold cursor-pointer transition-all shadow-md`}
           >
             Done & Close
           </button>

@@ -380,7 +380,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
         {/* Header */}
         <div className={`flex items-center justify-between border-b ${t.borderBase} pb-3`}>
           <div className="flex items-center gap-3">
-            <div className={`w-3.5 h-3.5 rounded-full border transition-all ${isToneActive ? 'bg-[#ebc238] border-[#ffe066] shadow-[0_0_12px_#ebc238]' : 'bg-[#2a2214] ${t.borderBase}'}`} />
+            <div className={`w-3.5 h-3.5 rounded-full border transition-all ${isToneActive ? 'bg-[#ebc238] border-[#ffe066] shadow-[0_0_12px_#ebc238]' : (theme === 'vintage' ? 'bg-[#2a2214]' : 'bg-slate-200') + ' ' + t.borderBase}`} />
             <div>
               <h3 className={`text-base sm:text-lg font-bold ${t.fontMono} ${t.textAccent} uppercase tracking-wide flex items-center gap-2`}>
                 <span className="material-symbols-outlined text-[20px]">rss_feed</span>
@@ -397,7 +397,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
               stopPlayback();
               onClose();
             }}
-            className={`${t.textMuted} hover:${t.textPrimary} p-1.5 rounded transition-colors cursor-pointer bg-[#221c11] border ${t.borderBase}`}
+            className={`${t.textMuted} hover:${t.textPrimary} p-1.5 rounded transition-colors cursor-pointer ${theme === 'vintage' ? 'bg-[#221c11]' : 'bg-slate-100'} border ${t.borderBase}`}
             title="Close Broadcast"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
@@ -420,8 +420,8 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
               }}
               className={`text-[10px] ${t.fontMono} font-bold uppercase px-2.5 py-1 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
                 localSound
-                  ? 'bg-[#1b5e20]/40 text-[#e8f5e9] border-[#2e7d32]'
-                  : 'bg-[#2a1a1a] text-[#ff8a80] border-[#5c2b2b]'
+                  ? (theme === 'vintage' ? 'bg-[#1b5e20]/40 text-[#e8f5e9] border-[#2e7d32]' : 'bg-green-50 text-green-700 border-green-200')
+                  : (theme === 'vintage' ? 'bg-[#2a1a1a] text-[#ff8a80] border-[#5c2b2b]' : 'bg-red-50 text-red-600 border-red-200')
               }`}
             >
               <span className="material-symbols-outlined text-[14px]">
@@ -440,8 +440,8 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
               }}
               className={`py-2 px-3 rounded text-xs ${t.fontMono} font-bold uppercase border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 source === 'ciphertext'
-                  ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]'
-                  : 'bg-[#1b160e] text-[#d1c4b7] border-[#4e453b] hover:bg-[#261f14]'
+                  ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600')
+                  : (theme === 'vintage' ? 'bg-[#1b160e] text-[#d1c4b7] border-[#4e453b] hover:bg-[#261f14]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm')
               }`}
             >
               <span className="material-symbols-outlined text-[14px]">lock</span>
@@ -455,8 +455,8 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
               }}
               className={`py-2 px-3 rounded text-xs ${t.fontMono} font-bold uppercase border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 source === 'plaintext'
-                  ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]'
-                  : 'bg-[#1b160e] text-[#d1c4b7] border-[#4e453b] hover:bg-[#261f14]'
+                  ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600')
+                  : (theme === 'vintage' ? 'bg-[#1b160e] text-[#d1c4b7] border-[#4e453b] hover:bg-[#261f14]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm')
               }`}
             >
               <span className="material-symbols-outlined text-[14px]">edit_note</span>
@@ -470,8 +470,8 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
               }}
               className={`py-2 px-3 rounded text-xs ${t.fontMono} font-bold uppercase border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 source === 'full'
-                  ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]'
-                  : 'bg-[#1b160e] text-[#d1c4b7] border-[#4e453b] hover:bg-[#261f14]'
+                  ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600')
+                  : (theme === 'vintage' ? 'bg-[#1b160e] text-[#d1c4b7] border-[#4e453b] hover:bg-[#261f14]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm')
               }`}
             >
               <span className="material-symbols-outlined text-[14px]">description</span>
@@ -511,7 +511,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
           {isPlaying && tokens[currentIndex] && (
             <div className={`flex items-center gap-2 pt-1.5 border-t ${t.borderBase}/50`}>
               <span className={`text-[10px] ${t.textMuted} uppercase font-mono`}>Current Morse:</span>
-              <span className={`text-xs font-mono font-bold ${t.textAccent} tracking-widest bg-[#221c11] px-2 py-0.5 rounded border ${t.borderBase}`}>
+              <span className={`text-xs font-mono font-bold ${t.textAccent} tracking-widest ${theme === 'vintage' ? 'bg-[#221c11]' : 'bg-slate-100'} px-2 py-0.5 rounded border ${t.borderBase}`}>
                 {tokens[currentIndex].morse.split('').map((sym, sIdx) => (
                   <span
                     key={sIdx}
@@ -526,7 +526,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
         </div>
 
         {/* Controls & Sliders */}
-        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#141007] p-3.5 rounded-lg border ${t.borderBase}`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${theme === 'vintage' ? 'bg-[#141007]' : 'bg-slate-50'} p-3.5 rounded-lg border ${t.borderBase}`}>
           <div className="flex flex-col gap-1.5">
             <div className={`flex justify-between text-xs ${t.fontMono}`}>
               <span className={`${t.textMuted} uppercase`}>Speed (WPM):</span>
@@ -561,7 +561,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
         </div>
 
         {/* Background Radio Noise Settings */}
-        <div className={`bg-[#141007] p-3.5 rounded-lg border ${t.borderBase} flex flex-col gap-3`}>
+        <div className={`${theme === 'vintage' ? 'bg-[#141007]' : 'bg-slate-50'} p-3.5 rounded-lg border ${t.borderBase} flex flex-col gap-3`}>
           <div className={`flex items-center justify-between text-xs ${t.fontMono} border-b ${t.borderBase} pb-2`}>
             <span className={`${t.textAccent} uppercase font-bold flex items-center gap-1.5`}>
               <span className="material-symbols-outlined text-[16px]">waves</span>
@@ -575,8 +575,8 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
                   onClick={() => setNoiseType(type)}
                   className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded border transition-all cursor-pointer ${
                     noiseType === type
-                      ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]'
-                      : 'bg-[#1b160e] text-[#8c7e6a] border-[#4e453b] hover:text-[#ede1cd]'
+                      ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600')
+                      : (theme === 'vintage' ? 'bg-[#1b160e] text-[#8c7e6a] border-[#4e453b] hover:text-[#ede1cd]' : 'bg-white text-slate-500 border-slate-200 hover:text-blue-600')
                   }`}
                 >
                   {type}
@@ -635,8 +635,8 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
                 disabled={!activeText.trim()}
                 className={`text-xs ${t.fontMono} font-bold uppercase px-5 py-2 rounded border transition-all cursor-pointer flex items-center gap-1.5 shadow ${
                   !activeText.trim()
-                    ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
-                    : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
+                    ? (theme === 'vintage' ? 'bg-[#1c1811] text-[#635848] border-[#2a241a]' : 'bg-slate-100 text-slate-400 border-slate-200')
+                    : (theme === 'vintage' ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]' : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 shadow-blue-500/20')
                 }`}
               >
                 <span className="material-symbols-outlined text-[16px]">podcasts</span>
@@ -648,7 +648,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
               <button
                 type="button"
                 onClick={stopPlayback}
-                className={`text-xs ${t.fontMono} font-bold uppercase px-3 py-2 rounded border ${t.borderBase} bg-[#221c11] ${t.textPrimary} hover:bg-[#2e2619] transition-all cursor-pointer flex items-center gap-1`}
+                className={`text-xs ${t.fontMono} font-bold uppercase px-3 py-2 rounded border ${t.borderBase} ${theme === 'vintage' ? 'bg-[#221c11]' : 'bg-slate-100'} ${t.textPrimary} hover:${theme === 'vintage' ? 'bg-[#2e2619]' : 'bg-slate-200'} transition-all cursor-pointer flex items-center gap-1`}
                 title="Stop transmission"
               >
                 <span className="material-symbols-outlined text-[16px]">stop</span>

@@ -563,7 +563,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                   <span className={`text-[9px] ${t.fontMono} uppercase font-bold`}>
                     Middle Deck: Lampboard (Glühlampenfeld)
                   </span>
-                  <span className={`text-[9px] ${t.fontMono} px-2 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent} font-bold' : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? '${t.panelInner} text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
+                  <span className={`text-[9px] ${t.fontMono} px-2 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.textAccent + ' font-bold' : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? t.panelInner + ' text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
                     {isLit ? '● BULB LIT' : '● BULB OFF'}
                   </span>
                 </div>
@@ -571,7 +571,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                   <span className={`text-xs ${t.fontHeader} font-bold`}>Output Lamp</span>
                   <div className="flex items-center gap-2">
                     <span className={`text-[10px] ${t.fontMono} opacity-80`}>Active Bulb:</span>
-                    <span className={`text-xl ${t.fontRotor} font-bold px-3 py-0.5 rounded shadow ${isLit ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b]' : 'bg-yellow-400 text-yellow-950') : (theme === 'vintage' ? 'bg-[#251f12] ${t.textAccent}' : 'bg-slate-200 text-slate-600')}`}>
+                    <span className={`text-xl ${t.fontRotor} font-bold px-3 py-0.5 rounded shadow ${isLit ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b]' : 'bg-yellow-400 text-yellow-950') : (theme === 'vintage' ? 'bg-[#251f12] ' + t.textAccent : 'bg-slate-200 text-slate-600')}`}>
                       '{outputChar}'
                     </span>
                   </div>
@@ -601,13 +601,13 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                     <span className={`text-[9px] ${t.fontMono} uppercase font-bold`}>
                       Keyboard (Tastatur)
                     </span>
-                    <span className={`text-[9px] ${t.fontMono} px-1.5 py-0.2 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? '${t.panelInner} text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
+                    <span className={`text-[9px] ${t.fontMono} px-1.5 py-0.2 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.textAccent : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? t.panelInner + ' text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
                       {isLit ? '● PRESSED' : '● READY'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className={`text-xs ${t.fontHeader} font-bold`}>Input Key</span>
-                    <span className={`text-base ${t.fontRotor} font-bold px-2.5 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-400 text-yellow-950 shadow-sm') : `${t.panelInner} ${t.textPrimary}`}`}>
+                    <span className={`text-base ${t.fontRotor} font-bold px-2.5 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.textAccent : 'bg-yellow-400 text-yellow-950 shadow-sm') : `${t.panelInner} ${t.textPrimary}`}`}>
                       '{inputChar}'
                     </span>
                   </div>
@@ -636,16 +636,16 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                     <span className={`text-[9px] ${t.fontMono} uppercase font-bold`}>
                       Steckerbrett (Plugboard)
                     </span>
-                    <span className={`text-[9px] ${t.fontMono} px-2 py-0.5 rounded font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent} shadow' : 'bg-yellow-900 text-yellow-100 shadow-sm') : (theme === 'vintage' ? '${t.panelInner} text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
+                    <span className={`text-[9px] ${t.fontMono} px-2 py-0.5 rounded font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.textAccent + ' shadow' : 'bg-yellow-900 text-yellow-100 shadow-sm') : (theme === 'vintage' ? t.panelInner + ' text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
                       {isLit ? '● ACTIVE' : '● IDLE'}
                     </span>
                   </div>
                   <div className={`grid grid-cols-2 gap-2 text-xs ${t.fontMono}`}>
-                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.borderAccent} ${t.textAccent}' : 'bg-yellow-900 text-yellow-100 border-yellow-800') : `${t.panelInner} ${t.borderBase} ${t.textSecondary}`}`}>
+                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.borderAccent + ' ' + t.textAccent : 'bg-yellow-900 text-yellow-100 border-yellow-800') : `${t.panelInner} ${t.borderBase} ${t.textSecondary}`}`}>
                       <span className="text-[8px] block opacity-80 uppercase">IN PASS</span>
                       {pbInStep ? `${pbInStep.inChar} ↔ ${pbInStep.outChar}` : `${inputChar} ↔ ${config.plugboard?.[inputChar] || inputChar}`}
                     </div>
-                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.borderAccent} ${t.textAccent}' : 'bg-yellow-900 text-yellow-100 border-yellow-800') : `${t.panelInner} ${t.borderBase} ${t.textSecondary}`}`}>
+                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.borderAccent + ' ' + t.textAccent : 'bg-yellow-900 text-yellow-100 border-yellow-800') : `${t.panelInner} ${t.borderBase} ${t.textSecondary}`}`}>
                       <span className="text-[8px] block opacity-80 uppercase">OUT PASS</span>
                       {pbOutStep ? `${pbOutStep.inChar} ↔ ${pbOutStep.outChar}` : `${outputChar} ↔ ${config.plugboard?.[outputChar] || outputChar}`}
                     </div>

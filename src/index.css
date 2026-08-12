@@ -221,6 +221,16 @@
   border-radius: 4px;
 }
 
+.theme-modern ::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+.theme-modern ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+.theme-modern ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 /* Print optimizations for codebook printing */
 @media print {
   body, html {

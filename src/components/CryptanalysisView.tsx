@@ -1399,7 +1399,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                     className={`w-full ${t.panelBg} ${t.textPrimary} font-bold text-xs border ${t.borderBase} rounded py-1 px-1 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer`}
                   >
                     {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].map((type) => (
-                      <option key={type} value={type} className="bg-[#1b170e]">
+                      <option key={type} value={type} className={`${theme === 'vintage' ? 'bg-[#1b170e]' : 'bg-white text-slate-800'}`}>
                         {type}
                       </option>
                     ))}
