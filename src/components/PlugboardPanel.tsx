@@ -51,25 +51,25 @@ const PlugboardSocket: React.FC<PlugboardSocketProps> = ({ char, isConnected, is
         type="button"
         ref={socketRef}
         onClick={() => onClick(char)}
-        className={`${theme === 'vintage' ? 'bg-[#1a1510]' : 'bg-slate-200'} border-2 rounded-full p-1 cursor-pointer flex flex-col gap-1 items-center justify-center transition-all min-w-[34px] min-h-[50px] sm:min-w-[44px] sm:min-h-[58px] ${
+        className={`${t.lampSocketBg} border-2 rounded-full p-1 cursor-pointer flex flex-col gap-1 items-center justify-center transition-all min-w-[34px] min-h-[50px] sm:min-w-[44px] sm:min-h-[58px] ${
           isSelected
-            ? `${theme === 'vintage' ? 'border-[#ebc238] shadow-[0_0_12px_#ebc238]' : 'border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.5)]'} scale-110`
+            ? `${t.borderAccent} shadow-[0_0_12px_rgba(235,194,56,0.6)] scale-110`
             : isConnected && colorClassIndex !== -1
             ? `cable-border-${colorClassIndex} shadow-md`
-            : theme === 'vintage' ? 'border-[#2a221a] hover:border-[#9a8f83]' : 'border-slate-300 hover:border-blue-400'
+            : `${t.borderBase} hover:${t.borderAccent}`
         }`}
         aria-label={`Socket ${char}`}
         title={partner ? `Plugged to ${partner}` : 'Click to connect'}
       >
         {/* Double pin holes (stecker sockets) */}
         <div
-          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border ${theme === 'vintage' ? 'border-[#000]' : 'border-slate-400'} shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] ${
-            isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : theme === 'vintage' ? 'bg-[#111]' : 'bg-slate-700'
+          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border ${t.borderBase} shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] ${
+            isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : t.lampSocketInnerBg
           }`}
         />
         <div
-          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border ${theme === 'vintage' ? 'border-[#000]' : 'border-slate-400'} shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] ${
-            isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : theme === 'vintage' ? 'bg-[#111]' : 'bg-slate-700'
+          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border ${t.borderBase} shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] ${
+            isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : t.lampSocketInnerBg
           }`}
         />
       </button>
@@ -284,7 +284,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
 
       {warningMessage && (
         <div className={`text-xs px-3 py-2 rounded-lg flex items-center gap-2 animate-fade-in ${t.dangerBg}`}>
-          <span className={`material-symbols-outlined text-sm ${theme === 'vintage' ? 'text-[#e05252]' : 'text-red-600'}`}>warning</span>
+          <span className={`material-symbols-outlined text-sm ${t.textDanger}`}>warning</span>
           <span>{warningMessage}</span>
         </div>
       )}
@@ -297,13 +297,13 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
         </div>
         <div
           ref={containerRef}
-          className={`relative rounded-xl p-3 sm:p-6 border-[6px] min-w-[620px] ${theme === 'vintage' ? 'bg-[#3b2a1a] border-[#2f291c] shadow-[inset_0_0_40px_rgba(0,0,0,0.8),0_10px_30px_rgba(0,0,0,0.8)]' : 'bg-slate-100 border-slate-300 shadow-sm'}`}
+          className={`relative rounded-xl p-3 sm:p-6 border-[6px] min-w-[620px] ${t.panelBg} ${t.borderBase} shadow-panel`}
         >
           {/* SVG Cable Overlay Canvas */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
             <defs>
               <filter id="cableShadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="8" stdDeviation="4" floodColor={theme === 'vintage' ? "#000000" : "#94a3b8"} floodOpacity="0.7" />
+                <feDropShadow dx="0" dy="8" stdDeviation="4" floodColor="#000000" floodOpacity="0.7" />
               </filter>
             </defs>
             {cablePaths.map(({ a, b, path, color }) => (
@@ -312,7 +312,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
                 <path
                   d={path}
                   fill="none"
-                  stroke={theme === 'vintage' ? "#000000" : "#cbd5e1"}
+                  stroke="#000000"
                   strokeWidth="10"
                   strokeLinecap="round"
                   opacity="0.4"
@@ -322,7 +322,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
                 <path
                   d={path}
                   fill="none"
-                  stroke={theme === 'vintage' ? "#1a1510" : "#475569"}
+                  stroke={t.batteryHubStroke}
                   strokeWidth="7"
                   strokeLinecap="round"
                 />

@@ -32,11 +32,11 @@ export const RotorDial: React.FC<RotorDialProps> = ({
       <span className={`text-[7.5px] sm:text-[9px] ${t.textMuted} ${t.fontMono} mb-0.5 whitespace-nowrap`}>
         {label} {typeDisplay ? `(${typeDisplay})` : ''}
       </span>
-      <div className={`relative rounded w-9 sm:w-12 h-11 sm:h-13 flex items-center justify-center my-0.5 overflow-hidden ${theme === 'vintage' ? 'bg-[#3b3426] border-[#4e453b] border shadow-rotor-window' : 'bg-white border-slate-300 border shadow-inner'}`}>
+      <div className={`relative rounded w-9 sm:w-12 h-11 sm:h-13 flex items-center justify-center my-0.5 overflow-hidden ${t.rotorWindowBg} ${t.rotorWindowBorder} border ${t.rotorWindowShadow}`}>
         <button
           type="button"
           onClick={() => onStep(1)}
-          className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} cursor-pointer`}
+          className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${t.rotorWindowControl} cursor-pointer`}
           title="Rotate Up"
         >
           <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_less</span>
@@ -47,7 +47,7 @@ export const RotorDial: React.FC<RotorDialProps> = ({
         <button
           type="button"
           onClick={() => onStep(-1)}
-          className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} cursor-pointer`}
+          className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${t.rotorWindowControl} cursor-pointer`}
           title="Rotate Down"
         >
           <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_more</span>

@@ -796,11 +796,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
           <button
             type="button"
             onClick={handleOpenMobileKeyboard}
-            className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-all flex items-center gap-1.5 font-bold cursor-pointer ${
-              theme === 'vintage'
-                ? 'border-[#ebc238]/60 bg-[#251b0a] text-[#ebc238] hover:bg-[#ebc238] hover:text-[#181307] shadow-[0_0_10px_rgba(235,194,56,0.25)]'
-                : 'border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-sm'
-            }`}
+            className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-all flex items-center gap-1.5 font-bold cursor-pointer ${t.buttonMuted} shadow-sm`}
             title="Open phone native virtual keyboard"
           >
             <span className="material-symbols-outlined text-sm">smartphone</span>
@@ -813,10 +809,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
             onClick={handleToggleKeySize}
             className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
               keySize === 'large'
-                ? theme === 'vintage'
-                  ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
-                  : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
-                : `${t.buttonPrimary}`
+                ? t.buttonHighlight
+                : t.buttonPrimary
             }`}
             title="Toggle between normal and large key/lamp sizes"
           >
@@ -831,10 +825,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
             onClick={handleToggleCompactMode}
             className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
               isCompactMode
-                ? theme === 'vintage'
-                  ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
-                  : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
-                : `${t.buttonPrimary}`
+                ? t.buttonHighlight
+                : t.buttonPrimary
             }`}
             title="Toggle Compact Enigma Machine Mode"
           >
@@ -849,10 +841,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
             onClick={() => setKeyboardBulbsOnly(!keyboardBulbsOnly)}
             className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
               keyboardBulbsOnly
-                ? theme === 'vintage'
-                  ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
-                  : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
-                : `${t.buttonPrimary}`
+                ? t.buttonHighlight
+                : t.buttonPrimary
             }`}
             title="Show only the Lampboard (Bulbs) and Keyboard"
           >
@@ -867,10 +857,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
             onClick={handleToggleDimIdleLights}
             className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
               dimIdleLights
-                ? theme === 'vintage'
-                  ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
-                  : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
-                : `${t.buttonPrimary}`
+                ? t.buttonHighlight
+                : t.buttonPrimary
             }`}
             title="Apply realistic dim glow & flickering effect to idle lampboard bulbs"
           >
@@ -887,10 +875,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 onClick={() => setShowChamber(!showChamber)}
                 className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                   showChamber
-                    ? theme === 'vintage'
-                      ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
-                      : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
-                    : `${t.buttonPrimary}`
+                    ? t.activeBadge + ' font-bold shadow-sm'
+                    : t.buttonPrimary
                 }`}
                 title="Toggle Rotors / Scrambler Chamber Visibility"
               >
@@ -905,10 +891,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 onClick={() => setShowBatterySwitch(!showBatterySwitch)}
                 className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                   showBatterySwitch
-                    ? theme === 'vintage'
-                      ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
-                      : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
-                    : `${t.buttonPrimary}`
+                    ? t.activeBadge + ' font-bold shadow-sm'
+                    : t.buttonPrimary
                 }`}
                 title="Toggle Battery Switch Visibility"
               >
@@ -931,10 +915,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 }}
                 className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                   showTape && !tapeCollapsed && !headerCollapsed
-                    ? theme === 'vintage'
-                      ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
-                      : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
-                    : `${t.buttonPrimary}`
+                    ? t.activeBadge + ' font-bold shadow-sm'
+                    : t.buttonPrimary
                 }`}
                 title="Toggle Funktelegramm Message Header Visibility"
               >
@@ -951,10 +933,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 }}
                 className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                   showTape
-                    ? theme === 'vintage'
-                      ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
-                      : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
-                    : `${t.buttonPrimary}`
+                    ? t.activeBadge + ' font-bold shadow-sm'
+                    : t.buttonPrimary
                 }`}
                 title="Toggle Paper Tape Visibility"
               >
@@ -970,10 +950,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   onClick={() => setShowSignalAnimation(!showSignalAnimation)}
                   className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                     showSignalAnimation
-                      ? theme === 'vintage'
-                        ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
-                        : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
-                      : `${t.buttonPrimary}`
+                      ? t.activeBadge + ' font-bold shadow-sm'
+                      : t.buttonPrimary
                   }`}
                   title="Toggle Signal Path Visualizer"
                 >
@@ -984,18 +962,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
             </>
           )}
 
-          <div className={`text-xs ${t.fontMono} px-3 py-1.5 rounded border ${
-            theme === 'vintage'
-              ? 'text-[#e3c193] bg-[#120e04] border-[#3b3426]'
-              : 'text-slate-700 bg-slate-100 border-slate-200'
-          }`}>
+          <div className={`text-xs ${t.fontMono} px-3 py-1.5 rounded border ${t.activeBadge}`}>
             Config: {generateConfigString(config, ringFormat)}
           </div>
         </div>
       </div>
 
       {isCompactMode ? (
-        <div className={`${theme === 'vintage' ? 'wood-texture border-[#4a3e2e]' : 'bg-slate-100/70 border-slate-200'} p-3 sm:p-5 rounded-2xl border shadow-2xl space-y-4 max-w-2xl mx-auto`}>
+        <div className={`${t.panelBg} p-3 sm:p-5 rounded-2xl border ${t.borderBase} shadow-2xl space-y-4 max-w-2xl mx-auto ${t.appTexture}`}>
           {keyboardBulbsOnly && (
             <div className={`rounded-lg p-2.5 text-center text-xs ${t.fontMono} flex items-center justify-between shadow-panel ${t.panelInner} border ${t.borderBase} ${t.textAccent}`}>
               <span className="flex items-center gap-2">
@@ -1049,7 +1023,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                       setInputTape('');
                       setCipherTape('');
                     }}
-                    className={`text-[9px] sm:text-[10px] ${t.fontMono} ${theme === 'vintage' ? 'text-red-400 bg-red-950/30 border-red-900/50 hover:bg-red-900/40' : 'text-red-500 bg-red-50 hover:bg-red-100 border-red-200'} px-2 py-0.5 rounded border transition-colors flex items-center gap-1 cursor-pointer font-bold`}
+                    className={`text-[9px] sm:text-[10px] ${t.fontMono} ${t.dangerBadge} px-2 py-0.5 rounded border transition-colors flex items-center gap-1 cursor-pointer font-bold`}
                     title="Clear Tape Content"
                   >
                     <span className="material-symbols-outlined text-[12px]">backspace</span>
@@ -1090,7 +1064,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
               </div>
 
               {!tapeCollapsed && (
-                <div className={`${t.paperTapeBg} min-h-[44px] max-h-[80px] w-full px-3 py-2 ${t.fontMono} ${theme === 'vintage' ? 'text-[#2b261f]' : 'text-slate-800'} border ${t.paperTapeBorder} overflow-y-auto break-all tracking-widest text-sm sm:text-base font-bold rounded shadow-inner flex items-center justify-between`}>
+                <div className={`${t.paperTapeBg} min-h-[44px] max-h-[80px] w-full px-3 py-2 ${t.fontMono} ${t.paperTapeText} border ${t.paperTapeBorder} overflow-y-auto break-all tracking-widest text-sm sm:text-base font-bold rounded shadow-inner flex items-center justify-between`}>
                   <span>{formatTapeText(cipherTape) || <span className={`${t.textMuted} italic font-normal text-xs`}>Tape output will appear here as you type...</span>}</span>
                 </div>
               )}
@@ -1256,12 +1230,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
             />
 
             {isMobileKeyboardOpen && (
-              <div className={`${theme === 'vintage' ? 'bg-[#181307] border-[#ebc238] shadow-[0_0_20px_rgba(235,194,56,0.3)]' : 'bg-white border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]'} border-2 rounded-xl p-3 animate-fade-in flex flex-col sm:flex-row items-center justify-between gap-2.5 my-1`}>
+              <div className={`${t.statusHighlight} border-2 rounded-xl p-3 animate-fade-in flex flex-col sm:flex-row items-center justify-between gap-2.5 my-1`}>
                 <div
                   onClick={() => mobileInputRef.current?.focus()}
                   className="flex items-center gap-2.5 cursor-pointer flex-1 w-full"
                 >
-                  <div className={`w-3 h-3 rounded-full ${theme === 'vintage' ? 'bg-[#ebc238]' : 'bg-blue-500'} animate-ping shrink-0`} />
+                  <div className={`w-3 h-3 rounded-full ${t.bgAccentSolid} animate-ping shrink-0`} />
                   <div>
                     <div className={`text-xs sm:text-sm ${t.fontHeader} ${t.textPrimary} flex items-center gap-1.5 font-bold`}>
                       <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>smartphone</span>
@@ -1317,7 +1291,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                       handleBackspace();
                       mobileInputRef.current?.focus();
                     }}
-                    className={`px-2 py-1 text-xs ${t.fontMono} rounded ${theme === 'vintage' ? 'bg-red-950/30 text-red-400 border-red-900/50 hover:bg-red-900/40' : 'bg-red-50 text-red-500 border-red-200 hover:bg-red-100'} border cursor-pointer font-bold transition-colors`}
+                    className={`px-2 py-1 text-xs ${t.fontMono} rounded ${t.dangerBadge} border cursor-pointer font-bold transition-colors`}
                   >
                     Backspace (⌫)
                   </button>
@@ -1377,7 +1351,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
       {!keyboardBulbsOnly && (showChamber || showBatterySwitch) && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {showChamber && (
-            <div className={`${showBatterySwitch ? 'lg:col-span-8' : 'lg:col-span-12'} ${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} transition-all animate-fade-in`}>
+            <div className={`${showBatterySwitch ? 'lg:col-span-8' : 'lg:col-span-12'} ${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${t.appTexture} transition-all animate-fade-in`}>
               <div className={`flex justify-between items-center mb-3 pb-2 border-b ${t.borderBase}`}>
                 <h2 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-widest flex items-center gap-2`}>
                   <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>tune</span>
@@ -1502,12 +1476,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
             aria-label="Mobile Keyboard Input Buffer"
           />
 
-              <div className={`${theme === 'vintage' ? 'bg-[#181307] border-[#ebc238] shadow-[0_0_20px_rgba(235,194,56,0.3)]' : 'bg-white border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]'} border-2 rounded-xl p-3 animate-fade-in flex flex-col sm:flex-row items-center justify-between gap-2.5 my-2`}>
+              <div className={`${t.lampboardPanelBg} border-2 ${t.borderAccent}/60 rounded-xl p-3 animate-fade-in flex flex-col sm:flex-row items-center justify-between gap-2.5 my-2 shadow-lg`}>
             <div
               onClick={() => mobileInputRef.current?.focus()}
               className="flex items-center gap-2.5 cursor-pointer flex-1 w-full"
             >
-              <div className={`w-3 h-3 rounded-full ${theme === 'vintage' ? 'bg-[#ebc238]' : 'bg-blue-500'} animate-ping shrink-0`} />
+              <div className={`w-3 h-3 rounded-full ${t.bgAccentSolid} animate-ping shrink-0`} />
               <div>
                 <div className={`text-xs sm:text-sm ${t.fontHeader} ${t.textPrimary} flex items-center gap-1.5 font-bold`}>
                   <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>smartphone</span>
@@ -1563,7 +1537,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   handleBackspace();
                   mobileInputRef.current?.focus();
                 }}
-                className={`px-2 py-1 text-xs ${t.fontMono} rounded bg-red-500/20 text-red-600 hover:bg-red-500/30 border border-red-500/40 cursor-pointer`}
+                className={`px-2 py-1 text-xs ${t.fontMono} rounded ${t.dangerBadge} border cursor-pointer font-bold transition-colors`}
               >
                 Backspace (⌫)
               </button>
@@ -1633,7 +1607,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 setInputTape('');
                 setCipherTape('');
               }}
-              className={`text-[10px] ${t.fontMono} ${theme === 'vintage' ? 'text-red-400 bg-red-950/30 border-red-900/50 hover:bg-red-900/40' : 'text-red-600 bg-red-50 border-red-200 hover:bg-red-100'} px-2 py-0.5 rounded border transition-colors ml-1 cursor-pointer font-bold`}
+              className={`text-[10px] ${t.fontMono} ${t.dangerBadge} px-2 py-0.5 rounded border transition-colors ml-1 cursor-pointer font-bold`}
             >
               Clear Tape
             </button>
@@ -1725,7 +1699,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 <span className={`text-[10px] ${t.fontMono} ${t.textMuted} uppercase block mb-1`}>
                   Plaintext Input:
                 </span>
-                <div className={`${t.paperTapeBg} ${theme === 'vintage' ? 'text-[#25190b]' : 'text-slate-800'} ${t.fontMono} p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold select-all border ${t.paperTapeBorder}`}>
+                <div className={`${t.paperTapeBg} ${t.paperTapeText} ${t.fontMono} p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold select-all border ${t.paperTapeBorder}`}>
                   {formatTapeText(inputTape) || <span className="opacity-40 italic">Type characters above...</span>}
                 </div>
               </div>
@@ -1735,13 +1709,13 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 <span className={`text-[10px] ${t.fontMono} ${t.textAccent} uppercase block mb-1 font-bold`}>
                   Ciphertext Output:
                 </span>
-                <div className={`${t.paperTapeBg} ${theme === 'vintage' ? 'text-[#25190b]' : 'text-slate-800'} ${t.fontMono} p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold border-2 ${theme === 'vintage' ? 'border-[#ebc238]' : 'border-blue-500'} select-all flex justify-between items-center`}>
+                <div className={`${t.paperTapeBg} ${t.paperTapeText} ${t.fontMono} p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold border-2 ${t.paperTapeBorderActive} select-all flex justify-between items-center`}>
                   <span>{formatTapeText(cipherTape) || <span className="opacity-40 italic">Ciphertext will appear here...</span>}</span>
                   {cipherTape && (
                     <button
                       type="button"
                       onClick={() => navigator.clipboard.writeText(formatTapeText(cipherTape))}
-                      className={`text-[10px] font-bold ${theme === 'vintage' ? 'bg-[#25190b] text-[#f6dfc7] hover:bg-[#3c2e1e]' : 'bg-blue-600 text-white hover:bg-blue-700'} px-2 py-1 rounded shadow flex items-center gap-1 shrink-0 ml-2 cursor-pointer transition-all active:scale-95`}
+                      className={`text-[10px] font-bold ${t.paperTapeCopyButton} px-2 py-1 rounded shadow flex items-center gap-1 shrink-0 ml-2 cursor-pointer transition-all active:scale-95`}
                       title="Copy Ciphertext"
                     >
                       <span className="material-symbols-outlined text-[12px]">content_copy</span>

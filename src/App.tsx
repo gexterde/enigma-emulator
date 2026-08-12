@@ -225,7 +225,7 @@ export default function App() {
   const t = getTheme(theme);
 
   return (
-    <div className={`${t.appBg} min-h-screen flex flex-col ${t.fontBody} text-ui-body ${theme === 'vintage' ? 'texture-wood' : ''} overflow-hidden`}>
+    <div className={`${t.appBg} min-h-screen flex flex-col ${t.fontBody} text-ui-body ${t.appTexture} overflow-hidden`}>
       {/* Top Header */}
       <Header
         onToggleMobileMenu={() => setIsMenuOpen((prev) => !prev)}

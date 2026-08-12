@@ -136,8 +136,8 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
     <div
       className={`${
         isCompact
-          ? (theme === 'vintage' ? 'bg-[#1b1710]/90 border-[#3d3526]' : 'bg-white/90 border-slate-200') + ' p-3.5 rounded-xl border shadow-lg space-y-3'
-          : (theme === 'vintage' ? 'bg-[#17130b] border-[#3b3426]' : 'bg-slate-50 border-slate-200') + ' border p-3.5 rounded-lg space-y-3.5'
+          ? `${t.modalBg} p-3.5 rounded-xl border shadow-lg space-y-3`
+          : `${t.panelBg} border p-3.5 rounded-lg space-y-3.5`
       } animate-fade-in`}
     >
       <div className={`flex items-center justify-between border-b ${t.borderBase} pb-1.5`}>
@@ -156,7 +156,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
             onClick={() => setHeaderCollapsed(!headerCollapsed)}
             className={`text-[10px] ${
               isCompact ? 'sm:text-[11px]' : ''
-            } font-ui-header ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238] border-[#3b3426] bg-[#120e04]' : 'text-slate-600 hover:text-blue-600 border-slate-300 bg-slate-100'} flex items-center gap-0.5 cursor-pointer border px-1.5 py-0.5 rounded`}
+            } font-ui-header ${t.tabSwitchButton} flex items-center gap-0.5 cursor-pointer border px-1.5 py-0.5 rounded`}
             title={headerCollapsed ? 'Show Message Header' : 'Close Message Header'}
           >
             <span className="material-symbols-outlined text-sm">
@@ -174,7 +174,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
             <div
               className={`border ${t.borderBase}/60 rounded ${
                 isCompact ? 'p-2' : 'p-2.5'
-              } ${theme === 'vintage' ? 'bg-[#120e04]/50' : 'bg-white'} flex flex-col justify-between`}
+              } ${t.inputBgAlt} flex flex-col justify-between`}
             >
               <div className={`flex items-center justify-between ${isCompact ? 'mb-1' : 'mb-1.5'}`}>
                 <span className={`text-[10px] ${t.fontMono} ${t.textMuted} font-bold uppercase`}>
@@ -199,9 +199,9 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                       )
                     }
                     placeholder="DFS"
-                    className={`w-full ${theme === 'vintage' ? 'bg-[#1b160e] ' + t.textAccent : 'bg-white text-blue-600'} border ${t.borderBase} rounded ${
+                    className={`w-full ${t.inputBgAlt} ${t.textAccent} border ${t.borderBase} rounded ${
                       isCompact ? 'px-1 py-0.5' : 'px-1.5 py-1'
-                    } text-xs font-monospaced-technical font-bold text-center focus:outline-none ${theme === 'vintage' ? 'focus:border-[#ebc238]' : 'focus:border-blue-500'} transition-colors`}
+                    } text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:${t.borderAccent} transition-colors`}
                     title="Sender identification call sign (Clear text)"
                   />
                 </div>
@@ -231,9 +231,9 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                     value={transmissionTime}
                     onChange={(e) => setTransmissionTime(e.target.value.replace(/[^0-9]/g, '').substring(0, 4))}
                     placeholder="1200"
-                    className={`w-full ${theme === 'vintage' ? 'bg-[#1b160e] ' + t.textAccent : 'bg-white text-blue-600'} border ${t.borderBase} rounded ${
+                    className={`w-full ${t.inputBgAlt} ${t.textAccent} border ${t.borderBase} rounded ${
                       isCompact ? 'px-1 py-0.5' : 'px-1.5 py-1'
-                    } text-xs font-monospaced-technical font-bold text-center focus:outline-none ${theme === 'vintage' ? 'focus:border-[#ebc238]' : 'focus:border-blue-500'} transition-colors`}
+                    } text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:${t.borderAccent} transition-colors`}
                     title="Time of transmission (HHMM clear text)"
                   />
                 </div>
@@ -245,7 +245,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                     Letters
                   </label>
                   <div
-                    className={`w-full ${theme === 'vintage' ? 'bg-[#1b160e]/50 ' + t.textPrimary : 'bg-slate-50 text-slate-400'} border ${t.borderBase} rounded ${
+                    className={`w-full ${t.inputBgAlt}/50 ${t.textPrimary} border ${t.borderBase} rounded ${
                       isCompact ? 'py-0.5' : 'py-1'
                     } text-xs font-monospaced-technical font-bold text-center select-none`}
                     title="Automatically computed letter count of ciphertext tape"
@@ -260,7 +260,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
             <div
               className={`border ${t.borderBase}/60 rounded ${
                 isCompact ? 'p-2' : 'p-2.5'
-              } ${theme === 'vintage' ? 'bg-[#120e04]/50' : 'bg-white'} flex flex-col justify-between`}
+              } ${t.inputBgAlt} flex flex-col justify-between`}
             >
               <div className={`flex items-center justify-between ${isCompact ? 'mb-1' : 'mb-1.5'}`}>
                 <span className={`text-[10px] ${t.fontMono} ${t.textMuted} font-bold uppercase`}>
@@ -285,9 +285,9 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                   value={kenngruppe}
                   onChange={(e) => setKenngruppe(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 3))}
                   placeholder="UIO"
-                  className={`w-20 ${theme === 'vintage' ? 'bg-[#1b160e] ' + t.textAccent : 'bg-white text-blue-600'} border ${t.borderBase} rounded ${
+                  className={`w-20 ${t.inputBgAlt} ${t.textAccent} border ${t.borderBase} rounded ${
                     isCompact ? 'px-1 py-0.5' : 'px-1.5 py-1'
-                  } text-xs font-monospaced-technical font-bold text-center focus:outline-none ${theme === 'vintage' ? 'focus:border-[#ebc238]' : 'focus:border-blue-500'} transition-colors`}
+                  } text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:${t.borderAccent} transition-colors`}
                   title="3-letter indicator of the daily key sheet being used"
                 />
                 <div className={`text-[9px] ${t.textMuted} leading-tight flex-1`}>
@@ -303,7 +303,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
             <div
               className={`border ${t.borderBase}/60 rounded ${
                 isCompact ? 'p-2' : 'p-2.5'
-              } ${theme === 'vintage' ? 'bg-[#120e04]/50' : 'bg-white'} flex flex-col justify-between`}
+              } ${t.inputBgAlt} flex flex-col justify-between`}
             >
               <div className={`flex items-center justify-between ${isCompact ? 'mb-1' : 'mb-1.5'}`}>
                 <span className={`text-[10px] ${t.fontMono} ${t.textMuted} font-bold uppercase`}>
@@ -329,9 +329,9 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                     value={localGrundstellung}
                     onChange={handleGrundstellungChange}
                     onBlur={onGrundstellungBlur}
-                    className={`w-full ${theme === 'vintage' ? 'bg-[#1b160e] ' + t.textAccent : 'bg-white text-blue-600'} border ${t.borderBase} rounded ${
+                    className={`w-full ${t.inputBgAlt} ${t.textAccent} border ${t.borderBase} rounded ${
                       isCompact ? 'px-1 py-0.5' : 'px-1.5 py-1'
-                    } text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none ${theme === 'vintage' ? 'focus:border-[#ebc238]' : 'focus:border-blue-500'} transition-colors`}
+                    } text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:${t.borderAccent} transition-colors`}
                     placeholder="AAA"
                     title={
                       config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma'
@@ -345,7 +345,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                       onClick={handleStepAllForward}
                       className={`${
                         isCompact ? 'text-[7px] px-0.5 py-0.2' : 'text-[8px] px-1 py-0.5'
-                      } font-monospaced-technical ${theme === 'vintage' ? 'bg-[#221c11] border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20' : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'} border rounded cursor-pointer font-bold`}
+                      } font-monospaced-technical ${t.tabSwitchButton} border rounded cursor-pointer font-bold`}
                       title="Step all rotors and reflector forward"
                     >
                       +1 ALL
@@ -355,7 +355,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                       onClick={handleResetAllToA}
                       className={`${
                         isCompact ? 'text-[7px] px-0.5 py-0.2' : 'text-[8px] px-1 py-0.5'
-                      } font-monospaced-technical ${theme === 'vintage' ? 'bg-[#221c11] border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20' : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'} border rounded cursor-pointer`}
+                      } font-monospaced-technical ${t.tabSwitchButton} border rounded cursor-pointer`}
                       title="Reset all rotors and reflector to A"
                     >
                       RESET
@@ -393,8 +393,8 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                 isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
               } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${
                 headerCopied
-                  ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                  : (theme === 'vintage' ? 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-400')
+                  ? t.buttonSuccessSolid
+                  : t.tabSwitchButton
               }`}
               title="Copy the Funktelegramm header/preamble to clipboard"
             >
@@ -412,10 +412,10 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                 isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
               } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${
                 !cipherTape
-                  ? (theme === 'vintage' ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]' : 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-300 border-slate-200')
+                  ? t.buttonDisabled
                   : fullMessageCopied
-                  ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                  : (theme === 'vintage' ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]' : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-500')
+                  ? t.buttonSuccessSolid
+                  : t.buttonHighlight
               }`}
               title="Copy full transmission (Header + Ciphertext) to clipboard"
             >
@@ -430,7 +430,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               onClick={() => setShowImportModal(true)}
               className={`shrink-0 ${
                 isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
-              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${theme === 'vintage' ? 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-400'}`}
+              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${t.tabSwitchButton}`}
               title="Import transmission or message and optional header"
             >
               <span className="material-symbols-outlined text-[13px]">file_upload</span>
@@ -442,7 +442,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               onClick={() => setShowBroadcastModal(true)}
               className={`shrink-0 ${
                 isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
-              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${theme === 'vintage' ? 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-400'}`}
+              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${t.tabSwitchButton}`}
               title="Broadcast message via Morse code audio and visual signal"
             >
               <span className="material-symbols-outlined text-[13px]">rss_feed</span>
@@ -455,7 +455,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
       {/* Indicator Procedure Modal (Spruchschlüssel Double Encryption) */}
       {showIndicatorModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`${theme === 'vintage' ? 'bg-[#1b170e]' : 'bg-white'} border ${t.borderBase} rounded-lg max-w-xl w-full p-6 space-y-4 shadow-2xl relative ${theme === 'vintage' ? 'texture-metal shadow-black/80' : 'shadow-slate-200/50'} max-h-[90vh] overflow-y-auto`}>
+          <div className={`${t.modalBg} border ${t.borderBase} rounded-lg max-w-xl w-full p-6 space-y-4 shadow-2xl relative ${t.appTexture} max-h-[90vh] overflow-y-auto`}>
             <button
               type="button"
               onClick={() => setShowIndicatorModal(false)}
@@ -465,14 +465,14 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
             </button>
 
             <div className={`flex items-center gap-2 border-b ${t.borderBase} pb-3`}>
-              <span className={`material-symbols-outlined ${theme === 'vintage' ? 'text-amber-500' : 'text-blue-600'}`}>key_visualizer</span>
+              <span className={`material-symbols-outlined ${t.textAccentExtra}`}>key_visualizer</span>
               <h3 className={`text-sm font-bold ${t.textSecondary} ${t.fontHeader} uppercase tracking-wider`}>
                 Authentic Indicator Procedure (Spruchschlüssel Workflow)
               </h3>
             </div>
 
             <p className={`text-xs ${t.textMuted} leading-relaxed ${t.fontMono}`}>
-              Historically, transmitting raw Grundstellung settings directly violated security protocols. Operators chose a random message key (<span className={`${theme === 'vintage' ? 'text-amber-400' : 'text-blue-600'} font-bold`}>Spruchschlüssel</span>) and encrypted it at the daily key position before transmitting it in the preamble.
+              Historically, transmitting raw Grundstellung settings directly violated security protocols. Operators chose a random message key (<span className={`${t.textAccentStrong} font-bold`}>Spruchschlüssel</span>) and encrypted it at the daily key position before transmitting it in the preamble.
             </p>
 
             {/* Mode Switcher: Double Encryption (Pre-May 1940) vs Single Encryption (Post-May 1940) */}
@@ -489,12 +489,12 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                   }}
                   className={`py-2 px-2 text-[11px] rounded border transition-colors cursor-pointer ${t.fontHeader} flex flex-col items-center gap-0.5 ${
                     indicatorMode === 'double'
-                      ? (theme === 'vintage' ? 'bg-[#ebc238]/15 border-[#ebc238] text-[#ede1cd] font-bold' : 'bg-blue-600/10 border-blue-600 text-blue-700 font-bold')
-                      : (theme === 'vintage' ? 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100')
+                      ? t.bgAccentFaint + ' border-' + t.textAccentStrong.split('-')[1] + ' ' + t.textAccentStrong + ' font-bold'
+                      : t.tabInactive
                   }`}
                 >
                   <span className={`flex items-center gap-1`}>
-                    <span className={`material-symbols-outlined text-xs ${theme === 'vintage' ? 'text-amber-400' : 'text-blue-600'} font-bold`}>repeat</span>
+                    <span className={`material-symbols-outlined text-xs ${t.textAccentStrong} font-bold`}>repeat</span>
                     Double Encryption (Pre-May 1940)
                   </span>
                   <span className="text-[8px] opacity-75 font-mono">Repeat Key: XQFXQF → 6 Letters</span>
@@ -507,12 +507,12 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                   }}
                   className={`py-2 px-2 text-[11px] rounded border transition-colors cursor-pointer ${t.fontHeader} flex flex-col items-center gap-0.5 ${
                     indicatorMode === 'single'
-                      ? (theme === 'vintage' ? 'bg-[#ebc238]/15 border-[#ebc238] text-[#ede1cd] font-bold' : 'bg-blue-600/10 border-blue-600 text-blue-700 font-bold')
-                      : (theme === 'vintage' ? 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100')
+                      ? t.bgAccentFaint + ' border-' + t.textAccentStrong.split('-')[1] + ' ' + t.textAccentStrong + ' font-bold'
+                      : t.tabInactive
                   }`}
                 >
                   <span className={`flex items-center gap-1`}>
-                    <span className={`material-symbols-outlined text-xs ${theme === 'vintage' ? 'text-amber-400' : 'text-blue-600'} font-bold`}>looks_one</span>
+                    <span className={`material-symbols-outlined text-xs ${t.textAccentStrong} font-bold`}>looks_one</span>
                     Single Encryption (Post-May 1940)
                   </span>
                   <span className="text-[8px] opacity-75 font-mono">Single Key: XQF → 3 Letters</span>
@@ -523,36 +523,36 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
             {/* Interactive Steps Visualizer */}
             <div className={`${t.panelInner} border ${t.borderBase} rounded-lg p-3 space-y-3 ${t.fontMono} text-xs`}>
               <div className={`flex items-center justify-between border-b ${t.borderBase} pb-2`}>
-                <span className={`${theme === 'vintage' ? 'text-amber-400' : 'text-blue-600'} font-bold uppercase text-[10px] tracking-wider`}>
+                <span className={`${t.textAccentStrong} font-bold uppercase text-[10px] tracking-wider`}>
                   Step-by-Step Procedure Steps
                 </span>
                 <span className={`text-[10px] ${t.textMuted}`}>
-                  Daily Key: <span className={`${theme === 'vintage' ? 'text-amber-300' : 'text-blue-600'} font-bold`}>{currentDailyGrundstellung}</span>
+                  Daily Key: <span className={`${t.textAccentExtra} font-bold`}>{currentDailyGrundstellung}</span>
                 </span>
               </div>
 
               <div className={`space-y-2 ${t.textPrimary}`}>
                 <div className="flex items-start gap-2">
-                  <span className={`w-5 h-5 rounded-full ${theme === 'vintage' ? 'bg-amber-950 border-amber-600/60 text-amber-400' : 'bg-blue-50 border-blue-200 text-blue-600'} font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5`}>
+                  <span className={`w-5 h-5 rounded-full ${t.circleIndicator} font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5`}>
                     1
                   </span>
                   <div>
-                    <span className={`font-bold ${theme === 'vintage' ? 'text-amber-300' : 'text-blue-700'}`}>Set Daily Machine Key:</span> Rotors & Plugboard set per codebook sheet (Grundstellung: <span className={`${theme === 'vintage' ? 'text-amber-400' : 'text-blue-600'} font-bold`}>{currentDailyGrundstellung}</span>).
+                    <span className={`font-bold ${t.textAccentExtra}`}>Set Daily Machine Key:</span> Rotors & Plugboard set per codebook sheet (Grundstellung: <span className={`${t.textAccentStrong} font-bold`}>{currentDailyGrundstellung}</span>).
                   </div>
                 </div>
 
                 <div className="flex items-start gap-2">
-                  <span className={`w-5 h-5 rounded-full ${theme === 'vintage' ? 'bg-amber-950 border-amber-600/60 text-amber-400' : 'bg-blue-50 border-blue-200 text-blue-600'} font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5`}>
+                  <span className={`w-5 h-5 rounded-full ${t.circleIndicator} font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5`}>
                     2
                   </span>
                   <div className="flex-1 space-y-1">
-                    <span className={`font-bold ${theme === 'vintage' ? 'text-amber-300' : 'text-blue-700'}`}>Choose Random Message Key (Spruchschlüssel):</span>
+                    <span className={`font-bold ${t.textAccentExtra}`}>Choose Random Message Key (Spruchschlüssel):</span>
                     <div className="flex items-center gap-2 pt-1">
                       <input
                         type="text"
                         value={messageKeyInput}
                         onChange={(e) => setMessageKeyInput(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 3))}
-                        className={`w-24 ${theme === 'vintage' ? 'bg-[#1b160e] text-amber-400 border-' + t.borderBase : 'bg-white text-blue-600 border-slate-300'} border rounded px-2 py-1 text-center font-bold tracking-widest focus:outline-none ${theme === 'vintage' ? 'focus:border-amber-400' : 'focus:border-blue-500'}`}
+                        className={`w-24 ${t.inputBgAlt} ${t.textAccentStrong} border ${t.borderBase} rounded px-2 py-1 text-center font-bold tracking-widest focus:outline-none focus:${t.borderAccent}`}
                         placeholder="XQF"
                       />
                       <button
@@ -564,7 +564,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                           setMessageKeyInput(rnd);
                           playRotorClickSound(soundEnabled);
                         }}
-                        className={`px-2 py-1 ${theme === 'vintage' ? 'bg-[#221c11] hover:bg-amber-600/20 text-amber-400' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} border ${t.borderBase} rounded text-[10px] font-bold cursor-pointer`}
+                        className={`px-2 py-1 ${t.tabSwitchButton} border ${t.borderBase} rounded text-[10px] font-bold cursor-pointer`}
                       >
                         🎲 Random Key
                       </button>
@@ -573,17 +573,17 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                 </div>
 
                 <div className="flex items-start gap-2">
-                  <span className={`w-5 h-5 rounded-full ${theme === 'vintage' ? 'bg-amber-950 border-amber-600/60 text-amber-400' : 'bg-blue-50 border-blue-200 text-blue-600'} font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5`}>
+                  <span className={`w-5 h-5 rounded-full ${t.circleIndicator} font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5`}>
                     3
                   </span>
                   <div className="flex-1 space-y-1">
-                    <span className={`font-bold ${theme === 'vintage' ? 'text-amber-300' : 'text-blue-700'}`}>Encrypt Message Key via Machine:</span>
-                    <div className={`flex items-center justify-between ${theme === 'vintage' ? 'bg-[#1b170e]' : 'bg-slate-50'} p-2 rounded border ${t.borderBase} text-xs`}>
-                      <span>Pattern: <span className={`font-bold ${theme === 'vintage' ? 'text-amber-300' : 'text-blue-700'}`}>{indicatorMode === 'double' ? `${messageKeyInput}${messageKeyInput}` : messageKeyInput}</span></span>
+                    <span className={`font-bold ${t.textAccentExtra}`}>Encrypt Message Key via Machine:</span>
+                    <div className={`flex items-center justify-between ${t.inputBgAlt} p-2 rounded border ${t.borderBase} text-xs`}>
+                      <span>Pattern: <span className={`font-bold ${t.textAccentExtra}`}>{indicatorMode === 'double' ? `${messageKeyInput}${messageKeyInput}` : messageKeyInput}</span></span>
                       <button
                         type="button"
                         onClick={handleCalculateIndicator}
-                        className={`px-2 py-0.5 ${theme === 'vintage' ? 'bg-amber-600 hover:bg-amber-500' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'} text-white rounded text-[10px] font-bold cursor-pointer transition-all`}
+                        className={`px-2 py-0.5 ${t.bgAccentSolid} hover:${t.bgAccentHover} text-white rounded text-[10px] font-bold cursor-pointer transition-all shadow-sm`}
                       >
                         Calculate Encrypted Indicator
                       </button>
@@ -592,20 +592,20 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                 </div>
 
                 <div className="flex items-start gap-2">
-                  <span className={`w-5 h-5 rounded-full ${theme === 'vintage' ? 'bg-amber-950 border-amber-600/60 text-amber-400' : 'bg-blue-50 border-blue-200 text-blue-600'} font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5`}>
+                  <span className={`w-5 h-5 rounded-full ${t.circleIndicator} font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5`}>
                     4
                   </span>
                   <div className="flex-1 space-y-1">
-                    <span className={`font-bold ${theme === 'vintage' ? 'text-amber-300' : 'text-blue-700'}`}>Encrypted Indicator Output (transmitted in header):</span>
-                    <div className={`${theme === 'vintage' ? 'bg-[#1b170e] border-amber-600/50' : 'bg-blue-50 border-blue-200'} p-2 rounded border flex items-center justify-between`}>
-                      <span className={`font-bold ${theme === 'vintage' ? 'text-amber-400' : 'text-blue-700'} tracking-widest text-sm`}>
+                    <span className={`font-bold ${t.textAccentExtra}`}>Encrypted Indicator Output (transmitted in header):</span>
+                    <div className={`${t.bgAccentFaint} border ${t.borderBase} p-2 rounded border flex items-center justify-between`}>
+                      <span className={`font-bold ${t.textAccentStrong} tracking-widest text-sm`}>
                         {encryptedIndicatorResult || '—'}
                       </span>
                       {encryptedIndicatorResult && (
                         <button
                           type="button"
                           onClick={() => handleApplyEncryptedIndicator(encryptedIndicatorResult)}
-                          className={`px-2 py-1 ${theme === 'vintage' ? 'bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white border-amber-600/50' : 'bg-blue-600/10 hover:bg-blue-600 text-blue-600 hover:text-white border-blue-600/50'} border rounded text-[10px] font-bold cursor-pointer transition-colors`}
+                          className={`px-2 py-1 ${t.bgAccentFaint} hover:${t.bgAccentSolid} ${t.textAccentStrong} hover:text-white border ${t.borderBase} rounded text-[10px] font-bold cursor-pointer transition-colors`}
                         >
                           Use in Funktelegramm Header
                         </button>
@@ -615,13 +615,13 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                 </div>
 
                 <div className="flex items-start gap-2">
-                  <span className={`w-5 h-5 rounded-full ${theme === 'vintage' ? 'bg-amber-950 border-amber-600/60 text-amber-400' : 'bg-blue-50 border-blue-200 text-blue-600'} font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5`}>
+                  <span className={`w-5 h-5 rounded-full ${t.circleIndicator} font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5`}>
                     5
                   </span>
                   <div>
-                    <span className={`font-bold ${theme === 'vintage' ? 'text-amber-300' : 'text-blue-700'}`}>Decrypt & Set Rotors for Message Body:</span>
+                    <span className={`font-bold ${t.textAccentExtra}`}>Decrypt & Set Rotors for Message Body:</span>
                     <p className={`text-[10px] ${t.textMuted} mt-0.5 leading-snug`}>
-                      Receiver decrypts <span className={`${theme === 'vintage' ? 'text-amber-300' : 'text-blue-600'}`}>{encryptedIndicatorResult || 'indicator'}</span> at daily key position back to secret key <span className={`${theme === 'vintage' ? 'text-amber-300' : 'text-blue-600'}`}>{messageKeyInput}</span>, then resets machine rotors to <span className={`${theme === 'vintage' ? 'text-amber-400' : 'text-blue-700'} font-bold`}>{messageKeyInput}</span> to encipher/decipher the actual message text!
+                      Receiver decrypts <span className={`${t.textAccentExtra}`}>{encryptedIndicatorResult || 'indicator'}</span> at daily key position back to secret key <span className={`${t.textAccentExtra}`}>{messageKeyInput}</span>, then resets machine rotors to <span className={`${t.textAccentStrong} font-bold`}>{messageKeyInput}</span> to encipher/decipher the actual message text!
                     </p>
                   </div>
                 </div>
@@ -632,7 +632,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               <button
                 type="button"
                 onClick={handleApplyMessageKeyToMachine}
-                className={`px-3 py-1.5 ${theme === 'vintage' ? 'bg-[#221c11] hover:bg-amber-600/20 text-amber-400 border-' + t.borderBase + ' hover:border-amber-600/60' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-300 hover:border-slate-400'} border rounded text-xs font-bold ${t.fontHeader} cursor-pointer flex items-center gap-1`}
+                className={`px-3 py-1.5 ${t.tabSwitchButton} border rounded text-xs font-bold ${t.fontHeader} cursor-pointer flex items-center gap-1`}
                 title="Set machine rotors to secret message key position"
               >
                 <span className="material-symbols-outlined text-sm">precision_manufacturing</span>
@@ -642,7 +642,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               <button
                 type="button"
                 onClick={() => setShowIndicatorModal(false)}
-                className={`px-4 py-2 ${theme === 'vintage' ? 'bg-amber-600 hover:bg-amber-500' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'} text-white rounded text-xs font-bold ${t.fontHeader} cursor-pointer transition-all`}
+                className={`px-4 py-2 ${t.bgAccentSolid} hover:${t.bgAccentHover} text-white rounded text-xs font-bold ${t.fontHeader} cursor-pointer transition-all`}
               >
                 Done
               </button>

@@ -150,7 +150,7 @@ export const KeyboardPanel: React.FC<KeyboardPanelProps> = ({
               <button
                 type="button"
                 onClick={onOpenMobileKeyboard}
-                className={`text-[9px] sm:text-[10px] ${t.fontMono} px-2 py-0.5 rounded border transition-all flex items-center gap-1 font-bold shadow-sm cursor-pointer ${theme === 'vintage' ? 'border-[#ebc238]/60 bg-[#251b0a] text-[#ebc238] hover:bg-[#ebc238] hover:text-[#181307]' : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-700 shadow-xs'}`}
+                className={`text-[9px] sm:text-[10px] ${t.fontMono} px-2 py-0.5 rounded border transition-all flex items-center gap-1 font-bold shadow-sm cursor-pointer ${t.buttonMuted}`}
                 title="Open native mobile keyboard"
               >
                 <span className="material-symbols-outlined text-[12px]">smartphone</span>
@@ -209,7 +209,7 @@ export const KeyboardPanel: React.FC<KeyboardPanelProps> = ({
             <button
               type="button"
               onClick={onOpenMobileKeyboard}
-              className={`text-[10px] sm:text-xs ${t.fontMono} px-2.5 py-1 rounded border transition-all flex items-center gap-1 font-bold shadow-sm cursor-pointer ${theme === 'vintage' ? 'border-[#ebc238]/60 bg-[#251b0a] text-[#ebc238] hover:bg-[#ebc238] hover:text-[#181307]' : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 shadow-xs'}`}
+              className={`text-[10px] sm:text-xs ${t.fontMono} px-2.5 py-1 rounded border transition-all flex items-center gap-1 font-bold shadow-sm cursor-pointer ${t.buttonMuted}`}
               title="Open native mobile keyboard"
             >
               <span className="material-symbols-outlined text-sm">smartphone</span>

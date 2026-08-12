@@ -329,7 +329,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
     <select
       value={draftConfig[rotorKey].type}
       onChange={(e) => updateRotorType(rotorKey, e.target.value as RotorType)}
-      className={`w-full min-h-[48px] ${theme === 'vintage' ? 'bg-[#3b3426] border-[#3b3426] text-[#e3c193] font-rotor-label text-rotor-label shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-300 text-slate-800 font-sans text-sm shadow-sm'} border rounded px-3 py-2 appearance-none cursor-pointer focus:${t.borderAccent} focus:ring-1 focus:outline-none`}
+      className={`w-full min-h-[48px] ${t.rotorSettingSelect} border rounded px-3 py-2 appearance-none cursor-pointer focus:${t.borderAccent} focus:ring-1 focus:outline-none`}
     >
       <optgroup label="Enigma I / M3 / M4 Naval (1930 - 1939)">
         <option value="I">I (1930)</option>
@@ -367,7 +367,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
     <select
       value={draftConfig.fourthRotor.type}
       onChange={(e) => updateFourthRotorType(e.target.value as RotorType)}
-      className={`w-full min-h-[48px] ${theme === 'vintage' ? 'bg-[#3b3426] border-[#3b3426] text-[#e3c193] font-rotor-label text-rotor-label shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-300 text-slate-800 font-sans text-sm shadow-sm'} border rounded px-3 py-2 appearance-none cursor-pointer focus:${t.borderAccent} focus:ring-1 focus:outline-none`}
+      className={`w-full min-h-[48px] ${t.rotorSettingSelect} border rounded px-3 py-2 appearance-none cursor-pointer focus:${t.borderAccent} focus:ring-1 focus:outline-none`}
     >
       <optgroup label="M4 Naval Fixed Stators (R2)">
         <option value="Beta">Beta (Spring 1941)</option>
@@ -386,14 +386,14 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
 
     return (
       <div key={rotorKey} className={`${t.lampboardPanelBg} rounded-lg p-4 md:p-5 relative overflow-hidden group`}>
-        <div className={`absolute top-0 right-0 w-16 h-16 ${theme === 'vintage' ? 'bg-[#e3c193]/5 group-hover:bg-[#e3c193]/10' : 'bg-blue-500/5 group-hover:bg-blue-500/10'} rounded-bl-full -z-10 transition-colors`} />
+        <div className={`absolute top-0 right-0 w-16 h-16 ${t.panelInner}/10 rounded-bl-full -z-10 transition-colors`} />
         <h3 className={`${t.fontHeader} ${t.textPrimary} border-b ${t.borderBase} pb-2 mb-4 flex justify-between items-center`}>
           <span>{label}</span>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => randomizeRotorEntire(rotorKey)}
-              className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238] bg-[#120e04]/40 border border-[#3b3426]' : 'text-slate-400 hover:text-blue-500 bg-white border border-slate-300'}`}
+              className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.buttonMuted}`}
               title={`Randomize all settings for ${label}`}
             >
               <span className="material-symbols-outlined text-xs">shuffle</span>
@@ -411,7 +411,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
               <button
                 type="button"
                 onClick={() => randomizeRotorType(rotorKey)}
-                className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`}
+                className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.rotorWindowControl}`}
                 title="Randomize Rotor Type"
               >
                 <span className="material-symbols-outlined text-[14px]">shuffle</span>
@@ -429,17 +429,17 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
               <button
                 type="button"
                 onClick={() => randomizeRotorRing(rotorKey)}
-                className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`}
+                className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.rotorWindowControl}`}
                 title="Randomize Ring Setting"
               >
                 <span className="material-symbols-outlined text-[14px]">shuffle</span>
               </button>
             </div>
-            <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${theme === 'vintage' ? 'bg-[#3b3426] border-[#3b3426] shadow-rotor-window' : 'bg-slate-100 border-slate-300 border shadow-inner'}`}>
+            <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${t.rotorWindowBg} ${t.rotorWindowBorder} ${t.rotorWindowShadow}`}>
               <button
                 type="button"
                 onClick={() => adjustRing(rotorKey, 1)}
-                className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${t.rotorWindowControl} transition-colors`}
                 aria-label={`Increase ${label} Ring`}
               >
                 <span className="material-symbols-outlined text-[16px]">expand_less</span>
@@ -450,7 +450,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
               <button
                 type="button"
                 onClick={() => adjustRing(rotorKey, -1)}
-                className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${t.rotorWindowControl} transition-colors`}
                 aria-label={`Decrease ${label} Ring`}
               >
                 <span className="material-symbols-outlined text-[16px]">expand_more</span>
@@ -467,17 +467,17 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
               <button
                 type="button"
                 onClick={() => randomizeRotorStart(rotorKey)}
-                className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`}
+                className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.rotorWindowControl}`}
                 title="Randomize Start Position"
               >
                 <span className="material-symbols-outlined text-[14px]">shuffle</span>
               </button>
             </div>
-            <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${theme === 'vintage' ? 'bg-[#3b3426] border-[#3b3426] shadow-rotor-window' : 'bg-slate-100 border-slate-300 border shadow-inner'}`}>
+            <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${t.rotorWindowBg} ${t.rotorWindowBorder} ${t.rotorWindowShadow}`}>
               <button
                 type="button"
                 onClick={() => adjustStart(rotorKey, 1)}
-                className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${t.rotorWindowControl} transition-colors`}
                 aria-label={`Increase ${label} Start`}
               >
                 <span className="material-symbols-outlined text-[16px]">expand_less</span>
@@ -488,7 +488,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
               <button
                 type="button"
                 onClick={() => adjustStart(rotorKey, -1)}
-                className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${t.rotorWindowControl} transition-colors`}
                 aria-label={`Decrease ${label} Start`}
               >
                 <span className="material-symbols-outlined text-[16px]">expand_more</span>
@@ -497,15 +497,15 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
           </div>
 
           {/* Turnover Notch Info */}
-          <div className={`${theme === 'vintage' ? 'bg-[#120e04]/80 border-[#3b3426]' : 'bg-slate-50 border-slate-200'} p-2.5 rounded border text-xs`}>
+          <div className={`${t.panelInner} p-2.5 rounded border ${t.borderBase} text-xs`}>
             <div className={`flex items-center justify-between ${t.textAccent} font-monospaced-technical font-bold text-[11px] mb-1`}>
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">turn_right</span>
+                <span className={`material-symbols-outlined text-xs`}>turn_right</span>
                 Turnover Notch: {spec?.notch}
               </span>
-              <span className={`${theme === 'vintage' ? 'text-[#8c7e6a]' : t.textMuted} text-[10px]`}>{spec?.year}</span>
+              <span className={`${t.textMuted} text-[10px]`}>{spec?.year}</span>
             </div>
-            <p className={`${theme === 'vintage' ? 'text-[#a89985]' : t.textSecondary} text-[10px] leading-snug`}>
+            <p className={`${t.textMuted} text-[10px] leading-snug`}>
               {spec?.turnoverAction}
             </p>
           </div>
@@ -547,15 +547,15 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
           <span className={`text-monospaced-technical font-monospaced-technical ${t.textMuted} mb-1 uppercase text-[10px]`}>
             Current String
           </span>
-          <span className={`text-rotor-label font-rotor-label ${theme === 'vintage' ? 'text-[#e3c193]' : t.textAccent} text-lg md:text-xl`} id="preview-string">
+          <span className={`text-rotor-label font-rotor-label ${t.textAccent} text-lg md:text-xl`} id="preview-string">
             {previewString}
           </span>
         </div>
       </div>
 
       {showAppliedToast && (
-        <div className={`${theme === 'vintage' ? 'bg-[#8b6f47]/30 border-[#ebc238] text-[#e3c193]' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded flex items-center gap-3 animate-fade-in shadow-lg`}>
-          <span className={`material-symbols-outlined ${theme === 'vintage' ? 'text-[#ebc238]' : 'text-green-600'}`}>check_circle</span>
+        <div className={`${t.buttonHighlight}/30 border ${t.borderAccent} ${t.textAccent} border px-4 py-3 rounded flex items-center gap-3 animate-fade-in shadow-lg`}>
+          <span className={`material-symbols-outlined ${t.textAccent}`}>check_circle</span>
           <span className="font-ui-header text-sm">
             Rotor settings applied successfully. Machine state reset to Grundstellung.
           </span>
@@ -632,8 +632,8 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
               onClick={() => handleSetRingFormat('number')}
               className={`px-2 py-0.5 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
                 ringFormat === 'number'
-                  ? theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] shadow' : 'bg-blue-600 text-white shadow'
-                  : theme === 'vintage' ? 'text-[#d1c4b7] hover:text-white hover:bg-[#3b3426]' : 'text-slate-600 hover:bg-slate-200'
+                  ? t.buttonHighlight + ' text-[#25190b] shadow'
+                  : t.buttonMuted
               }`}
             >
               01–26
@@ -643,8 +643,8 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
               onClick={() => handleSetRingFormat('letter')}
               className={`px-2 py-0.5 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
                 ringFormat === 'letter'
-                  ? theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] shadow' : 'bg-blue-600 text-white shadow'
-                  : theme === 'vintage' ? 'text-[#d1c4b7] hover:text-white hover:bg-[#3b3426]' : 'text-slate-600 hover:bg-slate-200'
+                  ? t.buttonHighlight + ' text-[#25190b] shadow'
+                  : t.buttonMuted
               }`}
             >
               A–Z
@@ -657,7 +657,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
       <div className="space-y-6">
         {/* 1. Reflector (Umkehrwalze) */}
         <div className={`${t.lampboardPanelBg} rounded-lg p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6`}>
-          <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full ${theme === 'vintage' ? 'bg-[#3b3426] border-4 border-[#181307] shadow-[inset_0_4px_8px_rgba(0,0,0,0.8)]' : 'bg-slate-100 border-4 border-slate-200 shadow-inner'} flex items-center justify-center shrink-0`}>
+          <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full ${t.rotorIconWrapper} flex items-center justify-center shrink-0`}>
             <span className={`material-symbols-outlined ${t.textSecondary} text-2xl md:text-3xl`}>sync</span>
           </div>
           <div className="flex-1 w-full">
@@ -666,7 +666,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
               <button
                 type="button"
                 onClick={randomizeReflectorType}
-                className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`}
+                className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.rotorWindowControlMuted}`}
                 title="Randomize Reflector Type"
               >
                 <span className="material-symbols-outlined text-[16px]">shuffle</span>
@@ -676,7 +676,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
             <select
               value={draftConfig.reflector.type}
               onChange={(e) => updateReflector(e.target.value as ReflectorType)}
-              className={`w-full min-h-[48px] ${theme === 'vintage' ? 'bg-[#3b3426] border-[#3b3426] text-[#e3c193] font-rotor-label text-rotor-label shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]' : 'bg-white border-slate-300 text-slate-800 font-sans text-sm shadow-sm'} border rounded px-3 py-2 appearance-none cursor-pointer focus:${t.borderAccent} focus:ring-1 focus:outline-none`}
+              className={`w-full min-h-[48px] ${t.rotorSettingSelect} border rounded px-3 py-2 appearance-none cursor-pointer focus:${t.borderAccent} focus:ring-1 focus:outline-none`}
             >
               <optgroup label="Standard Reflectors">
                 <option value="Reflector A">Reflector A (Enigma A/B/I)</option>
@@ -701,14 +701,14 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
         {/* Reflector Mechanics (UKW-Rotor) if UKW-Dual-Dynamic */}
         {draftConfig.reflector.type === 'UKW-Dual-Dynamic' && (
           <div className={`${t.lampboardPanelBg} rounded-lg p-4 md:p-5 relative overflow-hidden group`}>
-            <div className={`absolute top-0 right-0 w-16 h-16 ${theme === 'vintage' ? 'bg-[#e3c193]/5 group-hover:bg-[#e3c193]/10' : 'bg-blue-500/5 group-hover:bg-blue-500/10'} rounded-bl-full -z-10 transition-colors`} />
+            <div className={`absolute top-0 right-0 w-16 h-16 ${t.rotorSettingPanelDecoration} rounded-bl-full -z-10 transition-colors`} />
             <h3 className={`${t.fontHeader} ${t.textPrimary} border-b ${t.borderBase} pb-2 mb-4 flex justify-between items-center`}>
               <span>Reflector Mechanics (UKW-Rotor)</span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={randomizeReflectorEntire}
-                  className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238] bg-[#120e04]/40 border border-[#3b3426]' : 'text-slate-400 hover:text-blue-500 bg-white border border-slate-300'}`}
+                  className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.rotorWindowControlAlt}`}
                   title="Randomize all settings for Reflector"
                 >
                   <span className="material-symbols-outlined text-xs">shuffle</span>
@@ -726,17 +726,17 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={randomizeReflectorRing}
-                    className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`}
+                    className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.rotorWindowControlMuted}`}
                     title="Randomize Reflector Ring"
                   >
                     <span className="material-symbols-outlined text-[14px]">shuffle</span>
                   </button>
                 </div>
-                <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${theme === 'vintage' ? 'bg-[#3b3426] border-[#3b3426] shadow-rotor-window' : 'bg-slate-100 border-slate-300 border shadow-inner'}`}>
+                <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${t.rotorWindowContainer}`}>
                   <button
                     type="button"
                     onClick={() => adjustReflectorRing(1)}
-                    className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                    className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${t.rotorWindowControlAction} transition-colors`}
                     aria-label="Increase Reflector Ring"
                   >
                     <span className="material-symbols-outlined text-[16px]">expand_less</span>
@@ -747,7 +747,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => adjustReflectorRing(-1)}
-                    className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                    className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${t.rotorWindowControlAction} transition-colors`}
                     aria-label="Decrease Reflector Ring"
                   >
                     <span className="material-symbols-outlined text-[16px]">expand_more</span>
@@ -763,17 +763,17 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={randomizeReflectorStart}
-                    className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`}
+                    className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.rotorWindowControlMuted}`}
                     title="Randomize Reflector Start"
                   >
                     <span className="material-symbols-outlined text-[14px]">shuffle</span>
                   </button>
                 </div>
-                <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${theme === 'vintage' ? 'bg-[#3b3426] border-[#3b3426] shadow-rotor-window' : 'bg-slate-100 border-slate-300 border shadow-inner'}`}>
+                <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${t.rotorWindowContainer}`}>
                   <button
                     type="button"
                     onClick={() => adjustReflectorStart(1)}
-                    className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                    className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${t.rotorWindowControlAction} transition-colors`}
                     aria-label="Increase Reflector Start"
                   >
                     <span className="material-symbols-outlined text-[16px]">expand_less</span>
@@ -784,7 +784,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => adjustReflectorStart(-1)}
-                    className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                    className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${t.rotorWindowControlAction} transition-colors`}
                     aria-label="Decrease Reflector Start"
                   >
                     <span className="material-symbols-outlined text-[16px]">expand_more</span>
@@ -811,14 +811,14 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
         {/* 2. Fourth Rotor (Fixed Stator / M4) */}
         {(draftConfig.fourthRotor.type === 'Beta' || draftConfig.fourthRotor.type === 'Gamma') && (
           <div className={`${t.lampboardPanelBg} rounded-lg p-4 md:p-5 relative overflow-hidden group`}>
-            <div className={`absolute top-0 right-0 w-16 h-16 ${theme === 'vintage' ? 'bg-[#e3c193]/5 group-hover:bg-[#e3c193]/10' : 'bg-blue-500/5 group-hover:bg-blue-500/10'} rounded-bl-full -z-10 transition-colors`} />
+            <div className={`absolute top-0 right-0 w-16 h-16 ${t.rotorSettingPanelDecoration} rounded-bl-full -z-10 transition-colors`} />
             <h3 className={`${t.fontHeader} ${t.textPrimary} border-b ${t.borderBase} pb-2 mb-4 flex justify-between items-center`}>
               <span>Fourth Rotor (Fixed / IV. Rotor)</span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={randomizeFourthRotorEntire}
-                  className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238] bg-[#120e04]/40 border border-[#3b3426]' : 'text-slate-400 hover:text-blue-500 bg-white border border-slate-300'}`}
+                  className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.rotorWindowControlAlt}`}
                   title="Randomize all settings for Fourth Rotor"
                 >
                   <span className="material-symbols-outlined text-xs">shuffle</span>
@@ -835,7 +835,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={randomizeFourthRotorType}
-                    className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`}
+                    className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.rotorWindowControlMuted}`}
                     title="Randomize Fourth Rotor Type"
                   >
                     <span className="material-symbols-outlined text-[14px]">shuffle</span>
@@ -852,16 +852,16 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={randomizeFourthRotorRing}
-                    className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`}
+                    className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.rotorWindowControlMuted}`}
                     title="Randomize Fourth Rotor Ring Setting"
                   >
                     <span className="material-symbols-outlined text-[14px]">shuffle</span>
                   </button>
                 </div>
-                <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${theme === 'vintage' ? 'bg-[#3b3426] border-[#3b3426] shadow-rotor-window' : 'bg-slate-100 border-slate-300 border shadow-inner'}`}>
+                <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${t.rotorWindowContainer}`}>
                   <button
                     onClick={() => adjustFourthRing(1)}
-                    className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                    className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${t.rotorWindowControlAction} transition-colors`}
                     aria-label="Increase Fourth Rotor Ring"
                   >
                     <span className="material-symbols-outlined text-[16px]">expand_less</span>
@@ -871,7 +871,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                   </span>
                   <button
                     onClick={() => adjustFourthRing(-1)}
-                    className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                    className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${t.rotorWindowControlAction} transition-colors`}
                     aria-label="Decrease Fourth Rotor Ring"
                   >
                     <span className="material-symbols-outlined text-[16px]">expand_more</span>
@@ -887,16 +887,16 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={randomizeFourthRotorStart}
-                    className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`}
+                    className={`p-1 transition-colors cursor-pointer flex items-center justify-center rounded ${t.rotorWindowControlMuted}`}
                     title="Randomize Fourth Rotor Start Position"
                   >
                     <span className="material-symbols-outlined text-[14px]">shuffle</span>
                   </button>
                 </div>
-                <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${theme === 'vintage' ? 'bg-[#3b3426] border-[#3b3426] shadow-rotor-window' : 'bg-slate-100 border-slate-300 border shadow-inner'}`}>
+                <div className={`relative rounded h-14 min-h-[48px] flex items-center justify-center overflow-hidden ${t.rotorWindowContainer}`}>
                   <button
                     onClick={() => adjustFourthStart(1)}
-                    className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                    className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${t.rotorWindowControlAction} transition-colors`}
                     aria-label="Increase Fourth Rotor Start"
                   >
                     <span className="material-symbols-outlined text-[16px]">expand_less</span>
@@ -906,7 +906,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
                   </span>
                   <button
                     onClick={() => adjustFourthStart(-1)}
-                    className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238]' : 'text-slate-400 hover:text-blue-500'} transition-colors`}
+                    className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${t.rotorWindowControlAction} transition-colors`}
                     aria-label="Decrease Fourth Rotor Start"
                   >
                     <span className="material-symbols-outlined text-[16px]">expand_more</span>
@@ -932,7 +932,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
           </div>
           <button
             onClick={handleApply}
-            className={`w-full sm:w-auto min-w-[200px] min-h-[48px] py-3 px-6 rounded transition-all ${t.fontHeader} font-bold text-base flex items-center justify-center gap-2 group cursor-pointer ${theme === 'vintage' ? 'bg-[#8b6f47] text-[#fffaf8] shadow-key-base hover:bg-[#8b6f47]/90 active:shadow-key-pressed active:translate-y-1 border border-[#e3c193]/30' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md active:translate-y-0.5'}`}
+            className={`w-full sm:w-auto min-w-[200px] min-h-[48px] py-3 px-6 rounded transition-all ${t.fontHeader} font-bold text-base flex items-center justify-center gap-2 group cursor-pointer ${t.applyButton}`}
           >
             <span className="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500">
               memory

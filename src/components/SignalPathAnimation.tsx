@@ -245,18 +245,14 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
     <div
       className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
         isLit
-          ? theme === 'vintage' 
-            ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
-            : 'bg-yellow-400 text-yellow-950 border-yellow-200 shadow-[0_0_22px_rgba(250,204,21,0.5)] scale-105 z-20 font-bold'
-          : theme === 'vintage'
-            ? 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
-            : 'bg-white text-slate-600 border-slate-200'
+          ? `${t.activeKeyBg} border-white shadow-lg scale-105 z-20 font-bold`
+          : `${t.mutedBg} ${t.textSecondary} border-${t.borderBase}`
       }`}
     >
       <div>
         <div className="flex items-center justify-between mb-1">
           <span className={`text-[9px] ${t.fontMono} uppercase opacity-90`}>{title}</span>
-          <span className={`text-[9px] ${t.fontMono} px-1.5 py-0.5 rounded font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') + ' shadow' : (theme === 'vintage' ? 'bg-[#251f12] text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
+          <span className={`text-[9px] ${t.fontMono} px-1.5 py-0.5 rounded font-bold ${isLit ? `${t.indicatorBg} ${t.textAccent} shadow` : `${t.mutedBg} ${t.textMuted}`}`}>
             {statusLabel || (isLit ? '● LIT' : '● IDLE')}
           </span>
         </div>
@@ -265,7 +261,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
 
       <div className="mt-3 pt-2 border-t border-current/20">
         <span className={`text-[9px] ${t.fontMono} uppercase block opacity-90 font-semibold`}>{stepLabel}:</span>
-        <div className={`text-xs ${t.fontMono} font-bold mt-1 px-2 py-1 rounded text-center shadow ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') : `${t.panelBg} ${t.textPrimary}`}`}>
+        <div className={`text-xs ${t.fontMono} font-bold mt-1 px-2 py-1 rounded text-center shadow ${isLit ? `${t.indicatorBg} ${t.textAccent}` : `${t.panelBg} ${t.textPrimary}`}`}>
           {stepValue}
         </div>
       </div>
@@ -290,24 +286,20 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
         key={stageSub}
         className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
           isLit
-            ? theme === 'vintage'
-              ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
-              : 'bg-yellow-400 text-yellow-950 border-yellow-200 shadow-[0_0_22px_rgba(250,204,21,0.5)] scale-105 z-20 font-bold'
-            : theme === 'vintage'
-              ? 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
-              : 'bg-white text-slate-600 border-slate-200'
+            ? `${t.activeKeyBg} border-white shadow-lg scale-105 z-20 font-bold`
+            : `${t.mutedBg} ${t.textSecondary} border-${t.borderBase}`
         }`}
       >
         <div>
           <div className="flex items-center justify-between mb-1">
             <span className={`text-[9px] ${t.fontMono} uppercase opacity-90`}>{label} ({rotorType})</span>
-            <span className={`text-[9px] ${t.fontMono} px-1.5 py-0.5 rounded font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') + ' shadow' : (theme === 'vintage' ? 'bg-[#251f12] text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
+            <span className={`text-[9px] ${t.fontMono} px-1.5 py-0.5 rounded font-bold ${isLit ? `${t.indicatorBg} ${t.textAccent} shadow` : `${t.mutedBg} ${t.textMuted}`}`}>
               {isLit ? '● LIT' : '● IDLE'}
             </span>
           </div>
 
           {/* Rotor Window Dial */}
-          <div className={`my-1.5 p-1.5 rounded text-center border shadow-inner ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.borderAccent}' : 'bg-yellow-50 border-yellow-200') : `${t.panelBg} ${t.borderBase}`}`}>
+          <div className={`my-1.5 p-1.5 rounded text-center border shadow-inner ${isLit ? `${t.indicatorBg} ${t.borderAccent}` : `${t.panelBg} ${t.borderBase}`}`}>
             <span className={`text-[9px] ${t.fontMono} uppercase block ${t.textMuted}`}>Position</span>
             <span className={`text-2xl ${t.fontRotor} font-bold ${isLit ? t.textAccent : t.textPrimary}`}>
               {numToChar(currentPos)}
@@ -322,13 +314,13 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
         <div className={`mt-2 pt-1.5 border-t border-current/20 space-y-1 text-[10px] ${t.fontMono}`}>
           <div className="flex justify-between items-center">
             <span className="opacity-90">FWD:</span>
-            <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? 'bg-[#251f12] ${t.textSecondary}' : 'bg-slate-50 text-slate-600')}`}>
+            <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? `${t.indicatorBg} ${t.textAccent}` : `${t.panelInner} ${t.textSecondary}`}`}>
               {fwdStep ? `${fwdStep.inChar} ➔ ${fwdStep.outChar}` : '-'}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="opacity-90">REV:</span>
-            <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? 'bg-[#251f12] ${t.textSecondary}' : 'bg-slate-50 text-slate-600')}`}>
+            <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? `${t.indicatorBg} ${t.textAccent}` : `${t.panelInner} ${t.textSecondary}`}`}>
               {revStep ? `${revStep.inChar} ➔ ${revStep.outChar}` : '-'}
             </span>
           </div>
@@ -338,7 +330,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
   };
 
   return (
-    <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 md:p-6 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-6`}>
+    <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 md:p-6 shadow-panel ${t.appTexture} space-y-6`}>
       {/* Header & Controls */}
       <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b ${t.borderBase} pb-4`}>
         <div>
@@ -348,7 +340,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
               Interactive Signal Path Machine Visualizer
             </h2>
             {isKeyPressed && (
-              <span className={`flex items-center gap-1.5 ${theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] shadow-[0_0_12px_#ebc238]' : 'bg-yellow-400 text-yellow-950 shadow-sm'} px-2.5 py-0.5 rounded ${t.fontMono} text-[10px] font-bold animate-pulse`}>
+              <span className={`flex items-center gap-1.5 ${t.lampLitGlow} px-2.5 py-0.5 rounded ${t.fontMono} text-[10px] font-bold animate-pulse shadow-sm`}>
                 <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
                 KEY ACTIVE: '{selectedChar}' ➔ LAMP '{outputChar}'
               </span>
@@ -369,12 +361,8 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
               onClick={() => handleSelectChar(char)}
               className={`w-7 h-7 rounded ${t.fontRotor} text-xs font-bold transition-all cursor-pointer ${
                 selectedChar === char
-                  ? theme === 'vintage'
-                    ? 'bg-[#ebc238] text-[#25190b] border-2 border-white shadow-md scale-105'
-                    : 'bg-yellow-400 text-yellow-950 border-2 border-yellow-200 shadow-sm scale-105'
-                  : theme === 'vintage'
-                    ? 'bg-[#120e04] text-[#d1c4b7] border border-[#3b3426] hover:bg-[#3b3426]'
-                    : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+                  ? `${t.activeKeyBg} border-2 border-white shadow-md scale-105`
+                  : `${t.mutedBg} border ${t.borderBase} hover:opacity-80`
               }`}
             >
               {char}
@@ -413,7 +401,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
             type="button"
             onClick={handleStepBackward}
             disabled={currentStep === 0}
-            className={`${theme === 'vintage' ? 'bg-[#251f12]' : t.panelInner} hover:opacity-80 disabled:opacity-30 ${t.textSecondary} border ${t.borderBase} p-1.5 rounded transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center`}
+            className={`${t.mutedBg} hover:opacity-80 disabled:opacity-30 ${t.textSecondary} border ${t.borderBase} p-1.5 rounded transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center`}
             title="Step Backward"
           >
             <span className="material-symbols-outlined text-sm">skip_previous</span>
@@ -423,7 +411,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
             type="button"
             onClick={handleStepForward}
             disabled={currentStep >= totalStages - 1}
-            className={`${theme === 'vintage' ? 'bg-[#251f12]' : t.panelInner} hover:opacity-80 disabled:opacity-30 ${t.textSecondary} border ${t.borderBase} p-1.5 rounded transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center`}
+            className={`${t.mutedBg} hover:opacity-80 disabled:opacity-30 ${t.textSecondary} border ${t.borderBase} p-1.5 rounded transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center`}
             title="Step Forward"
           >
             <span className="material-symbols-outlined text-sm">skip_next</span>
@@ -432,7 +420,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
           <button
             type="button"
             onClick={handleReset}
-            className={`${theme === 'vintage' ? 'bg-[#251f12]' : t.panelInner} hover:opacity-80 ${t.textMuted} border ${t.borderBase} px-2.5 py-1.5 rounded text-xs ${t.fontMono} transition-colors cursor-pointer min-h-[36px]`}
+            className={`${t.mutedBg} hover:opacity-80 ${t.textMuted} border ${t.borderBase} px-2.5 py-1.5 rounded text-xs ${t.fontMono} transition-colors cursor-pointer min-h-[36px]`}
           >
             Reset
           </button>
@@ -452,12 +440,8 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
               onClick={() => setSpeedMs(sp.ms)}
               className={`text-[10px] ${t.fontMono} px-2 py-1 rounded border transition-colors cursor-pointer ${
                 speedMs === sp.ms
-                  ? theme === 'vintage'
-                    ? 'bg-[#ebc238] text-[#25190b] font-bold border-[#ebc238]'
-                    : 'bg-blue-600 text-white font-bold border-blue-600 shadow-sm'
-                  : theme === 'vintage'
-                    ? 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426] hover:bg-[#251f12]'
-                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                  ? t.activeBadge
+                  : t.inactiveBadge
               }`}
             >
               {sp.label}
@@ -551,27 +535,23 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
               <div
                 className={`md:col-span-2 p-3.5 rounded-lg border-2 transition-all ${
                   isLit
-                    ? theme === 'vintage'
-                      ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_20px_rgba(235,194,56,0.8)] font-bold z-20'
-                      : 'bg-yellow-400 text-yellow-950 border-yellow-200 shadow-[0_0_20px_rgba(250,204,21,0.5)] font-bold z-20'
-                    : theme === 'vintage'
-                      ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426]'
-                      : 'bg-white text-slate-600 border-slate-200'
+                    ? `${t.activeKeyBg} border-white shadow-lg z-20 font-bold`
+                    : `${t.mutedBg} ${t.textSecondary} border-${t.borderBase}`
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-[9px] ${t.fontMono} uppercase font-bold`}>
                     Middle Deck: Lampboard (Glühlampenfeld)
                   </span>
-                  <span className={`text-[9px] ${t.fontMono} px-2 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.textAccent + ' font-bold' : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? t.panelInner + ' text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
+                  <span className={`text-[9px] ${t.fontMono} px-2 py-0.5 rounded ${isLit ? `${t.indicatorBg} ${t.textAccent} font-bold` : `${t.mutedBg} ${t.textMuted}`}`}>
                     {isLit ? '● BULB LIT' : '● BULB OFF'}
                   </span>
                 </div>
-                <div className={`flex items-center justify-between ${theme === 'vintage' ? 'bg-[#201b0f]/80' : 'bg-slate-50'} p-2.5 rounded border border-current/30`}>
+                <div className={`flex items-center justify-between ${t.wellInnerBg} p-2.5 rounded border border-current/30`}>
                   <span className={`text-xs ${t.fontHeader} font-bold`}>Output Lamp</span>
                   <div className="flex items-center gap-2">
                     <span className={`text-[10px] ${t.fontMono} opacity-80`}>Active Bulb:</span>
-                    <span className={`text-xl ${t.fontRotor} font-bold px-3 py-0.5 rounded shadow ${isLit ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b]' : 'bg-yellow-400 text-yellow-950') : (theme === 'vintage' ? 'bg-[#251f12] ' + t.textAccent : 'bg-slate-200 text-slate-600')}`}>
+                    <span className={`text-xl ${t.fontRotor} font-bold px-3 py-0.5 rounded shadow ${isLit ? t.lampLitGlow : `${t.panelBg} ${t.textAccent}`}`}>
                       '{outputChar}'
                     </span>
                   </div>
@@ -589,25 +569,21 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                 <div
                   className={`p-3.5 rounded-lg border-2 transition-all ${
                     isLit
-                      ? theme === 'vintage'
-                        ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_20px_rgba(235,194,56,0.8)] font-bold z-20'
-                        : 'bg-yellow-400 text-yellow-950 border-yellow-200 shadow-[0_0_20px_rgba(250,204,21,0.5)] font-bold z-20'
-                      : theme === 'vintage'
-                        ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426]'
-                        : 'bg-white text-slate-600 border-slate-200'
+                      ? `${t.activeKeyBg} border-white shadow-lg z-20 font-bold`
+                      : `${t.mutedBg} ${t.textSecondary} border-${t.borderBase}`
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1.5">
                     <span className={`text-[9px] ${t.fontMono} uppercase font-bold`}>
                       Keyboard (Tastatur)
                     </span>
-                    <span className={`text-[9px] ${t.fontMono} px-1.5 py-0.2 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.textAccent : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? t.panelInner + ' text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
+                    <span className={`text-[9px] ${t.fontMono} px-1.5 py-0.2 rounded ${isLit ? `${t.indicatorBg} ${t.textAccent} font-bold` : `${t.mutedBg} ${t.textMuted}`}`}>
                       {isLit ? '● PRESSED' : '● READY'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className={`text-xs ${t.fontHeader} font-bold`}>Input Key</span>
-                    <span className={`text-base ${t.fontRotor} font-bold px-2.5 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.textAccent : 'bg-yellow-400 text-yellow-950 shadow-sm') : `${t.panelInner} ${t.textPrimary}`}`}>
+                    <span className={`text-base ${t.fontRotor} font-bold px-2.5 py-0.5 rounded ${isLit ? `${t.indicatorBg} ${t.textAccent}` : `${t.panelInner} ${t.textPrimary}`}`}>
                       '{inputChar}'
                     </span>
                   </div>
@@ -624,28 +600,24 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                 <div
                   className={`p-3.5 rounded-lg border-2 transition-all ${
                     isLit
-                      ? theme === 'vintage'
-                        ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] font-bold z-20'
-                        : 'bg-yellow-400 text-yellow-950 border-yellow-200 shadow-[0_0_22px_rgba(250,204,21,0.5)] font-bold z-20'
-                      : theme === 'vintage'
-                        ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426]'
-                        : 'bg-white text-slate-600 border-slate-200'
+                      ? `${t.activeKeyBg} border-white shadow-lg z-20 font-bold`
+                      : `${t.mutedBg} ${t.textSecondary} border-${t.borderBase}`
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className={`text-[9px] ${t.fontMono} uppercase font-bold`}>
                       Steckerbrett (Plugboard)
                     </span>
-                    <span className={`text-[9px] ${t.fontMono} px-2 py-0.5 rounded font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.textAccent + ' shadow' : 'bg-yellow-900 text-yellow-100 shadow-sm') : (theme === 'vintage' ? t.panelInner + ' text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
+                    <span className={`text-[9px] ${t.fontMono} px-2 py-0.5 rounded font-bold ${isLit ? `${t.indicatorBg} ${t.textAccent} shadow` : `${t.mutedBg} ${t.textMuted}`}`}>
                       {isLit ? '● ACTIVE' : '● IDLE'}
                     </span>
                   </div>
                   <div className={`grid grid-cols-2 gap-2 text-xs ${t.fontMono}`}>
-                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.borderAccent + ' ' + t.textAccent : 'bg-yellow-900 text-yellow-100 border-yellow-800') : `${t.panelInner} ${t.borderBase} ${t.textSecondary}`}`}>
+                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? `${t.indicatorBg} ${t.borderAccent} ${t.textAccent}` : `${t.panelInner} ${t.borderBase} ${t.textSecondary}`}`}>
                       <span className="text-[8px] block opacity-80 uppercase">IN PASS</span>
                       {pbInStep ? `${pbInStep.inChar} ↔ ${pbInStep.outChar}` : `${inputChar} ↔ ${config.plugboard?.[inputChar] || inputChar}`}
                     </div>
-                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ' + t.borderAccent + ' ' + t.textAccent : 'bg-yellow-900 text-yellow-100 border-yellow-800') : `${t.panelInner} ${t.borderBase} ${t.textSecondary}`}`}>
+                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? `${t.indicatorBg} ${t.borderAccent} ${t.textAccent}` : `${t.panelInner} ${t.borderBase} ${t.textSecondary}`}`}>
                       <span className="text-[8px] block opacity-80 uppercase">OUT PASS</span>
                       {pbOutStep ? `${pbOutStep.inChar} ↔ ${pbOutStep.outChar}` : `${outputChar} ↔ ${config.plugboard?.[outputChar] || outputChar}`}
                     </div>
@@ -662,15 +634,16 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
       <div className="relative overflow-x-auto pb-2 pt-1">
         <div className="flex items-center min-w-[850px] relative px-4">
           {/* Wire Background */}
-          <div className={`absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1 ${t.panelBg} z-0 rounded`}>
             <div
-              className="h-full bg-gradient-to-r from-slate-400 via-blue-500 to-blue-300 transition-all duration-300 rounded shadow-sm step-progress-fill"
-              style={{
-                '--progress-width': `${(currentStep / (totalStages - 1)) * 100}%`,
-                background: theme === 'vintage' ? 'linear-gradient(to right, #8b6f47, #ebc238, #fff5d6)' : undefined
-              } as React.CSSProperties}
-            />
-          </div>
+              className={`absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1 ${t.panelBg} z-0 rounded overflow-hidden`}
+            >
+              <div
+                className={`h-full ${t.accentSolidBg} transition-all duration-300 rounded shadow-sm`}
+                style={{
+                  width: `${(currentStep / (totalStages - 1)) * 100}%`,
+                }}
+              />
+            </div>
 
           {/* Step Nodes */}
           {Array.from({ length: totalStages }).map((_, idx) => {
@@ -690,16 +663,10 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                 <div
                   className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                     isActive
-                      ? theme === 'vintage'
-                        ? 'bg-[#ebc238] border-white text-[#25190b] shadow-[0_0_16px_#ebc238] scale-125'
-                        : 'bg-blue-600 border-white text-white shadow-[0_0_16px_rgba(37,99,235,0.4)] scale-125'
+                      ? `${t.activeBadge} scale-125 shadow-lg`
                       : isCompleted
-                      ? theme === 'vintage'
-                        ? 'bg-[#8b6f47] border-[#ebc238] text-white shadow-md'
-                        : 'bg-blue-100 border-blue-400 text-blue-700 shadow-sm'
-                      : theme === 'vintage'
-                        ? 'bg-[#120e04] border-[#3b3426] text-[#d1c4b7] group-hover:border-[#8b6f47]'
-                        : 'bg-slate-50 border-slate-200 text-slate-400 group-hover:border-slate-400'
+                      ? t.successBadge
+                      : t.inactiveBadge
                   }`}
                 >
                   <span className="material-symbols-outlined text-sm">{details.icon}</span>
@@ -708,10 +675,10 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                 <span
                   className={`mt-1.5 ${t.fontRotor} text-xs font-bold px-1.5 py-0.5 rounded transition-all ${
                     isActive
-                      ? theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] shadow' : 'bg-blue-600 text-white shadow-sm'
+                      ? t.activeBadge
                       : isCompleted
-                      ? theme === 'vintage' ? 'text-[#e3c193]' : 'text-blue-500'
-                      : theme === 'vintage' ? 'text-[#d1c4b7]' : 'text-slate-400'
+                      ? t.textAccent
+                      : t.textSecondary
                   }`}
                 >
                   {details.outChar}
@@ -729,7 +696,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
       {/* Active Stage Parameters Callout Spotlight */}
       <div className={`${t.panelInner} border-2 ${t.borderAccent} rounded-lg p-4 shadow-[0_0_15px_rgba(235,194,56,0.15)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4`}>
         <div className="flex items-start gap-3">
-          <div className={`w-12 h-12 rounded-full ${theme === 'vintage' ? 'bg-[#ebc238]/20 border-[#ebc238] shadow-[0_0_10px_rgba(235,194,56,0.3)]' : 'bg-blue-50 border-blue-200 shadow-sm'} flex items-center justify-center shrink-0 ${t.textAccent}`}>
+          <div className={`w-12 h-12 rounded-full ${t.accentLightBg} border-${t.borderAccent} flex items-center justify-center shrink-0 ${t.textAccent} shadow-sm`}>
             <span className="material-symbols-outlined text-2xl">{activeStage.icon}</span>
           </div>
           <div>

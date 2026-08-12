@@ -65,7 +65,7 @@ export const LogView: React.FC<LogViewProps> = ({ logs, onClearLogs }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Left Column: Recent Keystrokes List */}
-          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} max-h-[520px] overflow-y-auto space-y-2`}>
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${t.appTexture} max-h-[520px] overflow-y-auto space-y-2`}>
             <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase mb-3 pb-1 border-b ${t.borderBase}`}>
               Logged Character Events ({logs.length})
             </h3>
@@ -77,12 +77,8 @@ export const LogView: React.FC<LogViewProps> = ({ logs, onClearLogs }) => {
                   onClick={() => setSelectedLogId(entry.id)}
                   className={`w-full text-left p-3 rounded border transition-all cursor-pointer flex items-center justify-between ${
                     isSelected
-                      ? theme === 'vintage'
-                        ? 'bg-[#3b3426] border-[#ebc238] text-[#ede1cd] shadow-md'
-                        : 'bg-blue-50 border-blue-500 text-blue-900 shadow-sm'
-                      : theme === 'vintage'
-                        ? 'bg-[#120e04] border-[#3b3426] text-[#d1c4b7] hover:bg-[#2f291c]'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      ? `${t.bgAccentFaint} ${t.borderAccent} ${t.textAccentStrong} shadow-sm font-bold`
+                      : `${t.inputBgAlt} ${t.borderBase} ${t.textSecondary} hover:opacity-90`
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -102,7 +98,7 @@ export const LogView: React.FC<LogViewProps> = ({ logs, onClearLogs }) => {
           </div>
 
           {/* Right Column: Step-by-step Signal Path Circuit Diagram for selected character */}
-          <div className={`md:col-span-2 ${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-4`}>
+          <div className={`md:col-span-2 ${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${t.appTexture} space-y-4`}>
             {selectedLog && (
               <>
                 <div className={`flex justify-between items-center pb-2 border-b ${t.borderBase}`}>
@@ -140,7 +136,7 @@ export const LogView: React.FC<LogViewProps> = ({ logs, onClearLogs }) => {
                         </div>
                       </div>
 
-                      <div className={`${t.fontRotor} text-sm font-bold ${t.textAccent} ${theme === 'vintage' ? 'bg-[#251f12]' : 'bg-slate-100'} px-3 py-1 rounded border ${t.borderBase}`}>
+                      <div className={`${t.fontRotor} text-sm font-bold ${t.textAccent} ${t.panelBg} px-3 py-1 rounded border ${t.borderBase}`}>
                         {step.inChar} → {step.outChar}
                       </div>
                     </div>

@@ -55,7 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <img
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7GMVXh7JLwrcaJvJTMyXLWWowPJqQX9w-yJChY-oPx9x1aRjP881JIB1z1cXVJb0A1Uvaa_s2hTz8t0fjBALhR0I2jIgyh2PpOwglmuEO5CsnL4YMAbdkf4Wg6KhwBJhteZBUs_uja_8Js_KiIFN34gHjSsQTGWfnVPydhqxPbrHnC9pMLeRTOFhwUUyPBl4kLlT2PQcGIpXiqDCOBkSDq_NGe_UcglPvqhWWqintsiTuAA4o3faK"
                 alt="Enigma M3 Insignia"
-                className={`w-full h-full object-cover opacity-80 ${theme === 'vintage' ? 'mix-blend-screen' : ''}`}
+                className={`w-full h-full object-cover opacity-80 ${t.mixBlendMode}`}
               />
             </div>
             <div>
@@ -108,7 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className={`p-4 border-t ${t.borderBase}`}>
           <button
             onClick={onResetMachine}
-            className={`w-full py-3 min-h-[44px] ${theme === 'vintage' ? 'bg-[#93000a] text-[#ffdad6] border-red-800/30' : 'bg-red-600 text-white border-red-500'} rounded hover:${theme === 'vintage' ? 'bg-red-900' : 'bg-red-700'} transition-colors font-ui-header text-ui-header shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] active:scale-[0.98]`}
+            className={`w-full py-3 min-h-[44px] ${t.buttonDanger} rounded transition-colors font-ui-header text-ui-header shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] active:scale-[0.98]`}
           >
             Reset Machine
           </button>

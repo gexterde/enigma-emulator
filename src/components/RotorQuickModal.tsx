@@ -235,7 +235,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
-      <div className={`${t.modalBg} border ${t.borderAccent}/40 rounded-xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl ${theme === 'vintage' ? 'texture-metal' : ''} ${t.textMuted} relative my-auto`}>
+      <div className={`${t.modalBg} border ${t.borderAccent}/40 rounded-xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl ${t.appTexture} ${t.textMuted} relative my-auto`}>
         {/* Header */}
         <div className={`flex items-center justify-between pb-3 mb-4 border-b ${t.borderBase}`}>
           <div className="flex items-center gap-2">
@@ -249,7 +249,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className={`w-8 h-8 flex items-center justify-center ${t.textMuted} hover:${t.textAccent} ${theme === 'vintage' ? 'bg-[#221c11]' : 'bg-slate-100'} rounded-full border ${t.borderBase} transition-colors cursor-pointer`}
+            className={`w-8 h-8 flex items-center justify-center ${t.textMuted} hover:${t.textAccent} ${t.mutedBg} rounded-full border ${t.borderBase} transition-colors cursor-pointer`}
             title="Close"
           >
             <span className="material-symbols-outlined text-sm">close</span>
@@ -306,7 +306,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                         onUpdateConfig({ ...config, reflector: { ...config.reflector, ring: next } });
                         playRotorClickSound(soundEnabled);
                       }}
-                      className={`w-5 h-5 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200'} rounded cursor-pointer`}
+                      className={`w-5 h-5 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}
                     >
                       -
                     </button>
@@ -320,7 +320,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                         onUpdateConfig({ ...config, reflector: { ...config.reflector, ring: next } });
                         playRotorClickSound(soundEnabled);
                       }}
-                      className={`w-5 h-5 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200'} rounded cursor-pointer`}
+                      className={`w-5 h-5 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}
                     >
                       +
                     </button>
@@ -347,7 +347,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                         onUpdateConfig({ ...config, reflector: { ...config.reflector, start: next, current: next } });
                         playRotorClickSound(soundEnabled);
                       }}
-                      className={`w-5 h-5 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200'} rounded cursor-pointer`}
+                      className={`w-5 h-5 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}
                     >
                       -
                     </button>
@@ -361,7 +361,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                         onUpdateConfig({ ...config, reflector: { ...config.reflector, start: next, current: next } });
                         playRotorClickSound(soundEnabled);
                       }}
-                      className={`w-5 h-5 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200'} rounded cursor-pointer`}
+                      className={`w-5 h-5 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}
                     >
                       +
                     </button>
@@ -392,7 +392,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   });
                 }}
                 className={`flex-1 py-1 px-2 text-xs rounded border cursor-pointer font-bold transition-all ${
-                  config.fourthRotor.type === 'Beta' ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#201b0f] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600') : (theme === 'vintage' ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426] hover:text-[#ebc238]' : 'bg-white text-slate-500 border-slate-300 hover:text-blue-500 shadow-sm')
+                  config.fourthRotor.type === 'Beta' ? t.activeBadge : t.inactiveBadge
                 }`}
               >
                 M4 (Beta)
@@ -413,7 +413,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   });
                 }}
                 className={`flex-1 py-1 px-2 text-xs rounded border cursor-pointer font-bold transition-all ${
-                  config.fourthRotor.type === 'Gamma' ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#201b0f] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600') : (theme === 'vintage' ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426] hover:text-[#ebc238]' : 'bg-white text-slate-500 border-slate-300 hover:text-blue-500 shadow-sm')
+                  config.fourthRotor.type === 'Gamma' ? t.activeBadge : t.inactiveBadge
                 }`}
               >
                 M4 (Gamma)
@@ -454,9 +454,9 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                     </button>
                   </div>
                   <div className={`flex items-center justify-between ${t.panelBg} rounded border ${t.borderBase} p-1`}>
-                    <button onClick={() => handleAdjustRing('fourthRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>-</button>
+                    <button onClick={() => handleAdjustRing('fourthRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>-</button>
                     <span className={`text-xs font-bold ${t.textAccent} ${t.fontMono}`}>{formatRotorRing(config.fourthRotor.ring, ringFormat)}</span>
-                    <button onClick={() => handleAdjustRing('fourthRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>+</button>
+                    <button onClick={() => handleAdjustRing('fourthRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>+</button>
                   </div>
                 </div>
                 <div>
@@ -472,9 +472,9 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                     </button>
                   </div>
                   <div className={`flex items-center justify-between ${t.panelBg} rounded border ${t.borderBase} p-1`}>
-                    <button onClick={() => handleAdjustStart('fourthRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>-</button>
+                    <button onClick={() => handleAdjustStart('fourthRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>-</button>
                     <span className={`text-xs font-bold ${t.textAccent} ${t.fontMono}`}>{formatRotorPos(config.fourthRotor.start, ringFormat)}</span>
-                    <button onClick={() => handleAdjustStart('fourthRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>+</button>
+                    <button onClick={() => handleAdjustStart('fourthRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>+</button>
                   </div>
                 </div>
               </div>
@@ -530,9 +530,9 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   </button>
                 </div>
                 <div className={`flex items-center justify-between ${t.panelBg} rounded border ${t.borderBase} p-1`}>
-                  <button onClick={() => handleAdjustRing('leftRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>-</button>
+                  <button onClick={() => handleAdjustRing('leftRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>-</button>
                   <span className={`text-xs font-bold ${t.textAccent} ${t.fontMono}`}>{formatRotorRing(config.leftRotor.ring, ringFormat)}</span>
-                  <button onClick={() => handleAdjustRing('leftRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>+</button>
+                  <button onClick={() => handleAdjustRing('leftRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>+</button>
                 </div>
               </div>
               <div>
@@ -548,9 +548,9 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   </button>
                 </div>
                 <div className={`flex items-center justify-between ${t.panelBg} rounded border ${t.borderBase} p-1`}>
-                  <button onClick={() => handleAdjustStart('leftRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>-</button>
+                  <button onClick={() => handleAdjustStart('leftRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>-</button>
                   <span className={`text-xs font-bold ${t.textAccent} ${t.fontMono}`}>{formatRotorPos(config.leftRotor.start, ringFormat)}</span>
-                  <button onClick={() => handleAdjustStart('leftRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>+</button>
+                  <button onClick={() => handleAdjustStart('leftRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>+</button>
                 </div>
               </div>
             </div>
@@ -604,9 +604,9 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   </button>
                 </div>
                 <div className={`flex items-center justify-between ${t.panelBg} rounded border ${t.borderBase} p-1`}>
-                  <button onClick={() => handleAdjustRing('middleRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>-</button>
+                  <button onClick={() => handleAdjustRing('middleRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>-</button>
                   <span className={`text-xs font-bold ${t.textAccent} ${t.fontMono}`}>{formatRotorRing(config.middleRotor.ring, ringFormat)}</span>
-                  <button onClick={() => handleAdjustRing('middleRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>+</button>
+                  <button onClick={() => handleAdjustRing('middleRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>+</button>
                 </div>
               </div>
               <div>
@@ -622,9 +622,9 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   </button>
                 </div>
                 <div className={`flex items-center justify-between ${t.panelBg} rounded border ${t.borderBase} p-1`}>
-                  <button onClick={() => handleAdjustStart('middleRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>-</button>
+                  <button onClick={() => handleAdjustStart('middleRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>-</button>
                   <span className={`text-xs font-bold ${t.textAccent} ${t.fontMono}`}>{formatRotorPos(config.middleRotor.start, ringFormat)}</span>
-                  <button onClick={() => handleAdjustStart('middleRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>+</button>
+                  <button onClick={() => handleAdjustStart('middleRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>+</button>
                 </div>
               </div>
             </div>
@@ -678,9 +678,9 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   </button>
                 </div>
                 <div className={`flex items-center justify-between ${t.panelBg} rounded border ${t.borderBase} p-1`}>
-                  <button onClick={() => handleAdjustRing('rightRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>-</button>
+                  <button onClick={() => handleAdjustRing('rightRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>-</button>
                   <span className={`text-xs font-bold ${t.textAccent} ${t.fontMono}`}>{formatRotorRing(config.rightRotor.ring, ringFormat)}</span>
-                  <button onClick={() => handleAdjustRing('rightRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>+</button>
+                  <button onClick={() => handleAdjustRing('rightRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>+</button>
                 </div>
               </div>
               <div>
@@ -696,9 +696,9 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
                   </button>
                 </div>
                 <div className={`flex items-center justify-between ${t.panelBg} rounded border ${t.borderBase} p-1`}>
-                  <button onClick={() => handleAdjustStart('rightRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>-</button>
+                  <button onClick={() => handleAdjustStart('rightRotor', -1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>-</button>
                   <span className={`text-xs font-bold ${t.textAccent} ${t.fontMono}`}>{formatRotorPos(config.rightRotor.start, ringFormat)}</span>
-                  <button onClick={() => handleAdjustStart('rightRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} rounded cursor-pointer`}>+</button>
+                  <button onClick={() => handleAdjustStart('rightRotor', 1)} className={`w-6 h-6 text-xs ${t.textAccent} ${t.mutedBg} hover:${t.accentSolidBg} hover:text-black rounded cursor-pointer transition-colors`}>+</button>
                 </div>
               </div>
             </div>
@@ -718,7 +718,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
             <button
               type="button"
               onClick={handleRandomizeAll}
-              className={`px-3 py-1.5 text-xs ${t.textAccent} ${theme === 'vintage' ? 'hover:bg-[#ebc238]/20' : 'hover:bg-blue-50'} ${t.panelBg} rounded border ${t.borderAccent}/40 cursor-pointer transition-colors flex items-center gap-1 font-bold`}
+              className={`px-3 py-1.5 text-xs ${t.textAccent} hover:opacity-80 ${t.panelBg} rounded border ${t.borderAccent}/40 cursor-pointer transition-colors flex items-center gap-1 font-bold`}
             >
               <span className="material-symbols-outlined text-xs">shuffle</span>
               <span>Randomize All</span>
@@ -727,7 +727,7 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className={`px-5 py-1.5 text-xs ${theme === 'vintage' ? 'text-[#201b0f] bg-[#ebc238] hover:bg-[#ffd700]' : 'text-white bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'} rounded font-bold cursor-pointer transition-all shadow-md`}
+            className={`px-5 py-1.5 text-xs ${t.buttonHighlight} rounded font-bold cursor-pointer transition-all shadow-md`}
           >
             Done & Close
           </button>

@@ -642,20 +642,20 @@ export const MorseTrainer: React.FC = () => {
       {/* Level Up Banner Overlay */}
       {showLevelUpBanner && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/75 z-50 p-4 animate-fadeIn">
-          <div className={`${theme === 'vintage' ? 'bg-[#1b170e]' : t.panelBg} border-2 ${t.borderAccent} rounded-xl p-8 max-w-md w-full text-center space-y-4 shadow-2xl relative overflow-hidden`}>
-            <div className={`absolute top-0 left-0 w-full h-1 ${theme === 'vintage' ? 'bg-gradient-to-r from-amber-500 via-[#ebc238] to-amber-500' : 'bg-blue-600'}`} />
+          <div className={`${t.panelBg} border-2 ${t.borderAccent} rounded-xl p-8 max-w-md w-full text-center space-y-4 shadow-2xl relative overflow-hidden`}>
+            <div className={`absolute top-0 left-0 w-full h-1 ${t.bgAccentSolid}`} />
             <span className={`material-symbols-outlined text-5xl ${t.textAccent} animate-bounce`}>military_tech</span>
             <h2 className={`${t.fontHeader} font-bold text-2xl ${t.textPrimary} tracking-wider`}>LEVEL COMPLETED!</h2>
             <div className={`h-0.5 ${t.panelBg} my-2`} />
             <p className={`text-sm ${t.textMuted} leading-relaxed`}>
               Congratulations operator! You cracked the code and reached <strong className={`${t.textAccent}`}>Level {level}</strong>. 
             </p>
-            <p className={`text-xs ${theme === 'vintage' ? 'text-[#a89985]' : t.textSecondary} italic`}>
+            <p className={`text-xs ${t.textMuted} italic`}>
               "The speed and volume of intercepted teleprinter signals demands our utmost rigor."
             </p>
             <button
               onClick={() => setShowLevelUpBanner(false)}
-              className={`mt-4 px-6 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded border border-amber-500 text-xs font-bold ${t.fontHeader} cursor-pointer uppercase tracking-wider transition-colors`}
+              className={`mt-4 px-6 py-2 ${t.bgAccentSolid} hover:${t.bgAccentHover} text-white rounded border ${t.borderAccent} text-xs font-bold ${t.fontHeader} cursor-pointer uppercase tracking-wider transition-colors`}
             >
               Resume Interception Desk
             </button>
@@ -670,7 +670,7 @@ export const MorseTrainer: React.FC = () => {
             <span className={`material-symbols-outlined text-2xl ${t.textAccent}`}>school</span>
             Bletchley Morse Training Desk
           </h1>
-          <p className={`text-ui-body ${t.fontBody} ${theme === 'vintage' ? 'text-[#a89985]' : t.textSecondary} text-xs`}>
+          <p className={`text-ui-body ${t.fontBody} ${t.textMuted} text-xs`}>
             Build auditory telegraph muscle-memory. Perfect the dits and dahs required for wartime intelligence.
           </p>
         </div>
@@ -678,19 +678,19 @@ export const MorseTrainer: React.FC = () => {
         {/* Level Banner badge */}
         <div className={`flex items-center gap-2 ${t.panelBg} px-3 py-1.5 rounded-lg border ${t.borderBase} shrink-0`}>
           <span className={`text-[10px] uppercase ${t.fontMono} ${t.textMuted} tracking-wider`}>Level Progress</span>
-          <span className="text-amber-500 text-sm font-bold font-mono">{level} / {sequenceString.length}</span>
+          <span className={`${t.textAccentStrong} text-sm font-bold font-mono`}>{level} / {sequenceString.length}</span>
         </div>
       </div>
 
       {/* Operator Rank Badge Card */}
-      <div className={`${theme === 'vintage' ? 'bg-[#1b170e]/95' : t.panelBg} border-2 ${t.borderAccent}/40 rounded-lg p-4 shadow-panel flex items-center gap-4`}>
+      <div className={`${t.panelBg} border-2 ${t.borderAccent}/40 rounded-lg p-4 shadow-panel flex items-center gap-4`}>
         <div className={`w-12 h-12 rounded-full ${t.panelBg} flex items-center justify-center ${t.textAccent} border ${t.borderAccent}`}>
           <span className="material-symbols-outlined text-3xl">{operatorRank.icon}</span>
         </div>
         <div className="space-y-0.5">
           <span className={`text-[9px] uppercase tracking-wider ${t.fontMono} ${t.textAccent}`}>Active Operator Assignment</span>
           <h3 className={`${t.fontHeader} font-bold text-sm ${t.textPrimary}`}>{operatorRank.title}</h3>
-          <p className={`text-[11px] ${theme === 'vintage' ? 'text-[#a89985]' : t.textSecondary} leading-relaxed max-w-2xl`}>{operatorRank.desc} <strong className={`${t.textPrimary}`}>Best Speed: {maxWpmScored} WPM.</strong></p>
+          <p className={`text-[11px] ${t.textMuted} leading-relaxed max-w-2xl`}>{operatorRank.desc} <strong className={`${t.textPrimary}`}>Best Speed: {maxWpmScored} WPM.</strong></p>
         </div>
       </div>
 
@@ -700,7 +700,7 @@ export const MorseTrainer: React.FC = () => {
         <div className="lg:col-span-5 space-y-6">
           
           {/* Method and Speed Instrument dials */}
-          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-4`}>
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${t.appTexture} space-y-4`}>
             <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider pb-1.5 border-b ${t.borderBase} flex items-center gap-1.5`}>
               <span className="material-symbols-outlined text-xs">tune</span>
               Telegrapher Speeds & System Settings
@@ -714,8 +714,8 @@ export const MorseTrainer: React.FC = () => {
                   onClick={() => setMethod('koch')}
                   className={`py-1.5 ${t.fontHeader} font-bold text-xs rounded border transition-colors cursor-pointer ${
                     method === 'koch' 
-                      ? (theme === 'vintage' ? 'bg-[#ebc238]/10 text-[#ebc238] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600')
-                      : (theme === 'vintage' ? 'bg-[#120e04] text-[#8c7e6a] border-[#3b3426] hover:text-[#d1c4b7]' : 'bg-slate-50 text-slate-500 border-slate-300 hover:text-blue-500')
+                      ? `${t.bgAccentFaint} ${t.textAccentStrong} ${t.borderAccent}`
+                      : `${t.panelInner} ${t.textMuted} ${t.borderBase} hover:${t.textPrimary}`
                   }`}
                   title="The Koch method introduces characters one by one at full target speed."
                 >
@@ -725,8 +725,8 @@ export const MorseTrainer: React.FC = () => {
                   onClick={() => setMethod('lcwo')}
                   className={`py-1.5 ${t.fontHeader} font-bold text-xs rounded border transition-colors cursor-pointer ${
                     method === 'lcwo' 
-                      ? (theme === 'vintage' ? 'bg-[#ebc238]/10 text-[#ebc238] border-[#ebc238]' : 'bg-blue-600 text-white border-blue-600')
-                      : (theme === 'vintage' ? 'bg-[#120e04] text-[#8c7e6a] border-[#3b3426] hover:text-[#d1c4b7]' : 'bg-slate-50 text-slate-500 border-slate-300 hover:text-blue-500')
+                      ? `${t.bgAccentFaint} ${t.textAccentStrong} ${t.borderAccent}`
+                      : `${t.panelInner} ${t.textMuted} ${t.borderBase} hover:${t.textPrimary}`
                   }`}
                   title="LCWO (Learn Code Quick Online) standard character ordering sequence."
                 >
@@ -750,7 +750,7 @@ export const MorseTrainer: React.FC = () => {
                         Best: {bestAccuracy.toFixed(0)}%
                       </span>
                     )}
-                    <span className={`${theme === 'vintage' ? 'text-amber-500' : 'text-blue-600'} font-bold ${t.panelBg} px-1.5 py-0.5 rounded border ${t.borderBase}`}>{level}</span>
+                    <span className={`${t.textAccentStrong} font-bold ${t.panelBg} px-1.5 py-0.5 rounded border ${t.borderBase}`}>{level}</span>
                   </div>
                 </div>
                 <input 
@@ -759,9 +759,9 @@ export const MorseTrainer: React.FC = () => {
                   max={sequenceString.length} 
                   value={level} 
                   onChange={(e) => setLevel(parseInt(e.target.value))}
-                  className={`w-full ${theme === 'vintage' ? 'accent-[#ebc238]' : 'accent-blue-600'} h-1 ${t.panelInner} rounded-lg cursor-pointer`}
+                  className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
                 />
-                <div className={`text-[11px] font-mono ${theme === 'vintage' ? 'text-[#a89985]' : t.textSecondary} break-all p-2 ${t.panelInner} rounded border ${t.borderBase} leading-relaxed`}>
+                <div className={`text-[11px] font-mono ${t.textMuted} break-all p-2 ${t.panelInner} rounded border ${t.borderBase} leading-relaxed`}>
                   Characters in current pool: <strong className={`${t.textPrimary}`}>{currentChars}</strong>
                 </div>
               </div>
@@ -779,7 +779,7 @@ export const MorseTrainer: React.FC = () => {
                     onChange={(e) => setAutoAdvance(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className={`w-9 h-5 ${t.panelBg} peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#8c7e6a] after:${t.borderBase} after:border after:rounded-full after:h-4 after:w-4 after:transition-all ${theme === 'vintage' ? 'peer-checked:bg-amber-600' : 'peer-checked:bg-blue-600'} peer-checked:after:bg-[#ede1cd]`} />
+                  <div className={`w-9 h-5 ${t.panelBg} peer-focus:outline-none rounded-full peer peer-checked:translate-x-full peer-checked:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:${t.panelInner} after:${t.borderBase} after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:${t.bgAccentSolid}`} />
                 </label>
               </div>
 
@@ -800,7 +800,7 @@ export const MorseTrainer: React.FC = () => {
                       setCharWpm(val);
                       if (wpm > val) setWpm(val);
                     }}
-                    className={`w-full ${theme === 'vintage' ? 'accent-[#ebc238]' : 'accent-blue-600'} h-1 ${t.panelInner} rounded-lg cursor-pointer`}
+                    className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
                   />
                 </div>
                 <div className="space-y-1">
@@ -818,7 +818,7 @@ export const MorseTrainer: React.FC = () => {
                       setWpm(val);
                       if (val > charWpm) setCharWpm(val);
                     }}
-                    className={`w-full ${theme === 'vintage' ? 'accent-[#ebc238]' : 'accent-blue-600'} h-1 ${t.panelInner} rounded-lg cursor-pointer`}
+                    className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
                   />
                 </div>
               </div>
@@ -837,7 +837,7 @@ export const MorseTrainer: React.FC = () => {
                     step="20"
                     value={frequency} 
                     onChange={(e) => setFrequency(parseInt(e.target.value))}
-                    className={`w-full ${theme === 'vintage' ? 'accent-[#ebc238]' : 'accent-blue-600'} h-1 ${t.panelInner} rounded-lg cursor-pointer`}
+                    className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
                   />
                 </div>
                 <div className="space-y-1">
@@ -852,7 +852,7 @@ export const MorseTrainer: React.FC = () => {
                     step="0.05"
                     value={noiseLevel} 
                     onChange={(e) => setNoiseLevel(parseFloat(e.target.value))}
-                    className={`w-full ${theme === 'vintage' ? 'accent-[#ebc238]' : 'accent-blue-600'} h-1 ${t.panelInner} rounded-lg cursor-pointer`}
+                    className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
                   />
                 </div>
               </div>
@@ -901,8 +901,8 @@ export const MorseTrainer: React.FC = () => {
               }}
               className={`flex-1 pb-3 text-xs font-bold ${t.fontHeader} uppercase tracking-wider border-b-2 text-center transition-colors cursor-pointer ${
                 practiceMode === 'batch'
-                  ? (theme === 'vintage' ? 'border-[#ebc238] text-[#ede1cd]' : 'border-blue-600 text-blue-700')
-                  : (theme === 'vintage' ? 'border-transparent text-[#8c7e6a] hover:text-[#d1c4b7]' : 'border-transparent text-slate-400 hover:text-slate-600')
+                  ? `${t.borderAccent} ${t.textAccentStrong}`
+                  : `border-transparent ${t.textMuted} hover:${t.textPrimary}`
               }`}
             >
               Classic Batch Copy
@@ -918,8 +918,8 @@ export const MorseTrainer: React.FC = () => {
               }}
               className={`flex-1 pb-3 text-xs font-bold ${t.fontHeader} uppercase tracking-wider border-b-2 text-center transition-colors cursor-pointer ${
                 practiceMode === 'copy'
-                  ? (theme === 'vintage' ? 'border-[#ebc238] text-[#ede1cd]' : 'border-blue-600 text-blue-700')
-                  : (theme === 'vintage' ? 'border-transparent text-[#8c7e6a] hover:text-[#d1c4b7]' : 'border-transparent text-slate-400 hover:text-slate-600')
+                  ? `${t.borderAccent} ${t.textAccentStrong}`
+                  : `border-transparent ${t.textMuted} hover:${t.textPrimary}`
               }`}
             >
               Real-Time Copy Typing
@@ -928,12 +928,12 @@ export const MorseTrainer: React.FC = () => {
 
           {/* CLASSIC BATCH INTERACTION AREA */}
           {practiceMode === 'batch' && (
-            <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel space-y-5 ${theme === 'vintage' ? 'texture-metal' : ''}`}>
+            <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel space-y-5 ${t.appTexture}`}>
               <div className={`pb-1 border-b ${t.borderBase} flex justify-between items-center`}>
                 <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider`}>
                   Operational Broadcast Transcribing
                 </h3>
-                <span className={`text-[10px] ${t.fontMono} ${theme === 'vintage' ? 'text-amber-500 bg-amber-950/40 border-amber-800/40' : 'text-blue-600 bg-blue-50 border-blue-200'} px-2 py-0.5 rounded border font-bold`}>
+                <span className={`text-[10px] ${t.fontMono} ${t.bgAccentFaint} ${t.textAccentStrong} ${t.borderAccent} px-2 py-0.5 rounded border font-bold`}>
                   Wartime Standard
                 </span>
               </div>
@@ -943,8 +943,8 @@ export const MorseTrainer: React.FC = () => {
                 {/* Visualizer flasher */}
                 <div className={`h-10 ${t.panelInner} rounded border ${t.borderBase} flex items-center justify-center relative overflow-hidden`}>
                   {isPlaying ? (
-                    <div className={`flex items-center gap-2 ${theme === 'vintage' ? 'text-amber-500' : 'text-blue-600'} animate-pulse text-xs font-mono`}>
-                      <span className={`w-3.5 h-3.5 rounded-full ${theme === 'vintage' ? 'bg-amber-500' : 'bg-blue-600'} animate-ping absolute left-4`} />
+                    <div className={`flex items-center gap-2 ${t.textAccentStrong} animate-pulse text-xs font-mono`}>
+                      <span className={`w-3.5 h-3.5 rounded-full ${t.bgAccentSolid} animate-ping absolute left-4`} />
                       <span className="material-symbols-outlined text-lg">hearing</span>
                       <span>INCOMING TRANSMISSION PLAYING AT {wpm} WPM...</span>
                     </div>
@@ -980,7 +980,7 @@ export const MorseTrainer: React.FC = () => {
                     className={`py-3 rounded ${t.fontHeader} font-bold text-xs uppercase tracking-wider transition-colors border active:scale-[0.98] cursor-pointer ${
                       isPlaying 
                         ? 'bg-red-950/40 text-red-400 border-red-800 hover:bg-red-900/40' 
-                        : (theme === 'vintage' ? 'bg-[#2a2215] text-[#ebc238] border-[#8b6f47] hover:bg-[#3b3426]' : 'bg-white text-blue-600 border-slate-300 hover:bg-slate-50')
+                        : `${t.panelInner} ${t.textAccentStrong} ${t.borderAccent} hover:opacity-90`
                     }`}
                   >
                     {isPlaying ? 'Abrupt Stop' : 'Begin Transmission'}
@@ -989,7 +989,7 @@ export const MorseTrainer: React.FC = () => {
                   <button 
                     onClick={checkBatchAnswer}
                     disabled={isPlaying || !targetSequence || userInput.length === 0}
-                    className={`py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-45 text-white rounded border border-amber-500 ${t.fontHeader} font-bold text-xs uppercase tracking-wider transition-colors active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed`}
+                    className={`py-3 ${t.bgAccentSolid} hover:${t.bgAccentHover} disabled:opacity-45 text-white rounded border ${t.borderAccent} ${t.fontHeader} font-bold text-xs uppercase tracking-wider transition-colors active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed`}
                   >
                     Submit Log For Audit
                   </button>
@@ -1001,12 +1001,12 @@ export const MorseTrainer: React.FC = () => {
 
           {/* REAL-TIME COPY TYPING AREA */}
           {practiceMode === 'copy' && (
-            <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel space-y-5 ${theme === 'vintage' ? 'texture-metal' : ''}`}>
+            <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel space-y-5 ${t.appTexture}`}>
               <div className={`pb-1 border-b ${t.borderBase} flex justify-between items-center`}>
                 <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider`}>
                   Interactive Tape Ribbon Decoding
                 </h3>
-                <span className={`text-[10px] ${t.fontMono} ${theme === 'vintage' ? 'text-amber-500 bg-amber-950/40 border-amber-800/40' : 'text-blue-600 bg-blue-50 border-blue-200'} px-2 py-0.5 rounded border font-bold`}>
+                <span className={`text-[10px] ${t.fontMono} ${t.bgAccentFaint} ${t.textAccentStrong} ${t.borderAccent} px-2 py-0.5 rounded border font-bold`}>
                   Tactical Real-time
                 </span>
               </div>
@@ -1034,8 +1034,8 @@ export const MorseTrainer: React.FC = () => {
                       onClick={() => setShowHints(!showHints)}
                       className={`px-3 py-1 text-[10px] ${t.fontHeader} rounded border transition-colors cursor-pointer ${
                         showHints 
-                          ? (theme === 'vintage' ? 'bg-amber-600/10 border-amber-500 text-amber-400 font-bold' : 'bg-blue-600/10 border-blue-600 text-blue-600 font-bold')
-                          : (theme === 'vintage' ? 'bg-black/40 border-[#3b3426] text-[#8c7e6a]' : 'bg-slate-100 border-slate-200 text-slate-500')
+                          ? `${t.bgAccentFaint} border-amber-500 ${t.textAccentStrong} font-bold`
+                          : t.tabInactive
                       }`}
                     >
                       {showHints ? 'Show Visual Letter Hints: ON' : 'Show Visual Letter Hints: OFF'}
@@ -1044,7 +1044,7 @@ export const MorseTrainer: React.FC = () => {
 
                   <button
                     onClick={startCopyTypingSession}
-                    className={`px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white ${t.fontHeader} font-bold rounded border border-amber-500 text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer shadow-lg shadow-amber-950/20`}
+                    className={`px-6 py-3 ${t.bgAccentSolid} hover:${t.bgAccentHover} text-white ${t.fontHeader} font-bold rounded border ${t.borderAccent} text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer shadow-lg`}
                   >
                     Start Real-Time Session
                   </button>
@@ -1077,12 +1077,12 @@ export const MorseTrainer: React.FC = () => {
                             key={idx}
                             className={`w-10 h-12 flex flex-col items-center justify-center rounded border font-bold transition-all relative shrink-0 ${
                               isCurrent
-                                ? (theme === 'vintage' ? 'bg-amber-600/10 text-amber-400 border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.35)]' : 'bg-blue-600/10 text-blue-600 border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.35)]')
+                                ? `${t.bgAccentFaint} ${t.textAccentStrong} border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.35)]`
                                 : isPassed
                                 ? wasCorrect
                                   ? 'bg-green-950/35 text-green-400 border-green-800'
                                   : 'bg-red-950/35 text-red-400 border-red-800'
-                                : (theme === 'vintage' ? 'bg-[#120e04] text-[#8c7e6a]/30 border-[#3b3426]/50' : 'bg-slate-50 text-slate-300 border-slate-200')
+                                : `${t.panelInner} ${t.textMuted}/30 ${t.borderBase}/50`
                             }`}
                           >
                             <span className="text-base">
@@ -1106,8 +1106,8 @@ export const MorseTrainer: React.FC = () => {
 
                   {/* Real-time Instructions and escape */}
                   <div className={`flex justify-between items-center text-xs ${t.fontMono} p-1`}>
-                    <span className={`${theme === 'vintage' ? 'text-amber-500' : 'text-blue-600'} animate-pulse flex items-center gap-1`}>
-                      <span className={`w-2 h-2 rounded-full ${theme === 'vintage' ? 'bg-amber-500' : 'bg-blue-600'} animate-ping`} />
+                    <span className={`${t.textAccentStrong} animate-pulse flex items-center gap-1`}>
+                      <span className={`w-2 h-2 rounded-full ${t.bgAccentSolid} animate-ping`} />
                       SESSION ACTIVE: TYPE ON YOUR KEYBOARD NOW...
                     </span>
                     <button
@@ -1127,7 +1127,7 @@ export const MorseTrainer: React.FC = () => {
                   <h4 className={`${t.fontHeader} font-bold text-sm ${t.textPrimary} uppercase tracking-wider`}>
                     Session Log Captured Successfully
                   </h4>
-                  <p className={`text-xs ${theme === 'vintage' ? 'text-[#a89985]' : t.textMuted} max-w-sm mx-auto leading-normal`}>
+                  <p className={`text-xs ${t.textMuted} max-w-sm mx-auto leading-normal`}>
                     Review your results, adjust lessons, or immediately spin up another telemetry ribbon.
                   </p>
                   <button
@@ -1170,7 +1170,7 @@ export const MorseTrainer: React.FC = () => {
                   <p className={`text-xs text-red-400 font-bold ${t.fontBody}`}>
                     Accuracy dropped below the 90% required. Revise character codes and retry.
                   </p>
-                  <div className={`text-[10px] font-mono p-2 ${theme === 'vintage' ? 'bg-[#0d0a03]' : 'bg-slate-50'} border ${t.borderBase} rounded ${t.textPrimary} break-all leading-relaxed uppercase`}>
+                  <div className={`text-[10px] font-mono p-2 ${t.panelBg} border ${t.borderBase} rounded ${t.textPrimary} break-all leading-relaxed uppercase`}>
                     Target: {targetSequence}
                   </div>
                 </div>
@@ -1200,7 +1200,7 @@ export const MorseTrainer: React.FC = () => {
             <button
               onClick={() => setChartMetric('accuracy')}
               className={`flex-1 sm:flex-none px-3 py-1 text-[10px] ${t.fontHeader} font-bold uppercase rounded cursor-pointer ${
-                chartMetric === 'accuracy' ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#120e04]' : 'bg-blue-600 text-white') : (theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ede1cd]' : 'text-slate-500 hover:text-slate-700')
+                chartMetric === 'accuracy' ? `${t.bgAccentSolid} text-white` : `${t.textSecondary} hover:${t.textPrimary}`
               }`}
             >
               Accuracy
@@ -1208,7 +1208,7 @@ export const MorseTrainer: React.FC = () => {
             <button
               onClick={() => setChartMetric('wpm')}
               className={`flex-1 sm:flex-none px-3 py-1 text-[10px] ${t.fontHeader} font-bold uppercase rounded cursor-pointer ${
-                chartMetric === 'wpm' ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#120e04]' : 'bg-blue-600 text-white') : (theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ede1cd]' : 'text-slate-500 hover:text-slate-700')
+                chartMetric === 'wpm' ? `${t.bgAccentSolid} text-white` : `${t.textSecondary} hover:${t.textPrimary}`
               }`}
             >
               Speed
@@ -1216,7 +1216,7 @@ export const MorseTrainer: React.FC = () => {
             <button
               onClick={() => setChartMetric('level')}
               className={`flex-1 sm:flex-none px-3 py-1 text-[10px] ${t.fontHeader} font-bold uppercase rounded cursor-pointer ${
-                chartMetric === 'level' ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#120e04]' : 'bg-blue-600 text-white') : (theme === 'vintage' ? 'text-[#8c7e6a] hover:text-[#ede1cd]' : 'text-slate-500 hover:text-slate-700')
+                chartMetric === 'level' ? `${t.bgAccentSolid} text-white` : `${t.textSecondary} hover:${t.textPrimary}`
               }`}
             >
               Level
@@ -1228,9 +1228,9 @@ export const MorseTrainer: React.FC = () => {
         <div className="relative">
           {chartData.length === 0 ? (
             <div className={`${t.panelBg} rounded-lg border ${t.borderBase}/60 p-10 text-center space-y-2`}>
-              <span className={`material-symbols-outlined text-4xl ${theme === 'vintage' ? 'text-[#3b3426]' : 'text-slate-200'}`}>analytics</span>
+              <span className={`material-symbols-outlined text-4xl ${t.textMuted}/30`}>analytics</span>
               <h4 className={`text-xs ${t.fontHeader} font-bold ${t.textPrimary} uppercase tracking-wider`}>No Telegraph History Captured</h4>
-              <p className={`text-[11px] ${theme === 'vintage' ? 'text-[#a89985]' : t.textMuted} max-w-sm mx-auto`}>
+              <p className={`text-[11px] ${t.textMuted} max-w-sm mx-auto`}>
                 Once you complete your first practice session in Classic Batch or Real-Time, your auditory progress charts will appear here.
               </p>
             </div>
@@ -1238,15 +1238,15 @@ export const MorseTrainer: React.FC = () => {
             <div className="space-y-4">
               
               {/* SVG Plot container */}
-              <div className={`relative ${theme === 'vintage' ? 'bg-[#0d0a03]' : 'bg-slate-50'} rounded-lg p-2 border ${t.borderBase}/70 shadow-inner`}>
+              <div className={`relative ${t.panelBg} rounded-lg p-2 border ${t.borderBase}/70 shadow-inner`}>
                 <svg
                   viewBox={`0 0 ${svgChart.width} ${svgChart.height}`}
                   className="w-full h-56 select-none overflow-visible"
                 >
                   <defs>
                     <linearGradient id="chart-area-glow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={theme === 'vintage' ? "#ebc238" : "#3b82f6"} stopOpacity="0.25" />
-                      <stop offset="100%" stopColor={theme === 'vintage' ? "#ebc238" : "#3b82f6"} stopOpacity="0" />
+                      <stop offset="0%" stopColor="#ebc238" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="#ebc238" stopOpacity="0" />
                     </linearGradient>
                   </defs>
 
@@ -1262,14 +1262,14 @@ export const MorseTrainer: React.FC = () => {
                           y1={yPos}
                           x2={svgChart.width - svgChart.paddingRight}
                           y2={yPos}
-                          stroke={theme === 'vintage' ? "#3b3426" : "#334155"}
+                          stroke="#3b3426"
                           strokeWidth="1.5"
                           strokeDasharray="4 4"
                         />
                         <text
                           x={svgChart.paddingLeft - 8}
                           y={yPos + 3}
-                          fill={theme === 'vintage' ? "#8c7e6a" : "#64748b"}
+                          fill="#8c7e6a"
                           fontSize="9"
                           fontFamily="monospace"
                           textAnchor="end"
@@ -1290,7 +1290,7 @@ export const MorseTrainer: React.FC = () => {
                     <path
                       d={svgChart.pathD}
                       fill="none"
-                      stroke={theme === 'vintage' ? "#ebc238" : "#3b82f6"}
+                      stroke="#ebc238"
                       strokeWidth="2.5"
                       strokeLinecap="round"
                     />
@@ -1305,8 +1305,8 @@ export const MorseTrainer: React.FC = () => {
                           cx={p.x}
                           cy={p.y}
                           r={isHovered ? "6" : "3.5"}
-                          fill={isHovered ? (theme === 'vintage' ? "#ebc238" : "#3b82f6") : (theme === 'vintage' ? "#120e04" : "#1e293b")}
-                          stroke={theme === 'vintage' ? "#ebc238" : "#3b82f6"}
+                          fill={isHovered ? "#ebc238" : "#120e04"}
+                          stroke="#ebc238"
                           strokeWidth="2"
                           className="transition-all duration-150"
                         />
@@ -1329,7 +1329,7 @@ export const MorseTrainer: React.FC = () => {
                       key={idx}
                       x={p.x}
                       y={svgChart.height - svgChart.paddingBottom + 16}
-                      fill={theme === 'vintage' ? "#8c7e6a" : "#64748b"}
+                      fill="#8c7e6a"
                       fontSize="9"
                       fontFamily="monospace"
                       textAnchor="middle"
@@ -1342,7 +1342,7 @@ export const MorseTrainer: React.FC = () => {
                 {/* Floating coordinate tooltip */}
                 {hoveredDataPoint && (
                   <div
-                    className={`absolute ${theme === 'vintage' ? 'bg-[#1a140a]' : 'bg-white'} border ${t.borderAccent} p-2.5 rounded shadow-xl text-[10px] font-mono pointer-events-none z-30 space-y-1 ${t.textPrimary}`}
+                    className={`absolute ${t.modalBg} border ${t.borderAccent} p-2.5 rounded shadow-xl text-[10px] font-mono pointer-events-none z-30 space-y-1 ${t.textPrimary}`}
                     style={{
                       left: `${(hoveredDataPoint.x / svgChart.width) * 100}%`,
                       top: `${(hoveredDataPoint.y / svgChart.height) * 100 - 30}%`,
@@ -1387,7 +1387,7 @@ export const MorseTrainer: React.FC = () => {
       <div className={`border-t ${t.borderBase} pt-6`}>
         <button
           onClick={() => setShowChart(!showChart)}
-          className={`flex items-center gap-2 ${theme === 'vintage' ? 'text-[#a89985]' : 'text-slate-400'} ${t.fontHeader} font-bold text-xs uppercase mb-2 hover:${t.textAccent} transition-colors cursor-pointer`}
+          className={`flex items-center gap-2 ${t.textMuted} ${t.fontHeader} font-bold text-xs uppercase mb-2 hover:${t.textAccent} transition-colors cursor-pointer`}
         >
           <span className="material-symbols-outlined text-lg">
             {showChart ? 'expand_less' : 'expand_more'}

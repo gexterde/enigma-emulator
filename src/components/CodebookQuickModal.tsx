@@ -133,7 +133,7 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
-      <div className={`${t.modalBg} border ${t.borderAccent}/40 rounded-xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl ${theme === 'vintage' ? 'texture-metal' : ''} ${t.textMuted} relative my-auto`}>
+      <div className={`${t.modalBg} border ${t.borderAccent}/40 rounded-xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl ${t.modalTexture} ${t.textMuted} relative my-auto`}>
         {/* Header */}
         <div className={`flex items-center justify-between pb-3 mb-4 border-b ${t.borderBase}`}>
           <div className="flex items-center gap-2">
@@ -142,12 +142,12 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
               <h2 className={`${t.fontRotor} ${t.textAccent} text-base sm:text-lg font-bold leading-tight`}>
                 Codebook & Key Sheet Quick Loader
               </h2>
-              <p className={`text-[11px] ${theme === 'vintage' ? 'text-[#9e8d78]' : 'text-slate-500'}`}>Load daily historical Enigma key settings directly into your machine</p>
+              <p className={`text-[11px] ${t.textMutedAlt}`}>Load daily historical Enigma key settings directly into your machine</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className={`w-8 h-8 flex items-center justify-center ${t.textMuted} hover:${t.textAccent} ${theme === 'vintage' ? 'bg-[#221c11]' : 'bg-slate-100'} rounded-full border ${t.borderBase} transition-colors cursor-pointer`}
+            className={`w-8 h-8 flex items-center justify-center ${t.textMuted} hover:${t.textAccent} ${t.inputBgAlt} rounded-full border ${t.borderBase} transition-colors cursor-pointer`}
             title="Close"
           >
             <span className="material-symbols-outlined text-sm">close</span>
@@ -204,8 +204,8 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
                   }}
                   className={`w-full text-left px-2.5 py-1 text-xs rounded ${t.fontMono} flex items-center justify-between cursor-pointer transition-colors ${
                     selectedDay === e.day
-                      ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#1a150c] font-bold' : 'bg-blue-600 text-white font-bold')
-                      : (theme === 'vintage' ? 'bg-[#1b160e] text-[#d1c4b7] hover:bg-[#2a2215]' : 'bg-white text-slate-600 hover:bg-blue-50 border border-slate-100')
+                      ? t.tabActive
+                      : t.tabInactive
                   }`}
                 >
                   <span>Day {e.day < 10 ? `0${e.day}` : e.day}</span>
@@ -222,34 +222,34 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
                 <span className={`text-xs ${t.fontMono} ${t.textAccent} font-bold`}>
                   Day {currentEntry.day} Key Specs
                 </span>
-                <span className={`text-[10px] ${theme === 'vintage' ? 'text-[#9e8d78]' : 'text-slate-400'} font-mono`}>
+                <span className={`text-[10px] ${t.textMutedAlt} font-mono`}>
                   {currentSheet.classification}
                 </span>
               </div>
 
               <div className="space-y-2 text-xs">
-                <div className={`flex items-center justify-between ${theme === 'vintage' ? 'bg-[#1c170d] border-[#2d2518]' : 'bg-slate-50 border-slate-200'} p-1.5 rounded border`}>
+                <div className={`flex items-center justify-between ${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
                   <span className={`text-[11px] ${t.textMuted} ${t.fontMono}`}>Walzenlage (Rotors):</span>
-                  <span className={`font-bold ${theme === 'vintage' ? t.textAccent : 'text-blue-700'} ${t.fontMono}`}>
+                  <span className={`font-bold ${t.textAccent} ${t.fontMono}`}>
                     {currentEntry.fourthRotor ? `${currentEntry.fourthRotor} - ` : ''}
                     {currentEntry.rotors.join(' - ')}
                   </span>
                 </div>
 
-                <div className={`flex items-center justify-between ${theme === 'vintage' ? 'bg-[#1c170d] border-[#2d2518]' : 'bg-slate-50 border-slate-200'} p-1.5 rounded border`}>
+                <div className={`flex items-center justify-between ${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
                   <span className={`text-[11px] ${t.textMuted} ${t.fontMono}`}>Ringstellung (Rings):</span>
-                  <span className={`font-bold ${theme === 'vintage' ? t.textAccent : 'text-blue-700'} ${t.fontMono}`}>
+                  <span className={`font-bold ${t.textAccent} ${t.fontMono}`}>
                     {currentEntry.rings.map(r => formatRotorRing(r, ringFormat)).join(' - ')}
                   </span>
                 </div>
 
-                <div className={`${theme === 'vintage' ? 'bg-[#1c170d] border-[#2d2518]' : 'bg-slate-50 border-slate-200'} p-1.5 rounded border`}>
+                <div className={`${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
                   <span className={`text-[11px] ${t.textMuted} ${t.fontMono} block mb-1`}>
                     Steckerverbindungen ({currentEntry.plugboardPairs.length} Pairs):
                   </span>
                   <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto custom-scrollbar">
                     {currentEntry.plugboardPairs.map((pair, idx) => (
-                      <span key={idx} className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border ${theme === 'vintage' ? 'bg-[#2a2215] ' + t.textAccent + ' border-[#ebc238]/30' : 'bg-white text-blue-700 border-blue-200 shadow-xs'}`}>
+                      <span key={idx} className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border ${t.codebookHeaderButton}/30`}>
                         {pair}
                       </span>
                     ))}
@@ -257,13 +257,13 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
                 </div>
 
                 {currentEntry.kenngruppen && currentEntry.kenngruppen.length > 0 && (
-                  <div className={`${theme === 'vintage' ? 'bg-[#1c170d] border-[#2d2518]' : 'bg-slate-50 border-slate-200'} p-1.5 rounded border`}>
+                  <div className={`${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
                     <span className={`text-[11px] ${t.textMuted} ${t.fontMono} block mb-1`}>
                       Kenngruppen (Indicator Groups):
                     </span>
                     <div className="flex flex-wrap gap-1.5">
                       {currentEntry.kenngruppen.map((kg, idx) => (
-                        <span key={idx} className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${theme === 'vintage' ? 'bg-[#1b222c] text-[#61afef] border-[#61afef]/40' : 'bg-blue-50 text-blue-700 border-blue-200 shadow-xs'}`}>
+                        <span key={idx} className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${t.kenngruppenTag}`}>
                           {kg}
                         </span>
                       ))}
@@ -274,14 +274,14 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
             </div>
 
             {appliedMsg ? (
-              <div className={`border px-3 py-1.5 rounded text-center font-bold mt-2 animate-fade-in ${theme === 'vintage' ? 'bg-[#2e7d32]/30 border-[#4caf50] text-[#a5d6a7] text-xs' : 'bg-green-50 border-green-200 text-green-700 text-xs'}`}>
+              <div className={`border px-3 py-1.5 rounded text-center font-bold mt-2 animate-fade-in ${t.bgSuccessFaint} ${t.textSuccess} text-xs`}>
                 ✓ {appliedMsg}
               </div>
             ) : (
               <button
                 type="button"
                 onClick={() => handleApply(currentEntry)}
-                className={`w-full mt-3 py-2 ${theme === 'vintage' ? 'bg-[#ebc238] hover:bg-[#ffd700] text-[#1a150c]' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'} font-bold text-xs rounded transition-all shadow-md cursor-pointer ${t.fontMono} uppercase tracking-wider flex items-center justify-center gap-1.5`}
+                className={`w-full mt-3 py-2 ${t.buttonHighlight} font-bold text-xs rounded transition-all shadow-md cursor-pointer ${t.fontMono} uppercase tracking-wider flex items-center justify-center gap-1.5`}
               >
                 <span className="material-symbols-outlined text-sm">bolt</span>
                 <span>Apply Day {currentEntry.day} Key Settings</span>
@@ -298,7 +298,7 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className={`px-5 py-1.5 text-xs font-bold cursor-pointer transition-all shadow-md rounded ${theme === 'vintage' ? 'bg-[#ebc238] hover:bg-[#ffd700] text-[#201b0f]' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+            className={`px-5 py-1.5 text-xs font-bold cursor-pointer transition-all shadow-md rounded ${t.buttonHighlight}`}
           >
             Done & Close
           </button>

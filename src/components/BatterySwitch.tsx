@@ -46,43 +46,43 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
       <defs>
         {/* Wrinkled dark metallic panel texture gradient */}
         <radialGradient id="panelGrad" cx="50%" cy="50%" r="70%">
-          <stop offset="0%" stopColor={theme === 'vintage' ? '#211b12' : '#f8fafc'} />
-          <stop offset="100%" stopColor={theme === 'vintage' ? '#0d0a06' : '#e2e8f0'} />
+          <stop offset="0%" stopColor={t.batteryPanelStop0} />
+          <stop offset="100%" stopColor={t.batteryPanelStop100} />
         </radialGradient>
 
         {/* Brass finish gradient */}
         <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={theme === 'vintage' ? '#f7ea9b' : '#3b82f6'} />
-          <stop offset="40%" stopColor={theme === 'vintage' ? '#d8b240' : '#2563eb'} />
-          <stop offset="80%" stopColor={theme === 'vintage' ? '#8f6f1c' : '#1d4ed8'} />
-          <stop offset="100%" stopColor={theme === 'vintage' ? '#57420e' : '#1e40af'} />
+          <stop offset="0%" stopColor={t.batteryBrassStop0} />
+          <stop offset="40%" stopColor={t.batteryBrassStop40} />
+          <stop offset="80%" stopColor={t.batteryBrassStop80} />
+          <stop offset="100%" stopColor={t.batteryBrassStop100} />
         </linearGradient>
 
         {/* Bakelite knob gradient */}
         <radialGradient id="bakeliteBody" cx="35%" cy="30%" r="70%">
-          <stop offset="0%" stopColor={theme === 'vintage' ? '#4a2d1d' : '#475569'} />
-          <stop offset="40%" stopColor={theme === 'vintage' ? '#28170e' : '#334155'} />
-          <stop offset="85%" stopColor={theme === 'vintage' ? '#140b06' : '#1e293b'} />
-          <stop offset="100%" stopColor={theme === 'vintage' ? '#090402' : '#0f172a'} />
+          <stop offset="0%" stopColor={t.batteryBakeliteStop0} />
+          <stop offset="40%" stopColor={t.batteryBakeliteStop40} />
+          <stop offset="85%" stopColor={t.batteryBakeliteStop85} />
+          <stop offset="100%" stopColor={t.batteryBakeliteStop100} />
         </radialGradient>
 
         {/* Arc plate filter shadow */}
         <filter id="plateShadow" x="-10%" y="-10%" width="120%" height="120%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity={theme === 'vintage' ? '0.8' : '0.15'} />
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity={t.batteryPlateShadowOpacity} />
         </filter>
       </defs>
 
       {/* Background Textured Plate */}
-      <rect x="0" y="0" width="200" height="135" rx="6" fill="url(#panelGrad)" stroke={theme === 'vintage' ? '#3b3426' : '#cbd5e1'} strokeWidth="1" />
+      <rect x="0" y="0" width="200" height="135" rx="6" fill="url(#panelGrad)" stroke={t.batteryRectStroke} strokeWidth="1" />
 
       {/* Center Axle Screwhole */}
-      <circle cx="100" cy="92" r="6" fill={theme === 'vintage' ? '#080503' : '#cbd5e1'} stroke={theme === 'vintage' ? '#2d2215' : '#94a3b8'} strokeWidth="1.2" />
+      <circle cx="100" cy="92" r="6" fill={t.batteryAxleFill} stroke={t.batteryAxleStroke} strokeWidth="1.2" />
 
       {/* Pure White Porcelain / Enamel Arc Scale Plate */}
       <path
         d="M 32,92 A 68,68 0 0,1 168,92"
         fill="none"
-        stroke={theme === 'vintage' ? '#120e09' : '#e2e8f0'}
+        stroke={t.batteryArcStroke}
         strokeWidth="28"
         strokeLinecap="round"
         filter="url(#plateShadow)"
@@ -168,14 +168,14 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
         }}
       >
         {/* Knob Base Outer Circle */}
-        <circle cx="0" cy="0" r="32" fill={theme === 'vintage' ? "#0a0604" : "#1e293b"} stroke={theme === 'vintage' ? "#281a10" : "#475569"} strokeWidth="1.2" />
-        <circle cx="0" cy="0" r="29" fill="url(#bakeliteBody)" stroke={theme === 'vintage' ? "#110a06" : "#334155"} strokeWidth="0.8" />
+        <circle cx="0" cy="0" r="32" fill={t.batteryKnobBaseFill} stroke={t.batteryKnobBaseStroke} strokeWidth="1.2" />
+        <circle cx="0" cy="0" r="29" fill="url(#bakeliteBody)" stroke={t.batteryKnobBaseFill === '#0a0604' ? '#110a06' : '#334155'} strokeWidth="0.8" />
 
         {/* Raised Teardrop Bakelite Handle Bar */}
         <path
           d="M -10,-38 C -10,-44 10,-44 10,-38 L 12,38 C 12,44 -12,44 -12,38 Z"
           fill="url(#bakeliteBody)"
-          stroke={theme === 'vintage' ? "#050302" : "#0f172a"}
+          stroke={t.batteryKnobHandleStroke}
           strokeWidth="1"
           filter="url(#plateShadow)"
         />
@@ -183,21 +183,21 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
         {/* Inner Handle Grip Ridge */}
         <path
           d="M -7,-34 L 7,-34 L 8,34 L -8,34 Z"
-          fill={theme === 'vintage' ? "#211209" : "#334155"}
-          stroke={theme === 'vintage' ? "#382012" : "#475569"}
+          fill={t.batteryKnobRidgeFill}
+          stroke={t.batteryKnobRidgeStroke}
           strokeWidth="0.6"
         />
 
         {/* Center Brass Hub Screw */}
-        <circle cx="0" cy="0" r="5" fill="url(#brassGrad)" stroke={theme === 'vintage' ? "#2d1f07" : "#475569"} strokeWidth="0.8" />
-        <circle cx="0" cy="0" r="1.8" fill={theme === 'vintage' ? "#120c04" : "#0f172a"} />
+        <circle cx="0" cy="0" r="5" fill="url(#brassGrad)" stroke={t.batteryHubStroke} strokeWidth="0.8" />
+        <circle cx="0" cy="0" r="1.8" fill={t.batteryHubCenterFill} />
 
         {/* DOUBLE-ENDED BRASS ARROW INDICATOR */}
         <g transform="translate(0, 0)">
           {/* Top Arrow Pointer (Points directly to white arc scale label) */}
-          <path d="M 0,-28 L -5,-19 L -2,-19 L -2,-5 L 2,-5 L 2,-19 L 5,-19 Z" fill="url(#brassGrad)" stroke={theme === 'vintage' ? "#3d2c08" : "#1e40af"} strokeWidth="0.5" />
+          <path d="M 0,-28 L -5,-19 L -2,-19 L -2,-5 L 2,-5 L 2,-19 L 5,-19 Z" fill="url(#brassGrad)" stroke={t.batteryArrowStroke} strokeWidth="0.5" />
           {/* Bottom Arrow Pointer */}
-          <path d="M 0,28 L -5,19 L -2,19 L -2,5 L 2,5 L 2,19 L 5,19 Z" fill="url(#brassGrad)" stroke={theme === 'vintage' ? "#3d2c08" : "#1e40af"} strokeWidth="0.5" />
+          <path d="M 0,28 L -5,19 L -2,19 L -2,5 L 2,5 L 2,19 L 5,19 Z" fill="url(#brassGrad)" stroke={t.batteryArrowStroke} strokeWidth="0.5" />
         </g>
       </g>
     </svg>
@@ -206,7 +206,7 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
   // If rendering as a standalone Panel (Card layout)
   if (isPanel) {
     return (
-      <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} transition-all animate-fade-in flex flex-col h-full select-none w-full`}>
+      <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${t.textureMetal} transition-all animate-fade-in flex flex-col h-full select-none w-full`}>
         {/* Panel Header */}
         <div className={`flex justify-between items-center mb-4 pb-2 border-b ${t.borderBase}`}>
           <h2 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-widest flex items-center gap-2`}>

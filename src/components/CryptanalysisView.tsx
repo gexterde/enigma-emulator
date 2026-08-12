@@ -1223,7 +1223,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     return (
       <div className="flex flex-col items-center gap-1 sm:gap-2">
         <div className={`relative w-20 h-20 sm:w-28 sm:h-28 lg:w-36 lg:h-36 rounded-full border-[3px] sm:border-4 ${isRecentStop ? 'border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]' : `${t.borderAccent}`} ${t.panelInner} shadow-xl flex items-center justify-center transition-colors duration-300`}>
-          <div className={`absolute inset-0 bg-radial-gradient from-transparent ${theme === 'vintage' ? 'to-[#120e04]/90' : 'to-slate-900/10'} pointer-events-none rounded-full`} />
+          <div className={`absolute inset-0 bg-radial-gradient from-transparent ${t.codebookSheetBg.includes('slate') ? 'to-slate-900/10' : 'to-[#120e04]/90'} pointer-events-none rounded-full`} />
           
           {/* Outer Ring Letters */}
           {Array.from({ length: 26 }).map((_, i) => {
@@ -1239,8 +1239,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 style={{ transform: `rotate(${angle}deg)` }}
               >
                 <div className="absolute top-[2%] sm:top-1 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                  {isNotch && <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 lg:w-2 lg:h-2 ${theme === 'vintage' ? 'bg-amber-500' : 'bg-blue-500'} mb-[1px]`} style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }} />}
-                  <span className={`text-[5px] sm:text-[7px] lg:text-[9px] ${t.fontMono} font-bold leading-none ${isRingSetting ? (theme === 'vintage' ? 'text-[#ebc238] drop-shadow-[0_0_3px_rgba(235,194,56,1)]' : 'text-blue-600 drop-shadow-[0_0_3px_rgba(37,99,235,0.4)]') : `${t.textMuted}/40`}`} style={{ transform: `rotate(${-angle}deg)` }}>
+                  {isNotch && <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 lg:w-2 lg:h-2 ${t.bgAccentSolid} mb-[1px]`} style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }} />}
+                  <span className={`text-[5px] sm:text-[7px] lg:text-[9px] ${t.fontMono} font-bold leading-none ${isRingSetting ? `${t.textAccent} drop-shadow-[0_0_3px_rgba(235,194,56,0.6)]` : `${t.textMuted}/40`}`} style={{ transform: `rotate(${-angle}deg)` }}>
                     {letter}
                   </span>
                 </div>
@@ -1316,13 +1316,13 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
         <div className="flex gap-2 shrink-0">
           <button
             onClick={() => loadTemplate('navy_weather')}
-            className={`text-xs ${t.fontHeader} ${t.panelInner} hover:${theme === 'vintage' ? 'bg-[#4e453b]' : 'bg-slate-100'} ${t.textSecondary} border ${t.borderAccent} px-3 py-1.5 rounded transition-colors cursor-pointer`}
+            className={`text-xs ${t.fontHeader} ${t.panelInner} hover:opacity-85 ${t.textSecondary} border ${t.borderAccent} px-3 py-1.5 rounded transition-colors cursor-pointer`}
           >
             Kriegsmarine Wetter (Navy)
           </button>
           <button
             onClick={() => loadTemplate('army_intercept')}
-            className={`text-xs ${t.fontHeader} ${t.panelInner} hover:${theme === 'vintage' ? 'bg-[#4e453b]' : 'bg-slate-100'} ${t.textSecondary} border ${t.borderAccent} px-3 py-1.5 rounded transition-colors cursor-pointer`}
+            className={`text-xs ${t.fontHeader} ${t.panelInner} hover:opacity-85 ${t.textSecondary} border ${t.borderAccent} px-3 py-1.5 rounded transition-colors cursor-pointer`}
           >
             Wehrmacht Intercept (Army)
           </button>
@@ -1336,22 +1336,22 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
         <div className="lg:col-span-4 space-y-6">
           
           {/* Station X Briefing Card */}
-          <div className={`${theme === 'vintage' ? 'bg-[#1b170e]/95 border-2 border-[#8b6f47]/50 shadow-panel' : 'bg-blue-50 border-2 border-blue-200 shadow-sm'} rounded-lg p-4 relative overflow-hidden`}>
-            <div className={`absolute top-0 right-0 w-16 h-16 ${theme === 'vintage' ? 'bg-[#8b6f47]/5' : 'bg-blue-600/5'} transform rotate-45 translate-x-8 -translate-y-8 pointer-events-none`} />
-            <h3 className={`text-ui-header ${t.fontHeader} ${theme === 'vintage' ? 'text-[#ebc238]' : 'text-blue-700'} text-xs uppercase tracking-wider pb-1.5 border-b ${t.borderBase}/60 flex items-center gap-2`}>
+          <div className={`${t.panelInner} border-2 ${t.borderAccent}/50 shadow-panel rounded-lg p-4 relative overflow-hidden`}>
+            <div className={`absolute top-0 right-0 w-16 h-16 ${t.accentLightBg} transform rotate-45 translate-x-8 -translate-y-8 pointer-events-none`} />
+            <h3 className={`text-ui-header ${t.fontHeader} ${t.textAccent} text-xs uppercase tracking-wider pb-1.5 border-b ${t.borderBase}/60 flex items-center gap-2`}>
               <span className="material-symbols-outlined text-xs">gavel</span>
               Bletchley Park Protocol
             </h3>
-            <p className={`text-[11px] ${theme === 'vintage' ? t.textMuted : 'text-slate-600'} leading-relaxed pt-2`}>
+            <p className={`text-[11px] ${t.textMuted} leading-relaxed pt-2`}>
               The Turing-Welchman <strong>Bombe</strong> cracked keys not by trying millions of full decrypts, but by exploiting a critical design flaw: <strong>Enigma can never encrypt a letter to itself</strong>.
             </p>
-            <p className={`text-[11px] ${theme === 'vintage' ? t.textMuted : 'text-slate-600'} leading-relaxed pt-2`}>
+            <p className={`text-[11px] ${t.textMuted} leading-relaxed pt-2`}>
               By sliding a guessed phrase (Crib) against ciphertext, codebreakers immediately discarded alignments that had overlapping characters. Viable alignments were then scanned to find starting settings that yielded a perfect circuit path.
             </p>
           </div>
 
           {/* Active Scrambler Settings Card */}
-          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-3.5`}>
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${t.appTexture} space-y-3.5`}>
             <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider pb-1.5 border-b ${t.borderBase} flex items-center gap-1.5`}>
               <span className="material-symbols-outlined text-xs">settings_input_component</span>
               Scrambler Key Target
@@ -1399,7 +1399,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                     className={`w-full ${t.panelBg} ${t.textPrimary} font-bold text-xs border ${t.borderBase} rounded py-1 px-1 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer`}
                   >
                     {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].map((type) => (
-                      <option key={type} value={type} className={`${theme === 'vintage' ? 'bg-[#1b170e]' : 'bg-white text-slate-800'}`}>
+                      <option key={type} value={type} className={`${t.panelBg} ${t.textPrimary}`}>
                         {type}
                       </option>
                     ))}
@@ -1537,7 +1537,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 </select>
 
                 {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
-                  <div className={`p-1.5 ${t.panelInner} rounded border ${theme === 'vintage' ? 'border-amber-800/40 text-amber-400' : 'border-blue-200 text-blue-600 bg-blue-50'} text-[9px] ${t.fontMono} flex items-center gap-1`}>
+                  <div className={`p-1.5 ${t.panelInner} rounded border ${t.accentLightBg} border-${t.borderAccent} ${t.textAccent} text-[9px] ${t.fontMono} flex items-center gap-1`}>
                     <span className="material-symbols-outlined text-xs">info</span>
                     <span>M4 Active: The 4th Greek rotor ({config.fourthRotor.type}) position is held fixed per daily codebook rules while scanning the 3 driving wheels.</span>
                   </div>
@@ -1623,14 +1623,14 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <button
                       onClick={() => setShowMenuGraphModal(true)}
-                      className={`py-1 px-2 ${t.panelInner} hover:${theme === 'vintage' ? 'bg-[#252015]' : 'bg-slate-100'} border ${t.borderBase} hover:${t.borderAccent} rounded text-[10px] ${t.textAccent} ${t.fontMono} flex items-center justify-center gap-1 transition-colors cursor-pointer`}
+                      className={`py-1 px-2 ${t.panelInner} hover:opacity-80 border ${t.borderBase} hover:${t.borderAccent} rounded text-[10px] ${t.textAccent} ${t.fontMono} flex items-center justify-center gap-1 transition-colors cursor-pointer`}
                     >
                       <span className="material-symbols-outlined text-xs">hub</span>
                       Inspect Menu Graph
                     </button>
                     <button
                       onClick={() => setShowDiagonalBoardModal(true)}
-                      className={`py-1 px-2 ${t.panelInner} hover:${theme === 'vintage' ? 'bg-[#252015]' : 'bg-slate-100'} border ${t.borderBase} hover:${t.borderAccent} rounded text-[10px] ${t.textAccent} ${t.fontMono} flex items-center justify-center gap-1 transition-colors cursor-pointer`}
+                      className={`py-1 px-2 ${t.panelInner} hover:opacity-85 border ${t.borderBase} hover:${t.borderAccent} rounded text-[10px] ${t.textAccent} ${t.fontMono} flex items-center justify-center gap-1 transition-colors cursor-pointer`}
                     >
                       <span className="material-symbols-outlined text-xs">grid_on</span>
                       26×26 Diagonal Matrix
@@ -1695,7 +1695,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                             key={`${a}-${b}`}
                             className={`px-1.5 py-0.5 rounded text-[10px] border ${
                               plugboardMode === 'active'
-                                ? theme === 'vintage' ? 'bg-amber-950/40 text-amber-300 border-amber-800/50' : 'bg-blue-50 text-blue-600 border-blue-200'
+                                ? `${t.accentLightBg} ${t.textAccent} border-${t.borderAccent}`
                                 : `${t.panelInner} ${t.textSecondary} line-through opacity-60`
                             }`}
                           >
@@ -1724,13 +1724,13 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
         <div className="lg:col-span-8 space-y-6">
           
           {/* Station X Alignment Slide Ruler */}
-          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-4`}>
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${t.appTexture} space-y-4`}>
             <div className={`pb-1 border-b ${t.borderBase} flex justify-between items-center`}>
               <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider flex items-center gap-2`}>
                 <span className="material-symbols-outlined text-sm">view_week</span>
                 Interactive Crib Alignment Ruler
               </h3>
-              <span className={`text-[10px] ${t.fontMono} ${t.textAccent} ${theme === 'vintage' ? 'bg-amber-950/40 border-amber-800/40' : 'bg-blue-50 border-blue-200'} px-2 py-0.5 rounded border font-bold`}>
+              <span className={`text-[10px] ${t.fontMono} ${t.textAccent} ${t.accentLightBg} border-${t.borderAccent} px-2 py-0.5 rounded border font-bold`}>
                 Slide & Match Station
               </span>
             </div>
@@ -1776,7 +1776,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   max={maxOffset}
                   value={alignmentOffset}
                   onChange={(e) => setAlignmentOffset(Number(e.target.value))}
-                  className={`w-full h-1.5 ${t.panelInner} rounded-lg appearance-none cursor-pointer ${theme === 'vintage' ? 'accent-[#ebc238]' : 'accent-blue-600'} border ${t.borderBase}`}
+                  className={`w-full h-1.5 ${t.panelInner} rounded-lg appearance-none cursor-pointer ${t.sliderAccent} border ${t.borderBase}`}
                 />
                 
                 {/* Viable Zero-Overlap Offsets Badges */}
@@ -1789,7 +1789,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                         onClick={() => setAlignmentOffset(offset)}
                         className={`px-2 py-0.5 rounded border cursor-pointer transition-all ${
                           alignmentOffset === offset
-                            ? theme === 'vintage' ? 'bg-green-950/80 border-green-500 text-green-300 font-bold shadow-[0_0_8px_rgba(34,197,94,0.3)]' : 'bg-green-50 border-green-500 text-green-700 font-bold'
+                            ? `${t.successLightBg} border-green-500 ${t.successText} font-bold shadow-md`
                             : `${t.buttonPrimary}`
                         }`}
                       >
@@ -1817,7 +1817,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                             key={idx}
                             className={`w-7 h-8 flex items-center justify-center rounded border font-bold transition-all duration-300 shrink-0 ${
                               isAligned
-                                ? `${theme === 'vintage' ? 'bg-[#ebc238]/10 text-[#ebc238] border-[#ebc238]/50 shadow-[0_0_8px_rgba(235,194,56,0.2)]' : 'bg-blue-50 text-blue-600 border-blue-200 shadow-[0_0_8px_rgba(59,130,246,0.2)]'}`
+                                ? `${t.accentLightBg} ${t.textAccent} border-${t.borderAccent} shadow-sm`
                                 : `${t.textSecondary}/40 ${t.borderBase}/30`
                             }`}
                           >
@@ -1846,7 +1846,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                             key={idx}
                             className={`w-7 h-8 flex flex-col items-center justify-center rounded border font-bold transition-all duration-300 shrink-0 ${
                               isConflict
-                                ? theme === 'vintage' ? 'bg-red-950/45 text-red-400 border-red-800 shadow-[0_0_12px_rgba(239,68,68,0.4)] animate-pulse' : 'bg-red-50 text-red-600 border-red-200 animate-pulse'
+                                ? `${t.dangerLightBg} ${t.dangerText} border-red-800 shadow-md animate-pulse`
                                 : `${t.panelInner} ${t.textPrimary} border-current/20`
                             }`}
                             title={isConflict ? `Conflict! Both positions are "${char}"` : ''}
@@ -1869,18 +1869,18 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
             {ciphertext && crib && (
               <div className="pt-1">
                 {alignedSection.isViable ? (
-                  <div className={`p-3 ${theme === 'vintage' ? 'bg-green-950/25 border-green-900/60 text-green-300' : 'bg-green-50 border-green-200 text-green-800'} border-2 rounded flex items-center gap-3`}>
-                    <span className={`material-symbols-outlined ${theme === 'vintage' ? 'text-green-400' : 'text-green-600'} text-xl animate-bounce`}>verified</span>
+                  <div className={`p-3 ${t.successLightBg} border-2 border-green-900/60 ${t.successText} rounded flex items-center gap-3`}>
+                    <span className={`material-symbols-outlined ${t.successText} text-xl animate-bounce`}>verified</span>
                     <div className="text-xs">
-                      <strong className={`block uppercase tracking-wider ${theme === 'vintage' ? 'text-green-400' : 'text-green-700'} text-[10px]`}>Alignment Viable (0 Overlaps)</strong>
+                      <strong className={`block uppercase tracking-wider ${t.successText} text-[10px]`}>Alignment Viable (0 Overlaps)</strong>
                       Perfect! No character in this crib maps to the same ciphertext index. This alignment is eligible for electromechanical scanning!
                     </div>
                   </div>
                 ) : (
                   <div className={`p-3 ${t.dangerBg} border-2 rounded flex items-center gap-3 animate-headShake`}>
-                    <span className={`material-symbols-outlined ${theme === 'vintage' ? 'text-red-400' : 'text-red-600'} text-xl`}>cancel</span>
+                    <span className={`material-symbols-outlined ${t.dangerText} text-xl`}>cancel</span>
                     <div className="text-xs">
-                      <strong className={`block uppercase tracking-wider ${theme === 'vintage' ? 'text-red-400' : 'text-red-700'} text-[10px]`}>Impossible Alignment ({alignedSection.matchesCount} overlap{alignedSection.matchesCount > 1 ? 's' : ''})</strong>
+                      <strong className={`block uppercase tracking-wider ${t.dangerText} text-[10px]`}>Impossible Alignment ({alignedSection.matchesCount} overlap{alignedSection.matchesCount > 1 ? 's' : ''})</strong>
                       Turing's derangement rule broken. This offset is impossible because letters cannot encrypt to themselves. Slide to another position.
                     </div>
                   </div>
@@ -1890,7 +1890,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
           </div>
 
           {/* The Turing-Welchman Bombe Rotors Search Panel */}
-          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-6`}>
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${t.appTexture} space-y-6`}>
             <div className={`pb-1 border-b ${t.borderBase} flex justify-between items-center`}>
               <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider flex items-center gap-2`}>
                 <span className="material-symbols-outlined text-sm">settings_backup_restore</span>
@@ -1915,7 +1915,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                     const speeds = ['paused', 'slow', 'normal', 'fast', 'realtime'] as const;
                     setScanSpeed(speeds[parseInt(e.target.value)]);
                   }}
-                  className={`w-full ${theme === 'vintage' ? 'accent-amber-500' : 'accent-blue-600'} cursor-pointer`}
+                  className={`w-full ${t.sliderAccent} cursor-pointer`}
                 />
                 <div className={`flex justify-between text-[8px] ${t.textMuted} mt-1 ${t.fontMono} uppercase px-1`}>
                   <span>Paused</span>
@@ -1930,7 +1930,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 <span className={`text-xs ${t.fontMono} ${t.textPrimary} mb-1`}>{progress}%</span>
                 <div className={`w-full h-2 ${t.panelInner} rounded-full overflow-hidden border ${t.borderBase}`}>
                   <div
-                    className={`h-full ${theme === 'vintage' ? 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]' : 'bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.4)]'} rounded-full transition-all duration-100`}
+                    className={`h-full ${t.progressFill} rounded-full transition-all duration-100`}
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -1965,7 +1965,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
             {/* Rotor Combination Badge & Offset */}
             <div className={`flex justify-between items-center ${t.panelInner} border ${t.borderBase} p-2 rounded`}>
               <div className="flex items-center gap-3">
-                <span className={`text-xs ${t.textAccent} font-bold ${t.fontMono} uppercase px-2 py-1 ${theme === 'vintage' ? 'bg-amber-950/40 border-amber-900/50' : 'bg-blue-50 border-blue-200'} rounded border flex items-center gap-1`}>
+                <span className={`text-xs ${t.textAccent} font-bold ${t.fontMono} uppercase px-2 py-1 ${t.accentLightBg} border-${t.borderAccent} rounded border flex items-center gap-1`}>
                   {currentRotorComb}
                   {isStopFlashing && (
                     <span className="ml-1 px-1 bg-green-500 text-black text-[9px] rounded">STOP</span>
@@ -2025,7 +2025,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
           {/* Matches & Decrypted Outputs Desk */}
           {!isSearching && matches.length > 0 && (
-            <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-4 animate-fadeIn`}>
+            <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${t.appTexture} space-y-4 animate-fadeIn`}>
               <div className={`pb-1 border-b ${t.borderBase} flex items-center gap-2`}>
                 <span className="material-symbols-outlined text-sm text-green-400">task_alt</span>
                 <h3 className={`text-ui-header ${t.fontHeader} text-green-400 text-xs uppercase tracking-wider`}>
@@ -2119,7 +2119,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   return (
                     <div
                       key={idx}
-                      className={`${t.panelInner} border ${theme === 'vintage' ? 'border-green-900/40' : 'border-green-200'} p-4 rounded-md space-y-4 shadow-inner`}
+                      className={`${t.panelInner} border ${t.successBadge} p-4 rounded-md space-y-4 shadow-inner`}
                     >
                       {/* Rotor Types & Mapping Grid */}
                       <div className={`flex flex-col md:flex-row gap-4 items-start md:items-center justify-between pb-3 border-b ${t.borderBase}/60`}>
@@ -2130,12 +2130,12 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                               {match.leftRotor} - {match.middleRotor} - {match.rightRotor}
                             </span>
                             {match.leftRing !== undefined && (
-                              <span className={`text-[9px] ${theme === 'vintage' ? 'text-amber-400 bg-amber-950/50 border-amber-800/50' : 'bg-blue-50 text-blue-600 border-blue-200'} px-1.5 py-0.5 rounded font-bold ${t.fontMono}`}>
+                              <span className={`text-[9px] ${t.accentLightBg} ${t.textAccent} border-${t.borderAccent} px-1.5 py-0.5 rounded font-bold ${t.fontMono}`}>
                                 Discovered Rings: {formatRotorRing(match.leftRing)}-{formatRotorRing(match.middleRing)}-{formatRotorRing(match.rightRing)}
                               </span>
                             )}
                             {match.offset > 0 && (
-                              <span className={`text-[9px] ${theme === 'vintage' ? 'text-green-500 bg-green-950/40 border-green-800/40' : 'bg-green-50 text-green-700 border-green-200'} px-1.5 py-0.5 rounded font-bold ${t.fontMono}`}>
+                              <span className={`text-[9px] ${t.successLightBg} ${t.successText} border-green-800/40 px-1.5 py-0.5 rounded font-bold ${t.fontMono}`}>
                                 Matched at Crib Offset: {match.offset}
                               </span>
                             )}
@@ -2150,11 +2150,11 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                         </div>
 
                         {/* Mapped Key Position */}
-                        <div className={`${t.panelBg} px-4 py-2.5 rounded border-2 ${theme === 'vintage' ? 'border-green-800/40' : 'border-green-300'} shadow-sm space-y-0.5 text-center shrink-0 min-w-[150px] w-full md:w-auto`}>
-                          <span className={`text-[9px] ${t.fontMono} ${theme === 'vintage' ? 'text-green-500' : 'text-green-700'} block uppercase font-bold tracking-wider`}>
+                        <div className={`${t.panelBg} px-4 py-2.5 rounded border-2 ${t.successLightBg} border-green-300 shadow-sm space-y-0.5 text-center shrink-0 min-w-[150px] w-full md:w-auto`}>
+                          <span className={`text-[9px] ${t.fontMono} ${t.successText} block uppercase font-bold tracking-wider`}>
                             {match.leftRing !== undefined ? 'Discovered Start Position (Offset 0)' : 'Mapped Start Position (Offset 0)'}
                           </span>
-                          <span className={`${t.fontRotor} text-lg font-bold ${theme === 'vintage' ? 'text-green-400' : 'text-blue-600'} tracking-widest block`}>
+                          <span className={`${t.fontRotor} text-lg font-bold ${t.successText} tracking-widest block`}>
                             {displayStartLeft} - {displayStartMiddle} - {displayStartRight}
                           </span>
                           <span className={`text-[8px] ${t.fontMono} ${t.textMuted} block`}>
@@ -2168,21 +2168,21 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                         <span className={`text-[9px] ${t.fontMono} ${t.textMuted} block uppercase`}>
                           Decrypted Output Message Segment:
                         </span>
-                        <div className={`${theme === 'vintage' ? 'bg-[#0b0802]' : t.panelInner} border ${t.borderBase} p-3 rounded ${t.fontMono} text-xs tracking-wider ${t.textPrimary} max-h-24 overflow-y-auto uppercase select-text`}>
+                        <div className={`${t.wellInnerBg} border ${t.borderBase} p-3 rounded ${t.fontMono} text-xs tracking-wider ${t.textPrimary} max-h-24 overflow-y-auto uppercase select-text`}>
                           {match.decrypted}
                         </div>
                       </div>
 
                       {/* Welchman Diagonal Board Deduced Steckers */}
                       {match.deducedSteckers && Object.keys(match.deducedSteckers).length > 0 && (
-                        <div className={`p-3 ${theme === 'vintage' ? 'bg-amber-950/30 border-amber-800/40' : 'bg-blue-50 border-blue-100'} rounded space-y-2 shadow-sm`}>
+                        <div className={`p-3 ${t.accentLightBg} border-${t.borderAccent} rounded space-y-2 shadow-sm`}>
                           <div className="flex items-center justify-between">
-                            <span className={`text-[10px] ${t.fontMono} font-bold ${theme === 'vintage' ? t.textAccent : 'text-blue-700'} uppercase tracking-wider flex items-center gap-1.5`}>
+                            <span className={`text-[10px] ${t.fontMono} font-bold ${t.textAccent} uppercase tracking-wider flex items-center gap-1.5`}>
                               <span className="material-symbols-outlined text-xs">grid_4x4</span>
                               Welchman Diagonal Board Deduced Steckers ({Object.keys(match.deducedSteckers).length} self-reciprocal mappings)
                             </span>
                             {match.stopHypothesis && (
-                              <span className={`text-[9px] ${t.fontMono} ${theme === 'vintage' ? 'text-amber-300 bg-amber-900/50 border-amber-700/50' : 'text-blue-800 bg-blue-200/50 border-blue-300'} px-1.5 py-0.5 rounded border`}>
+                              <span className={`text-[9px] ${t.fontMono} ${t.accentLightBg} ${t.textAccent} border-${t.borderAccent} px-1.5 py-0.5 rounded border`}>
                                 Stop Hypothesis: {match.stopHypothesis}
                               </span>
                             )}
@@ -2191,7 +2191,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                             {Object.entries(match.deducedSteckers).map(([node, stecker]) => (
                               <span
                                 key={`${node}-${stecker}`}
-                                className={`px-2 py-0.5 rounded border ${theme === 'vintage' ? 'bg-[#1b170e] text-amber-300 border-amber-800/50' : 'bg-white text-blue-700 border-blue-200 shadow-xs'} font-bold`}
+                                className={`px-2 py-0.5 rounded border ${t.indicatorBg} ${t.textAccent} border-${t.borderAccent} font-bold`}
                               >
                                 {node}↔{stecker}
                               </span>
@@ -2203,7 +2203,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                       {/* Apply Settings Button */}
                       <button
                         onClick={() => handleApplyMatchWithRings(match, matchLeftRing, matchMiddleRing, matchRightRing, displayStartLeft, displayStartMiddle, displayStartRight)}
-                        className={`w-full text-center text-xs ${theme === 'vintage' ? 'bg-green-950/80 hover:bg-green-900 text-green-300 border-green-800/80' : 'bg-green-600 hover:bg-green-700 text-white border-green-500 shadow-sm'} px-3 py-2.5 rounded transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-1.5 ${t.fontHeader}`}
+                        className={`w-full text-center text-xs ${t.buttonSuccess} px-3 py-2.5 rounded transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-1.5 ${t.fontHeader}`}
                       >
                         <span className="material-symbols-outlined text-xs">logout</span>
                         Apply Settings ({match.leftRotor}-{match.middleRotor}-{match.rightRotor} with Rings {formatRotorRing(matchLeftRing)}-{formatRotorRing(matchMiddleRing)}-{formatRotorRing(matchRightRing)} & Start {displayStartLeft}-{displayStartMiddle}-{displayStartRight}) to Machine
@@ -2217,9 +2217,9 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
           {/* No Matches Found Banner */}
           {!isSearching && hasSearched && matches.length === 0 && ciphertext && crib && alignedSection.isViable && (
-            <div className={`${t.panelBg} border ${t.borderBase} p-5 rounded-lg shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} text-center space-y-2 animate-fadeIn`}>
-              <span className={`material-symbols-outlined ${theme === 'vintage' ? 'text-red-500' : 'text-red-600'} text-3xl`}>error_outline</span>
-              <h4 className={`text-xs ${t.fontHeader} font-bold ${theme === 'vintage' ? 'text-red-400' : 'text-red-700'} uppercase tracking-wider`}>
+            <div className={`${t.panelBg} border ${t.borderBase} p-5 rounded-lg shadow-panel ${t.appTexture} text-center space-y-2 animate-fadeIn`}>
+              <span className={`material-symbols-outlined ${t.dangerText} text-3xl`}>error_outline</span>
+              <h4 className={`text-xs ${t.fontHeader} font-bold ${t.dangerText} uppercase tracking-wider`}>
                 No Matches Found
               </h4>
               <p className={`text-[11px] ${t.textMuted} max-w-md mx-auto leading-normal`}>
@@ -2233,7 +2233,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
           {/* Waiting for Search Banner */}
           {!isSearching && !hasSearched && matches.length === 0 && ciphertext && crib && alignedSection.isViable && (
-            <div className={`${t.panelBg} border ${t.borderBase} p-5 rounded-lg shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} text-center space-y-2`}>
+            <div className={`${t.panelBg} border ${t.borderBase} p-5 rounded-lg shadow-panel ${t.appTexture} text-center space-y-2`}>
               <span className={`material-symbols-outlined ${t.textAccent} text-3xl`}>question_mark</span>
               <h4 className={`text-xs ${t.fontHeader} font-bold ${t.textPrimary} uppercase tracking-wider`}>
                 Waiting for Search
@@ -2251,7 +2251,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       {/* 1. Modal: Menu Graph Visualizer */}
       {showMenuGraphModal && crib && ciphertext && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`${t.modalBg} border ${t.borderBase} rounded-lg max-w-2xl w-full p-6 space-y-4 shadow-2xl relative ${theme === 'vintage' ? 'texture-metal' : ''}`}>
+          <div className={`${t.modalBg} border ${t.borderBase} rounded-lg max-w-2xl w-full p-6 space-y-4 shadow-2xl relative ${t.appTexture}`}>
             <button
               onClick={() => setShowMenuGraphModal(false)}
               className={`absolute top-4 right-4 ${t.textMuted} hover:${t.textPrimary} transition-colors cursor-pointer`}
@@ -2308,7 +2308,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       {/* 2. Modal: 26x26 Welchman Diagonal Board Matrix */}
       {showDiagonalBoardModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`${t.modalBg} border ${t.borderBase} rounded-lg max-w-3xl w-full p-6 space-y-4 shadow-2xl relative ${theme === 'vintage' ? 'texture-metal' : ''} max-h-[90vh] overflow-y-auto`}>
+          <div className={`${t.modalBg} border ${t.borderBase} rounded-lg max-w-3xl w-full p-6 space-y-4 shadow-2xl relative ${t.appTexture} max-h-[90vh] overflow-y-auto`}>
             <button
               onClick={() => setShowDiagonalBoardModal(false)}
               className={`absolute top-4 right-4 ${t.textMuted} hover:${t.textPrimary} transition-colors cursor-pointer`}

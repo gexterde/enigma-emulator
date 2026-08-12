@@ -996,7 +996,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 setIsShareModalOpen(true);
                 setShareToast(null);
               }}
-              className={`text-xs ${t.fontHeader} ${theme === 'vintage' ? 'bg-[#2a2215] hover:bg-[#3b301e] ' + t.textAccent + ' border-[#8b6f47]' : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200'} border px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow`}
+              className={`text-xs ${t.fontHeader} ${t.codebookHeaderButton} border px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow`}
               title="Share or export the selected codebook sheet"
             >
               <span className="material-symbols-outlined text-sm">share</span>
@@ -1624,7 +1624,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                   </button>
                 </>
               ) : (
-                <div className={`text-xs ${theme === 'vintage' ? 'bg-[#2b2518] ' + t.textSecondary + ' border-[#524430]' : 'bg-slate-50 text-slate-500 border-slate-200 shadow-sm'} border px-3 py-2 rounded-lg flex items-center gap-1.5 font-bold`}>
+                <div className={`text-xs ${t.indicatorBgAlt} border px-3 py-2 rounded-lg flex items-center gap-1.5 font-bold`}>
                   <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>lock</span>
                   Read-Only
                 </div>
@@ -1633,18 +1633,18 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
           </div>
 
           {/* HISTORICAL TYPEWRITTEN SCHLÜSSELTAFEL CARD */}
-          <div className={`relative ${theme === 'vintage' ? 'bg-[#d3c2a5] text-[#1f1910] border-[#8c785b]' : 'bg-white text-slate-900 border-slate-200'} p-6 sm:p-10 rounded-lg shadow-2xl border-4 font-mono select-none overflow-x-auto print:shadow-none print:border-none print:p-0 print:bg-white print:text-black print:overflow-visible print:page-break-inside-avoid`}>
+          <div className={`relative ${t.codebookSheetBg} p-6 sm:p-10 rounded-lg shadow-2xl border-4 font-mono select-none overflow-x-auto print:shadow-none print:border-none print:p-0 print:bg-white print:text-black print:overflow-visible print:page-break-inside-avoid`}>
             {/* Classification Stamp */}
-            <div className={`absolute top-6 right-8 border-4 ${theme === 'vintage' ? 'border-[#a32020] text-[#a32020]' : 'border-blue-600 text-blue-600'} font-extrabold text-xl sm:text-2xl tracking-widest px-4 py-1 transform rotate-12 opacity-85 select-none pointer-events-none print:text-black print:border-black`}>
+            <div className={`absolute top-6 right-8 border-4 ${t.codebookStamp} font-extrabold text-xl sm:text-2xl tracking-widest px-4 py-1 transform rotate-12 opacity-85 select-none pointer-events-none print:text-black print:border-black`}>
               {currentSheet.classification}
             </div>
 
             {/* Header Document Metadata */}
-            <div className={`mb-6 space-y-1 border-b-2 ${theme === 'vintage' ? 'border-[#1f1910]' : 'border-slate-200'} pb-4`}>
+            <div className={`mb-6 space-y-1 border-b-2 ${t.borderStrong} pb-4`}>
               <h1 className="text-xl sm:text-3xl font-black uppercase tracking-wider underline underline-offset-4 pr-32 sm:pr-48">
                 {currentSheet.title}
               </h1>
-              <p className={`text-xs font-bold ${theme === 'vintage' ? 'text-[#4a3f2f]' : 'text-slate-500'} uppercase tracking-widest print:text-black`}>
+              <p className={`text-xs font-bold ${t.textMutedStrong} uppercase tracking-widest print:text-black`}>
                 {currentSheet.subtitle}
               </p>
 
@@ -1652,7 +1652,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 <span>Monat: <strong className="underline">{currentSheet.monthYear}</strong></span>
                 <span>Prüfnummer: <strong className="underline">{currentSheet.pruefnummer}</strong></span>
               </div>
-              <p className={`text-xs pt-1 italic ${theme === 'vintage' ? 'text-[#4a3f2f]' : 'text-slate-400'} print:text-black`}>
+              <p className={`text-xs pt-1 italic ${t.textMutedStrong} print:text-black`}>
                 ACHTUNG! Schlüsselmittel dürfen nicht unversehrt in Feindeshand fallen. Bei Gefahr restlos vernichten.
               </p>
             </div>
@@ -1662,63 +1662,59 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
               <h2 className="text-base sm:text-lg font-black uppercase tracking-widest underline decoration-2">
                 TÄGLICHE SCHLÜSSELEINSTELLUNGEN ({currentSheet.entries.length} DAYS)
               </h2>
-              <p className={`text-xs tracking-wide ${theme === 'vintage' ? 'text-[#3a3022]' : 'text-slate-500'} mt-0.5 print:text-black`}>
+              <p className={`text-xs tracking-wide ${t.tableHeaderMuted} mt-0.5 print:text-black`}>
                 (Nur für den dienstlichen Gebrauch — Click 'Apply' on any date row to set machine)
               </p>
             </div>
 
             {/* MAIN SCHLÜSSELTAFEL TABLE */}
             <div className="overflow-x-auto my-6 print:overflow-visible">
-              <table className={`w-full border-collapse border-2 ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} text-center text-xs sm:text-sm font-bold min-w-[700px]`}>
+              <table className={`w-full border-collapse border-2 ${t.borderStrong} text-center text-xs sm:text-sm font-bold min-w-[700px]`}>
                 <thead>
-                  <tr className={`${theme === 'vintage' ? 'bg-[#bfae91] border-[#1f1910]' : `${t.panelInner} ${t.borderBase}`} print:bg-gray-200 border-b-2`}>
-                    <th className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-2 sm:p-2.5 w-16`}>
+                  <tr className={`${t.tableHeaderBg} ${t.borderStrong} print:bg-gray-200 border-b-2`}>
+                    <th className={`border ${t.borderStrong} p-2 sm:p-2.5 w-16`}>
                       Tag
                     </th>
-                    <th className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-2 sm:p-2.5`}>
+                    <th className={`border ${t.borderStrong} p-2 sm:p-2.5`}>
                       <div>Walzenlage</div>
-                      <div className={`text-[10px] font-normal ${theme === 'vintage' ? 'text-[#3a3022]' : t.textMuted} print:text-black`}>(Rotor Order)</div>
+                      <div className={`text-[10px] ${t.tableHeaderMuted}`}>(Rotor Order)</div>
                     </th>
-                    <th className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-2 sm:p-2.5`}>
+                    <th className={`border ${t.borderStrong} p-2 sm:p-2.5`}>
                       <div>Ringstellung</div>
                       <button
                         type="button"
                         onClick={() => handleSetRingFormat(ringFormat === 'number' ? 'letter' : 'number')}
-                        className={`mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded transition-all cursor-pointer inline-flex items-center gap-1 border shadow-xs print:hidden ${
-                          theme === 'vintage'
-                            ? `text-[#2a2215] bg-[#a89679] hover:bg-[#1f1910] hover:${t.textAccent} border-[#1f1910]/30`
-                            : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'
-                        }`}
+                        className={`mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded transition-all cursor-pointer inline-flex items-center gap-1 border shadow-xs print:hidden ${t.tabSwitchButton}`}
                         title="Click to toggle Ringstellung format between Numbers and Letters"
                       >
                         <span className="material-symbols-outlined text-[11px]">swap_horiz</span>
                         {ringFormat === 'number' ? 'Numbers (01–26)' : 'Letters (A–Z)'}
                       </button>
-                      <div className={`hidden print:block text-[10px] font-normal ${theme === 'vintage' ? 'text-[#3a3022]' : t.textMuted}`}>
+                      <div className={`hidden print:block text-[10px] ${t.tableHeaderMuted}`}>
                         ({ringFormat === 'number' ? 'Ring Settings: 01–26' : 'Ring Settings: A–Z'})
                       </div>
                     </th>
                     {hasFourthRotor && (
-                      <th className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-2 sm:p-2.5`}>
+                      <th className={`border ${t.borderStrong} p-2 sm:p-2.5`}>
                         <div>4. Walze (M4)</div>
-                        <div className={`text-[10px] font-normal ${theme === 'vintage' ? 'text-[#3a3022]' : t.textMuted} print:text-black`}>(4th Rotor / Fixed Stator)</div>
+                        <div className={`text-[10px] ${t.tableHeaderMuted}`}>(4th Rotor / Fixed Stator)</div>
                       </th>
                     )}
                     {hasDualReflector && (
-                      <th className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-2 sm:p-2.5`}>
+                      <th className={`border ${t.borderStrong} p-2 sm:p-2.5`}>
                         <div>Umkehrwalze (UKW)</div>
-                        <div className={`text-[10px] font-normal ${theme === 'vintage' ? 'text-[#3a3022]' : t.textMuted} print:text-black`}>(Reflector Setting)</div>
+                        <div className={`text-[10px] ${t.tableHeaderMuted}`}>(Reflector Setting)</div>
                       </th>
                     )}
-                    <th className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-2 sm:p-2.5`}>
+                    <th className={`border ${t.borderStrong} p-2 sm:p-2.5`}>
                       <div>Steckerverbindungen</div>
-                      <div className={`text-[10px] font-normal ${theme === 'vintage' ? 'text-[#3a3022]' : t.textMuted} print:text-black`}>(Plugboard Patches 1-10)</div>
+                      <div className={`text-[10px] ${t.tableHeaderMuted}`}>(Plugboard Patches 1-10)</div>
                     </th>
-                    <th className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-2 sm:p-2.5`}>
+                    <th className={`border ${t.borderStrong} p-2 sm:p-2.5`}>
                       <div>Kenngruppen</div>
-                      <div className={`text-[10px] font-normal ${theme === 'vintage' ? 'text-[#3a3022]' : t.textMuted} print:text-black`}>(Identifiers)</div>
+                      <div className={`text-[10px] ${t.tableHeaderMuted}`}>(Identifiers)</div>
                     </th>
-                    <th className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-2 sm:p-2.5 w-28 print:hidden`}>
+                    <th className={`border ${t.borderStrong} p-2 sm:p-2.5 w-28 print:hidden`}>
                       Aktion
                     </th>
                   </tr>
@@ -1726,7 +1722,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 <tbody>
                   {displayedEntries.length === 0 ? (
                     <tr>
-                      <td colSpan={5 + (hasFourthRotor ? 1 : 0) + (hasDualReflector ? 1 : 0) + 1} className={`p-8 text-center ${theme === 'vintage' ? 'text-[#594a36]' : t.textMuted} italic`}>
+                      <td colSpan={5 + (hasFourthRotor ? 1 : 0) + (hasDualReflector ? 1 : 0) + 1} className={`p-8 text-center ${t.textMutedStrong} italic`}>
                         No entries found for this codebook. {!isCurrentHistorical && 'Click "Add Date" above to add entries.'}
                       </td>
                     </tr>
@@ -1737,68 +1733,68 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                       return (
                         <tr
                           key={entry.day}
-                          className={`${theme === 'vintage' ? 'hover:bg-[#c7b597]' : 'hover:bg-slate-50'} print:hover:bg-transparent print:page-break-inside-avoid transition-colors border-b ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} ${
-                            isApplied ? (theme === 'vintage' ? 'bg-[#ebd4ad] font-extrabold' : 'bg-blue-50 font-extrabold') : ''
+                          className={`${t.tableRowHover} print:hover:bg-transparent print:page-break-inside-avoid transition-colors border-b ${t.borderStrong} ${
+                            isApplied ? `${t.tableRowActive} font-extrabold` : ''
                           }`}
                         >
                           {/* Day Tag */}
-                          <td className={`border ${theme === 'vintage' ? 'border-[#1f1910] bg-[#c4b395]' : `${t.borderBase} ${t.panelInner}`} p-1.5 sm:p-2 text-base font-black print:bg-transparent`}>
+                          <td className={`border ${t.tableDayTag} p-1.5 sm:p-2 text-base font-black print:bg-transparent`}>
                             {pad2(entry.day)}
                           </td>
 
                           {/* Walzenlage (Rotor Order) */}
-                          <td className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-1.5 sm:p-2 tracking-wider font-extrabold font-mono`}>
+                          <td className={`border ${t.borderStrong} p-1.5 sm:p-2 tracking-wider font-extrabold font-mono`}>
                             {entry.rotors.join('  ')}
                           </td>
 
                           {/* Ringstellung (Ring Settings) */}
-                          <td className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-1.5 sm:p-2 tracking-widest font-mono font-extrabold text-center`}>
+                          <td className={`border ${t.borderStrong} p-1.5 sm:p-2 tracking-widest font-mono font-extrabold text-center`}>
                             {entry.rings.map((r) => formatRotorRing(r, ringFormat)).join(' ')}
                           </td>
 
                           {/* 4. Walze (4th Rotor — M4 only) */}
                           {hasFourthRotor && (
-                            <td className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-1.5 sm:p-2 tracking-widest font-mono font-extrabold text-center`}>
+                            <td className={`border ${t.borderStrong} p-1.5 sm:p-2 tracking-widest font-mono font-extrabold text-center`}>
                               {entry.fourthRotor ? `${entry.fourthRotor} (${formatRotorRing(entry.fourthRing || 1, ringFormat)})` : '—'}
                             </td>
                           )}
 
                           {/* Umkehrwalze (Reflector Settings) */}
                           {hasDualReflector && (
-                            <td className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-1.5 sm:p-2 tracking-wide font-mono text-xs font-extrabold text-center`}>
+                            <td className={`border ${t.borderStrong} p-1.5 sm:p-2 tracking-wide font-mono text-xs font-extrabold text-center`}>
                               {entry.reflectorType ? (
                                 <span className="inline-flex flex-col items-center justify-center">
-                                  <span className={`${theme === 'vintage' ? 'text-[#a32020]' : 'text-red-600'} font-black`}>{entry.reflectorType}</span>
-                                  <span className={`text-[10px] font-mono ${theme === 'vintage' ? 'text-[#3a3022]' : t.textMuted}`}>
+                                  <span className={`${t.textDangerStrongAlt} font-black`}>{entry.reflectorType}</span>
+                                  <span className={`text-[10px] font-mono ${t.tableHeaderMuted}`}>
                                     Ring:{formatRotorRing(entry.reflectorRing || 1, ringFormat)} Pos:{formatRotorRing(entry.reflectorStart || 1, ringFormat)}
                                   </span>
                                 </span>
                               ) : (
-                                <span className={theme === 'vintage' ? 'text-[#594a36]' : t.textMuted}>Standard</span>
+                                <span className={t.textMutedStrong}>Standard</span>
                               )}
                             </td>
                           )}
 
                           {/* Steckerverbindungen (Plugboard Pairs) */}
-                          <td className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-1.5 sm:p-2 tracking-wide text-xs font-mono`}>
+                          <td className={`border ${t.borderStrong} p-1.5 sm:p-2 tracking-wide text-xs font-mono`}>
                             {entry.plugboardPairs.join(' ')}
                           </td>
 
                           {/* Kenngruppen */}
-                          <td className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-1.5 sm:p-2 tracking-widest text-xs font-mono`}>
+                          <td className={`border ${t.borderStrong} p-1.5 sm:p-2 tracking-widest text-xs font-mono`}>
                             {entry.kenngruppen.join(' ')}
                           </td>
 
                           {/* Action Apply / Manage Button */}
-                          <td className={`border ${theme === 'vintage' ? 'border-[#1f1910]' : t.borderBase} p-1.5 sm:p-2 print:hidden`}>
+                          <td className={`border ${t.borderStrong} p-1.5 sm:p-2 print:hidden`}>
                             <div className="flex items-center gap-1">
                               <button
                                 type="button"
                                 onClick={() => handleApplyDay(entry)}
                                 className={`flex-1 py-1 px-2 rounded text-xs font-bold font-sans uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 shadow-sm ${
                                   isApplied
-                                    ? theme === 'vintage' ? 'bg-[#2b6121] text-white hover:bg-[#1f4a18]' : 'bg-green-600 text-white hover:bg-green-700'
-                                    : theme === 'vintage' ? 'bg-[#1f1910] text-[#f4ebdc] hover:bg-[#3b3123]' : `${t.buttonPrimary}`
+                                    ? t.buttonSuccessSolid
+                                    : t.buttonMutedSolid
                                 }`}
                               >
                                 <span className="material-symbols-outlined text-xs">
@@ -1828,7 +1824,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
             </div>
 
             {/* Footer Document Metadata */}
-            <div className={`flex justify-between items-center text-xs font-bold ${theme === 'vintage' ? 'text-[#3a3022]' : t.textMuted} print:text-black border-t ${theme === 'vintage' ? 'border-[#1f1910]/30' : t.borderBase} pt-3 mt-6`}>
+            <div className={`flex justify-between items-center text-xs font-bold ${t.tableHeaderMuted} print:text-black border-t ${t.borderStrong} pt-3 mt-6`}>
               <span>Vernichten nach Gebrauch!</span>
               <span>{isCurrentHistorical ? 'Official WWII Historical Record' : 'Custom User Schlüsseltafel'}</span>
             </div>
@@ -1839,7 +1835,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
       {/* Add Day Entry Modal for Custom Codebooks */}
       {isAddDayModalOpen && !isCurrentHistorical && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className={`${t.panelBg} border ${theme === 'vintage' ? 'border-[#8b6f47]' : t.borderBase} rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4`}>
+          <div className={`${t.panelBg} border ${t.borderAccent} rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4`}>
             <div className={`flex justify-between items-center border-b ${t.borderBase} pb-2`}>
               <h3 className={`text-base ${t.fontHeader} ${t.textAccent} uppercase flex items-center gap-2`}>
                 <span className="material-symbols-outlined">add_box</span>
@@ -1912,8 +1908,8 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                       onClick={() => handleSetRingFormat('number')}
                       className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                         ringFormat === 'number'
-                          ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'bg-blue-500 text-white font-bold')
-                          : (theme === 'vintage' ? 'text-[#83715d] hover:text-[#d1c4b7]' : 'text-slate-500 hover:text-slate-700')
+                          ? t.tabActive
+                          : t.tabInactive
                       }`}
                     >
                       01–26
@@ -1923,8 +1919,8 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                       onClick={() => handleSetRingFormat('letter')}
                       className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                         ringFormat === 'letter'
-                          ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'bg-blue-500 text-white font-bold')
-                          : (theme === 'vintage' ? 'text-[#83715d] hover:text-[#d1c4b7]' : 'text-slate-500 hover:text-slate-700')
+                          ? t.tabActive
+                          : t.tabInactive
                       }`}
                     >
                       A–Z
@@ -1997,7 +1993,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                     <select
                       value={addReflectorRing}
                       onChange={(e) => setAddReflectorRing(parseInt(e.target.value) || 1)}
-                      className={`w-full ${theme === 'vintage' ? 'bg-[#1c160a]' : t.panelInner} border ${t.borderBase} rounded p-1 ${t.textAccent} font-mono text-xs`}
+                      className={`w-full ${t.inputBgAlt} border ${t.borderBase} rounded p-1 ${t.textAccent} font-mono text-xs`}
                     >
                       {Array.from({ length: 26 }, (_, i) => i + 1).map((n) => (
                         <option key={n} value={n}>
@@ -2011,7 +2007,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                     <select
                       value={addReflectorStart}
                       onChange={(e) => setAddReflectorStart(parseInt(e.target.value) || 1)}
-                      className={`w-full ${theme === 'vintage' ? 'bg-[#1c160a]' : t.panelInner} border ${t.borderBase} rounded p-1 ${t.textAccent} font-mono text-xs`}
+                      className={`w-full ${t.inputBgAlt} border ${t.borderBase} rounded p-1 ${t.textAccent} font-mono text-xs`}
                     >
                       {Array.from({ length: 26 }, (_, i) => i + 1).map((n) => (
                         <option key={n} value={n}>
@@ -2027,15 +2023,13 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 <button
                   type="button"
                   onClick={() => setIsAddDayModalOpen(false)}
-                  className={`px-3 py-1.5 rounded ${t.panelBg} ${t.textMuted} ${theme === 'vintage' ? 'hover:bg-[#4e453b]' : 'hover:bg-slate-100'}`}
+                  className={`px-3 py-1.5 rounded ${t.panelBg} ${t.textMuted} ${t.buttonMutedHover}`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className={`px-4 py-1.5 rounded font-bold transition-all ${
-                    theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] hover:bg-[#d4ad2d]' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm active:scale-95'
-                  }`}
+                  className={`px-4 py-1.5 rounded font-bold transition-all ${t.buttonHighlight}`}
                 >
                   Save Entry
                 </button>
@@ -2048,21 +2042,21 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
       {/* SHARE CODEBOOK MODAL */}
       {isShareModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`${t.modalBg} border ${theme === 'vintage' ? 'border-[#8b6f47]' : t.borderBase} ${t.textPrimary} rounded-xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200`}>
+          <div className={`${t.modalBg} border ${t.borderAccent} ${t.textPrimary} rounded-xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200`}>
             <div className={`flex justify-between items-start border-b ${t.borderBase} pb-3`}>
               <div>
                 <h3 className={`text-lg ${t.fontHeader} font-bold ${t.textAccent} uppercase flex items-center gap-2`}>
                   <span className="material-symbols-outlined text-xl">share</span>
                   Share Codebook / Schlüsseltafel
                 </h3>
-                <p className={`text-xs ${theme === 'vintage' ? 'text-[#9e8d78]' : t.textMuted} mt-0.5`}>
+                <p className={`text-xs ${t.textMutedAlt} mt-0.5`}>
                   Export or share key sheet <strong className={`${t.textSecondary}`}>"{currentSheet.title}"</strong> ({currentSheet.entries.length} Days)
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsShareModalOpen(false)}
-                className={`${theme === 'vintage' ? 'text-[#9e8d78]' : t.textMuted} hover:${t.textAccent} cursor-pointer p-1`}
+                className={`${t.textMutedAlt} hover:${t.textAccent} cursor-pointer p-1`}
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
@@ -2072,18 +2066,18 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
             <div className={`${t.panelInner} border ${t.borderBase} rounded-lg p-3.5 space-y-1 text-xs`}>
               <div className={`flex justify-between items-center ${t.textAccent} font-bold`}>
                 <span>{currentSheet.title}</span>
-                <span className={`text-[10px] ${theme === 'vintage' ? 'bg-[#801818] text-white' : 'bg-red-100 text-red-700'} px-2 py-0.5 rounded font-mono uppercase`}>
+                <span className={`text-[10px] ${t.buttonDangerHighlight} px-2 py-0.5 rounded font-mono uppercase`}>
                   {currentSheet.classification}
                 </span>
               </div>
-              <div className={`${theme === 'vintage' ? 'text-[#9e8d78]' : t.textMuted} flex gap-4 text-[11px]`}>
+              <div className={`${t.textMutedAlt} flex gap-4 text-[11px]`}>
                 <span>Monat: <strong className={`${t.textMuted}`}>{currentSheet.monthYear}</strong></span>
                 <span>Prüfnummer: <strong className={`${t.textMuted}`}>{currentSheet.pruefnummer}</strong></span>
               </div>
             </div>
 
             {shareToast && (
-              <div className={`${theme === 'vintage' ? 'bg-[#1f3a18] border-[#3f7a30] text-[#a1f092]' : 'bg-green-50 border-green-200 text-green-700'} border text-xs px-3 py-2 rounded flex items-center gap-2 font-mono`}>
+              <div className={`${t.bgSuccess} ${t.borderSuccess} ${t.textSuccess} border text-xs px-3 py-2 rounded flex items-center gap-2 font-mono`}>
                 <span className="material-symbols-outlined text-sm">check_circle</span>
                 <span>{shareToast}</span>
               </div>
@@ -2095,13 +2089,13 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 <button
                   type="button"
                   onClick={handleCopyShareLink}
-                  className={`${theme === 'vintage' ? 'bg-[#251f12] hover:bg-[#332b1a] border-[#5c4a30]' : `${t.panelInner} hover:bg-slate-100 border-slate-200`} p-3.5 border rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between`}
+                  className={`${t.panelInner} hover:bg-slate-100 border-slate-200 p-3.5 border rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between`}
                 >
                   <div className={`flex items-center gap-2 ${t.textAccent} font-bold text-xs uppercase mb-1`}>
                     <span className="material-symbols-outlined text-base">link</span>
                     Copy Direct Share Link
                   </div>
-                  <p className={`text-[11px] ${theme === 'vintage' ? 'text-[#9e8d78]' : t.textMuted} group-hover:${t.textMuted}`}>
+                  <p className={`text-[11px] ${t.textMutedAlt} group-hover:${t.textMuted}`}>
                     Generates a URL with encoded codebook hash for 1-click web import.
                   </p>
                 </button>
@@ -2110,13 +2104,13 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 <button
                   type="button"
                   onClick={handleDownloadCodebookJson}
-                  className={`${theme === 'vintage' ? 'bg-[#251f12] hover:bg-[#332b1a] border-[#5c4a30]' : `${t.panelInner} hover:bg-slate-100 border-slate-200`} p-3.5 border rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between`}
+                  className={`${t.cardInteractive} p-3.5 border rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between`}
                 >
                   <div className={`flex items-center gap-2 ${t.textAccent} font-bold text-xs uppercase mb-1`}>
                     <span className="material-symbols-outlined text-base">download</span>
                     Download .JSON File
                   </div>
-                  <p className={`text-[11px] ${theme === 'vintage' ? 'text-[#9e8d78]' : t.textMuted} group-hover:${t.textMuted}`}>
+                  <p className={`text-[11px] ${t.textMutedAlt} group-hover:${t.textMuted}`}>
                     Saves full codebook structure as a standard JSON file.
                   </p>
                 </button>
@@ -2125,13 +2119,13 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 <button
                   type="button"
                   onClick={handleCopyShareCode}
-                  className={`${theme === 'vintage' ? 'bg-[#251f12] hover:bg-[#332b1a] border-[#5c4a30]' : `${t.panelInner} hover:bg-slate-100 border-slate-200`} p-3.5 border rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between`}
+                  className={`${t.cardInteractive} p-3.5 border rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between`}
                 >
                   <div className={`flex items-center gap-2 ${t.textAccent} font-bold text-xs uppercase mb-1`}>
                     <span className="material-symbols-outlined text-base">content_copy</span>
                     Copy Base64 Share Code
                   </div>
-                  <p className={`text-[11px] ${theme === 'vintage' ? 'text-[#9e8d78]' : t.textMuted} group-hover:${t.textMuted}`}>
+                  <p className={`text-[11px] ${t.textMutedAlt} group-hover:${t.textMuted}`}>
                     Compact encoded string ideal for messaging or email distribution.
                   </p>
                 </button>
@@ -2140,13 +2134,13 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 <button
                   type="button"
                   onClick={handleCopyJsonText}
-                  className={`${theme === 'vintage' ? 'bg-[#251f12] hover:bg-[#332b1a] border-[#5c4a30]' : `${t.panelInner} hover:bg-slate-100 border-slate-200`} p-3.5 border rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between`}
+                  className={`${t.cardInteractive} p-3.5 border rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between`}
                 >
                   <div className={`flex items-center gap-2 ${t.textAccent} font-bold text-xs uppercase mb-1`}>
                     <span className="material-symbols-outlined text-base">code</span>
                     Copy Formatted JSON
                   </div>
-                  <p className={`text-[11px] ${theme === 'vintage' ? 'text-[#9e8d78]' : t.textMuted} group-hover:${t.textMuted}`}>
+                  <p className={`text-[11px] ${t.textMutedAlt} group-hover:${t.textMuted}`}>
                     Raw uncompressed JSON payload for developer tools or archives.
                   </p>
                 </button>
@@ -2157,7 +2151,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
               <button
                 type="button"
                 onClick={() => setIsShareModalOpen(false)}
-                className={`px-4 py-2 rounded ${t.panelBg} ${t.textMuted} ${theme === 'vintage' ? 'hover:bg-[#4e453b]' : 'hover:bg-slate-100'} text-xs font-bold uppercase cursor-pointer`}
+                className={`px-4 py-2 rounded ${t.panelBg} ${t.textMuted} ${t.buttonMutedHover} text-xs font-bold uppercase cursor-pointer`}
               >
                 Close
               </button>
@@ -2169,21 +2163,21 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
       {/* IMPORT CODEBOOK MODAL */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`${t.modalBg} border ${theme === 'vintage' ? 'border-[#8b6f47]' : t.borderBase} ${t.textPrimary} rounded-xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto`}>
+          <div className={`${t.modalBg} border ${t.borderAccent} ${t.textPrimary} rounded-xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto`}>
             <div className={`flex justify-between items-start border-b ${t.borderBase} pb-3`}>
               <div>
                 <h3 className={`text-lg ${t.fontHeader} font-bold ${t.textAccent} uppercase flex items-center gap-2`}>
                   <span className="material-symbols-outlined text-xl">file_download</span>
                   Import Codebook / Schlüsseltafel
                 </h3>
-                <p className={`text-xs ${theme === 'vintage' ? 'text-[#9e8d78]' : t.textMuted} mt-0.5`}>
+                <p className={`text-xs ${t.textMutedAlt} mt-0.5`}>
                   Import custom or shared Enigma key sheets into your workspace.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsImportModalOpen(false)}
-                className={`${theme === 'vintage' ? 'text-[#9e8d78]' : t.textMuted} hover:${t.textAccent} cursor-pointer p-1`}
+                className={`${t.textMutedAlt} hover:${t.textAccent} cursor-pointer p-1`}
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
@@ -2196,8 +2190,8 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 onClick={() => setImportSourceTab('file')}
                 className={`pb-2 px-3 text-xs font-bold uppercase flex items-center gap-1.5 transition-colors cursor-pointer border-b-2 ${
                   importSourceTab === 'file'
-                    ? (theme === 'vintage' ? 'border-[#ebc238] text-[#ebc238]' : 'border-blue-500 text-blue-600')
-                    : (theme === 'vintage' ? 'border-transparent text-[#9e8d78] hover:text-[#d1c4b7]' : 'border-transparent text-slate-500 hover:text-slate-700')
+                    ? t.buttonActive
+                    : t.buttonInactive
                 }`}
               >
                 <span className="material-symbols-outlined text-sm">upload_file</span>
@@ -2208,8 +2202,8 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 onClick={() => setImportSourceTab('text')}
                 className={`pb-2 px-3 text-xs font-bold uppercase flex items-center gap-1.5 transition-colors cursor-pointer border-b-2 ${
                   importSourceTab === 'text'
-                    ? (theme === 'vintage' ? 'border-[#ebc238] text-[#ebc238]' : 'border-blue-500 text-blue-600')
-                    : (theme === 'vintage' ? 'border-transparent text-[#9e8d78] hover:text-[#d1c4b7]' : 'border-transparent text-slate-500 hover:text-slate-700')
+                    ? t.buttonActive
+                    : t.buttonInactive
                 }`}
               >
                 <span className="material-symbols-outlined text-sm">content_paste</span>
@@ -2218,7 +2212,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
             </div>
 
             {importToast && (
-              <div className={`${theme === 'vintage' ? 'bg-[#1f3a18] border-[#3f7a30] text-[#a1f092]' : 'bg-green-50 border-green-200 text-green-700'} border text-xs px-3 py-2 rounded flex items-center gap-2 font-mono`}>
+              <div className={`${t.bgSuccess} ${t.borderSuccess} ${t.textSuccess} border text-xs px-3 py-2 rounded flex items-center gap-2 font-mono`}>
                 <span className="material-symbols-outlined text-sm">check_circle</span>
                 <span>{importToast}</span>
               </div>
@@ -2227,14 +2221,14 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
             {/* Tab 1: File Upload */}
             {importSourceTab === 'file' && (
               <div className="space-y-3">
-                <label className={`block border-2 border-dashed ${theme === 'vintage' ? 'border-[#5c4a30]' : 'border-slate-300'} hover:${t.borderAccent} ${t.panelInner} rounded-xl p-6 text-center cursor-pointer transition-all group`}>
-                  <span className={`material-symbols-outlined text-3xl ${theme === 'vintage' ? 'text-[#8b6f47]' : 'text-slate-400'} group-hover:${t.textAccent} mb-2 block`}>
+                <label className={`block border-2 border-dashed ${t.borderBase} hover:${t.borderAccent} ${t.panelInner} rounded-xl p-6 text-center cursor-pointer transition-all group`}>
+                  <span className={`material-symbols-outlined text-3xl ${t.textMutedAlt} group-hover:${t.textAccent} mb-2 block`}>
                     folder_open
                   </span>
                   <span className={`text-xs font-bold ${t.textAccent} uppercase block`}>
                     Click to select .JSON Codebook File
                   </span>
-                  <span className={`text-[11px] ${theme === 'vintage' ? 'text-[#9e8d78]' : t.textMuted} mt-1 block`}>
+                  <span className={`text-[11px] ${t.textMutedAlt} mt-1 block`}>
                     Select a previously exported codebook file from your computer
                   </span>
                   <input
@@ -2267,21 +2261,21 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
             {importValidationResult && (
               <div className="space-y-2 pt-1">
                 {importValidationResult.valid ? (
-                  <div className={`${theme === 'vintage' ? 'bg-[#121c0e] border-[#2e5e22]' : 'bg-green-50 border-green-200'} border rounded-lg p-3.5 text-xs space-y-1.5`}>
-                    <div className={`flex items-center justify-between ${theme === 'vintage' ? 'text-[#81d86d]' : 'text-green-700'} font-bold`}>
+                  <div className={`${t.bgSuccess} ${t.borderSuccessAlt} rounded-lg p-3.5 text-xs space-y-1.5`}>
+                    <div className={`flex items-center justify-between ${t.textSuccess} font-bold`}>
                       <span className="flex items-center gap-1.5 uppercase">
                         <span className="material-symbols-outlined text-base">verified</span>
                         Valid Codebook Payload
                       </span>
-                      <span className={`text-[10px] ${theme === 'vintage' ? 'bg-[#224419] text-[#a1f092]' : 'bg-green-200 text-green-800'} px-2 py-0.5 rounded font-mono`}>
+                      <span className={`text-[10px] ${t.bgSuccessStrong} ${t.textSuccessStrong} px-2 py-0.5 rounded font-mono`}>
                         {importValidationResult.sheet ? '1 Codebook' : `${importValidationResult.sheets?.length} Codebooks`}
                       </span>
                     </div>
 
                     {importValidationResult.sheet && (
-                      <div className={`${theme === 'vintage' ? 'bg-[#0b1209] border-[#224419]' : 'bg-white/50 border-green-100'} p-2.5 rounded border space-y-1 ${t.textMuted}`}>
+                      <div className={`${t.bgSuccessFaint} p-2.5 rounded border space-y-1 ${t.textMuted}`}>
                         <div className={`${t.textAccent} font-bold`}>{importValidationResult.sheet.title}</div>
-                        <div className={`text-[11px] ${theme === 'vintage' ? 'text-[#8a9e84]' : t.textMuted} flex justify-between`}>
+                        <div className={`text-[11px] ${t.textSuccessFaint} flex justify-between`}>
                           <span>{importValidationResult.sheet.subtitle}</span>
                           <span>{importValidationResult.sheet.entries?.length || 0} Days</span>
                         </div>
@@ -2291,7 +2285,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                     {importValidationResult.sheets && (
                       <div className="space-y-1 max-h-28 overflow-y-auto">
                         {importValidationResult.sheets.map((s, idx) => (
-                          <div key={idx} className={`${theme === 'vintage' ? 'bg-[#0b1209] border-[#224419]' : 'bg-white/50 border-green-100'} p-2 rounded border text-[11px] ${t.textMuted} flex justify-between`}>
+                          <div key={idx} className={`${t.bgSuccessFaint} p-2 rounded border text-[11px] ${t.textMuted} flex justify-between`}>
                             <span className={`font-bold ${t.textAccent}`}>{s.title}</span>
                             <span>{s.entries?.length || 0} Days</span>
                           </div>
@@ -2300,8 +2294,8 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                     )}
                   </div>
                 ) : (
-                  <div className={`${theme === 'vintage' ? 'bg-[#241010] border-[#6b2222] text-[#f29191]' : 'bg-red-50 border-red-200 text-red-700'} border text-xs p-3 rounded-lg flex items-center gap-2`}>
-                    <span className="material-symbols-outlined text-base ${theme === 'vintage' ? 'text-[#e05252]' : 'text-red-500'}">error</span>
+                  <div className={`${t.bgDangerAlt} ${t.borderDangerAlt} ${t.textDangerAlt} border text-xs p-3 rounded-lg flex items-center gap-2`}>
+                    <span className={`material-symbols-outlined text-base ${t.textDangerStrong}`}>error</span>
                     <span>{importValidationResult.error || 'Invalid codebook format.'}</span>
                   </div>
                 )}
@@ -2313,7 +2307,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
               <button
                 type="button"
                 onClick={() => setIsImportModalOpen(false)}
-                className={`px-4 py-2 rounded ${t.panelBg} ${t.textMuted} ${theme === 'vintage' ? 'hover:bg-[#4e453b]' : 'hover:bg-slate-100'} text-xs font-bold uppercase cursor-pointer`}
+                className={`px-4 py-2 rounded ${t.panelBg} ${t.textMuted} ${t.buttonMutedHover} text-xs font-bold uppercase cursor-pointer`}
               >
                 Cancel
               </button>
@@ -2323,8 +2317,8 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 onClick={handleConfirmImport}
                 className={`px-5 py-2 rounded text-xs font-bold uppercase flex items-center gap-1.5 shadow transition-all ${
                   importValidationResult && importValidationResult.valid
-                    ? theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] hover:bg-[#d4ad2d] cursor-pointer' : 'bg-blue-600 text-white hover:bg-blue-700'
-                    : theme === 'vintage' ? 'bg-[#3b3426] text-[#73685a] cursor-not-allowed' : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    ? t.buttonHighlight + ' cursor-pointer'
+                    : t.buttonDisabled
                 }`}
               >
                 <span className="material-symbols-outlined text-base">check_circle</span>
@@ -2338,10 +2332,10 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
       {/* IN-APP CONFIRMATION MODAL: DELETE CUSTOM CODEBOOK */}
       {codebookToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in print:hidden">
-          <div className={`${t.modalBg} border ${theme === 'vintage' ? 'border-[#801818]' : 'border-red-200'} rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4`}>
-            <div className={`flex items-center gap-3 border-b ${t.borderBase} pb-3 ${theme === 'vintage' ? 'text-[#ff7070]' : 'text-red-600'}`}>
-              <span className={`material-symbols-outlined text-2xl ${theme === 'vintage' ? 'text-[#e05252]' : 'text-red-500'}`}>delete_forever</span>
-              <h3 className={`text-base ${t.fontHeader} font-bold uppercase tracking-wider ${theme === 'vintage' ? 'text-[#f5d0d0]' : 'text-red-800'}`}>
+          <div className={`${t.modalBg} border ${t.borderDangerAlt} rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4`}>
+            <div className={`flex items-center gap-3 border-b ${t.borderBase} pb-3 ${t.textDangerStrong}`}>
+              <span className={`material-symbols-outlined text-2xl ${t.textDangerStrong}`}>delete_forever</span>
+              <h3 className={`text-base ${t.fontHeader} font-bold uppercase tracking-wider ${t.textDangerHeader}`}>
                 Delete Custom Codebook
               </h3>
             </div>
@@ -2355,7 +2349,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 {codebookToDelete.title || 'Custom Codebook'}
               </div>
               {codebookToDelete.subtitle && (
-                <div className={`text-[11px] ${theme === 'vintage' ? 'text-[#9e8d78]' : t.textMuted} ${t.fontBody}`}>
+                <div className={`text-[11px] ${t.textMutedAlt} ${t.fontBody}`}>
                   {codebookToDelete.subtitle}
                 </div>
               )}
@@ -2366,8 +2360,8 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
               </div>
             </div>
 
-            <div className={`${theme === 'vintage' ? 'bg-[#241010] border-[#6b2222] text-[#f29191]' : 'bg-red-50 border-red-100 text-red-600'} border text-[11px] p-2.5 rounded-lg flex items-center gap-2 font-medium`}>
-              <span className={`material-symbols-outlined text-sm ${theme === 'vintage' ? 'text-[#e05252]' : 'text-red-500'}`}>warning</span>
+            <div className={`${t.bgDangerAlt} ${t.borderDangerAlt} ${t.textDangerAlt} border text-[11px] p-2.5 rounded-lg flex items-center gap-2 font-medium`}>
+              <span className={`material-symbols-outlined text-sm ${t.textDangerStrong}`}>warning</span>
               <span>This action cannot be undone. It will be removed from your browser storage.</span>
             </div>
 
@@ -2375,16 +2369,14 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
               <button
                 type="button"
                 onClick={() => setCodebookToDelete(null)}
-                className={`px-4 py-2 rounded ${t.panelBg} ${t.textMuted} ${theme === 'vintage' ? 'hover:bg-[#4e453b]' : 'hover:bg-slate-100'} text-xs font-bold uppercase cursor-pointer transition-colors`}
+                className={`px-4 py-2 rounded ${t.panelBg} ${t.textMuted} ${t.buttonMutedHover} text-xs font-bold uppercase cursor-pointer transition-colors`}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDeleteCodebook}
-                className={`px-5 py-2 rounded font-bold uppercase flex items-center gap-1.5 shadow cursor-pointer transition-all active:scale-95 ${
-                  theme === 'vintage' ? 'bg-[#801818] hover:bg-[#a12020] text-white' : 'bg-red-600 hover:bg-red-700 text-white'
-                }`}
+                className={`px-5 py-2 rounded font-bold uppercase flex items-center gap-1.5 shadow cursor-pointer transition-all active:scale-95 ${t.buttonDangerSolid}`}
               >
                 <span className="material-symbols-outlined text-base">delete</span>
                 Confirm Delete
@@ -2397,10 +2389,10 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
       {/* IN-APP CONFIRMATION MODAL: DELETE SINGLE DAY ENTRY */}
       {dayEntryToDelete !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in print:hidden">
-          <div className={`${t.modalBg} border ${theme === 'vintage' ? 'border-[#801818]' : 'border-red-200'} rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4`}>
-            <div className={`flex items-center gap-3 border-b ${t.borderBase} pb-3 ${theme === 'vintage' ? 'text-[#ff7070]' : 'text-red-600'}`}>
-              <span className={`material-symbols-outlined text-2xl ${theme === 'vintage' ? 'text-[#e05252]' : 'text-red-500'}`}>delete</span>
-              <h3 className={`text-base ${t.fontHeader} font-bold uppercase tracking-wider ${theme === 'vintage' ? 'text-[#f5d0d0]' : 'text-red-800'}`}>
+          <div className={`${t.modalBg} border ${t.borderDanger} rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4`}>
+            <div className={`flex items-center gap-3 border-b ${t.borderBase} pb-3 ${t.textDanger}`}>
+              <span className={`material-symbols-outlined text-2xl ${t.textDanger}`}>delete</span>
+              <h3 className={`text-base ${t.fontHeader} font-bold uppercase tracking-wider ${t.textDanger}`}>
                 Delete Day {dayEntryToDelete} Entry
               </h3>
             </div>
@@ -2413,16 +2405,14 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
               <button
                 type="button"
                 onClick={() => setDayEntryToDelete(null)}
-                className={`px-4 py-2 rounded ${t.panelBg} ${t.textMuted} ${theme === 'vintage' ? 'hover:bg-[#4e453b]' : 'hover:bg-slate-100'} text-xs font-bold uppercase cursor-pointer transition-colors`}
+                className={`px-4 py-2 rounded ${t.panelBg} ${t.textMuted} ${t.buttonMutedHover} text-xs font-bold uppercase cursor-pointer transition-colors`}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDeleteDayEntry}
-                className={`px-5 py-2 rounded font-bold uppercase flex items-center gap-1.5 shadow cursor-pointer transition-all active:scale-95 ${
-                  theme === 'vintage' ? 'bg-[#801818] hover:bg-[#a12020] text-white' : 'bg-red-600 hover:bg-red-700 text-white'
-                }`}
+                className={`px-5 py-2 rounded font-bold uppercase flex items-center gap-1.5 shadow cursor-pointer transition-all active:scale-95 ${t.buttonDangerSolid}`}
               >
                 <span className="material-symbols-outlined text-base">delete</span>
                 Remove Day
