@@ -140,11 +140,14 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
           : `${t.panelBg} border p-3.5 rounded-lg space-y-3.5`
       } animate-fade-in`}
     >
-      <div className={`flex items-center justify-between border-b ${t.borderBase} pb-1.5`}>
-        <div className="flex items-center gap-1.5">
+      <div className={`flex flex-wrap items-center justify-between border-b ${t.borderBase} pb-1.5 gap-2`}>
+        <div className="flex flex-wrap items-center gap-2">
           <span className={`material-symbols-outlined text-[15px] ${t.textAccent}`}>fact_check</span>
           <span className={`text-[10px] ${t.fontMono} ${t.textAccent} uppercase tracking-wider font-bold`}>
-            Funktelegramm Header (Message Header)
+            Funktelegramm Header
+          </span>
+          <span className={`px-2 py-0.5 rounded font-mono text-[11px] font-bold ${t.activeBadge} ${t.textAccentStrong} border ${t.borderBase}`}>
+            {senderCallSign || '???'} {transmissionTime || '????'} {lettersCount} {kenngruppe || '???'} {localGrundstellung || '???'}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -254,6 +257,11 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                   </div>
                 </div>
               </div>
+              <div className={`text-[9px] ${t.textMuted} mt-1.5 italic font-mono leading-tight border-t ${t.borderBase}/30 pt-1 flex justify-between items-center`}>
+                <span>
+                  Format: <span className="font-bold text-slate-300">{senderCallSign || 'DFS'}</span> • <span className="font-bold text-slate-300">{transmissionTime || '1200'}</span> • <span className="font-bold text-slate-300">{lettersCount}</span>
+                </span>
+              </div>
             </div>
 
             {/* 2. Key Identifier */}
@@ -296,6 +304,11 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                     {kenngruppe || '—'}
                   </span>
                 </div>
+              </div>
+              <div className={`text-[9px] ${t.textMuted} mt-1.5 italic font-mono leading-tight border-t ${t.borderBase}/30 pt-1 flex justify-between items-center`}>
+                <span>
+                  Key Day ID: <span className="font-bold text-slate-300">{kenngruppe || '—'}</span>
+                </span>
               </div>
             </div>
 

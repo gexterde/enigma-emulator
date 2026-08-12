@@ -7,11 +7,12 @@ interface LampSocketProps {
   isLit: boolean;
   isDimIdle: boolean;
   batteryMode: string;
+  batteryLevel: number;
   isCompact: boolean;
   keySize: 'normal' | 'large';
 }
 
-const LampSocket: React.FC<LampSocketProps> = ({ char, isLit, isDimIdle, batteryMode, isCompact, keySize }) => {
+const LampSocket: React.FC<LampSocketProps> = ({ char, isLit, isDimIdle, batteryMode, batteryLevel, isCompact, keySize }) => {
   const { theme, setTheme } = useTheme();
   const t = getTheme(theme);
 
@@ -43,6 +44,12 @@ const LampSocket: React.FC<LampSocketProps> = ({ char, isLit, isDimIdle, battery
       }
     }
 
+    const brightnessStyle = isLit
+      ? { opacity: Math.max(0.15, batteryLevel / 100) }
+      : isDimIdle
+      ? { opacity: Math.max(0.08, (batteryLevel / 100) * 0.4) }
+      : undefined;
+
     const sizeClasses = isLarge
       ? 'w-10 h-10 xs:w-11 xs:h-11 sm:w-14 sm:h-14 md:w-15 md:h-15 text-xs xs:text-sm sm:text-base md:text-lg'
       : 'w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[11px] xs:text-xs sm:text-sm';
@@ -50,6 +57,7 @@ const LampSocket: React.FC<LampSocketProps> = ({ char, isLit, isDimIdle, battery
     return (
       <div
         className={`${t.lampShape} select-none flex items-center justify-center transition-all ${sizeClasses} ${lampClass}`}
+        style={brightnessStyle}
       >
         <div
           className={`${t.lampShape} w-full h-full flex items-center justify-center font-bold ${innerGlassClasses} ${idleClass} ${t.fontMono}`}
@@ -80,6 +88,12 @@ const LampSocket: React.FC<LampSocketProps> = ({ char, isLit, isDimIdle, battery
     }
   }
 
+  const brightnessStyle = isLit
+    ? { opacity: Math.max(0.15, batteryLevel / 100) }
+    : isDimIdle
+    ? { opacity: Math.max(0.08, (batteryLevel / 100) * 0.4) }
+    : undefined;
+
   const standardSizeClasses = isLarge
     ? 'w-9 h-9 min-w-[36px] min-h-[36px] xs:w-10 xs:h-10 xs:min-w-[40px] sm:w-13 sm:h-13 sm:min-w-[52px] md:w-14 md:h-14 md:min-w-[56px] text-sm xs:text-base sm:text-xl md:text-2xl'
     : 'w-8 h-8 min-w-[32px] min-h-[32px] xs:w-9 xs:h-9 xs:min-w-[36px] sm:w-11 sm:h-11 sm:min-w-[44px] md:w-12 md:h-12 md:min-w-[48px] text-xs xs:text-sm sm:text-lg md:text-xl';
@@ -87,6 +101,7 @@ const LampSocket: React.FC<LampSocketProps> = ({ char, isLit, isDimIdle, battery
   return (
     <div
       className={`${t.lampShape} border-2 select-none flex items-center justify-center transition-all duration-100 ${standardSizeClasses} ${litStyle}`}
+      style={brightnessStyle}
     >
       <span className={`${t.fontMono} font-bold`}>
         {char}
@@ -98,6 +113,7 @@ const LampSocket: React.FC<LampSocketProps> = ({ char, isLit, isDimIdle, battery
 interface LampboardPanelProps {
   isCompact: boolean;
   batteryMode: string;
+  batteryLevel: number;
   litLamp: string | null;
   dimIdleLights: boolean;
   keySize?: 'normal' | 'large';
@@ -107,6 +123,7 @@ interface LampboardPanelProps {
 export const LampboardPanel: React.FC<LampboardPanelProps> = ({
   isCompact,
   batteryMode,
+  batteryLevel,
   litLamp,
   dimIdleLights,
   keySize = 'normal',
@@ -173,6 +190,7 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
                   isLit={isPowerOn && litLamp === char}
                   isDimIdle={isPowerOn && !litLamp && dimIdleLights}
                   batteryMode={batteryMode}
+                  batteryLevel={batteryLevel}
                   isCompact={isCompact}
                   keySize={keySize}
                 />
@@ -235,6 +253,7 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
                 isLit={isPowerOn && litLamp === char}
                 isDimIdle={isPowerOn && !litLamp && dimIdleLights}
                 batteryMode={batteryMode}
+                batteryLevel={batteryLevel}
                 isCompact={isCompact}
                 keySize={keySize}
               />

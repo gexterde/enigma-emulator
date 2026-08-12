@@ -4,6 +4,8 @@ import { Sidebar } from './components/Sidebar';
 import { Footer } from './components/Footer';
 import { RotorSettingsView } from './components/RotorSettingsView';
 import { MachineView } from './components/MachineView';
+import { BatterySwitchMode } from './components/BatterySwitch';
+import { playRotorClickSound } from './lib/audio';
 import { PlugboardView } from './components/PlugboardView';
 import { CodebookView } from './components/CodebookView';
 import { LogView } from './components/LogView';
@@ -79,6 +81,79 @@ export default function App() {
     return [];
   });
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+
+  // Simulated Battery Level (0 to 100)
+  const [batteryLevel, setBatteryLevel] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('enigma_battery_level');
+      return saved !== null ? Number(saved) : 100;
+    } catch {
+      return 100;
+    }
+  });
+
+  // Battery Switch Mode State
+  const [batteryMode, setBatteryMode] = useState<BatterySwitchMode>(() => {
+    try {
+      const saved = localStorage.getItem('enigma_battery_mode');
+      return (saved as BatterySwitchMode) || 'hell';
+    } catch {
+      return 'hell';
+    }
+  });
+
+  // Persist Battery State
+  useEffect(() => {
+    try {
+      localStorage.setItem('enigma_battery_level', String(batteryLevel));
+    } catch {}
+  }, [batteryLevel]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('enigma_battery_mode', batteryMode);
+    } catch {}
+  }, [batteryMode]);
+
+  // Background depletion
+  useEffect(() => {
+    if (batteryMode === 'aus') return;
+
+    const interval = setInterval(() => {
+      setBatteryLevel((prev) => {
+        if (prev <= 0) return 0;
+        let rate = 0.05; // 'hell'
+        if (batteryMode === 'dkl') rate = 0.02;
+        if (batteryMode === 'sammler') rate = 0.04;
+        
+        const next = prev - rate;
+        return next < 0 ? 0 : next;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [batteryMode]);
+
+  const handleConsumePower = () => {
+    setBatteryLevel((prev) => {
+      if (prev <= 0) return 0;
+      let cost = 0.25; // standard key press cost
+      if (batteryMode === 'dkl') cost = 0.12;
+      if (batteryMode === 'sammler') cost = 0.20;
+      const next = prev - cost;
+      return next < 0 ? 0 : next;
+    });
+  };
+
+  const handleRecharge = () => {
+    setBatteryLevel(100);
+    playRotorClickSound(soundEnabled);
+  };
+
+  const handleSetBatteryMode = (mode: BatterySwitchMode) => {
+    setBatteryMode(mode);
+    playRotorClickSound(soundEnabled);
+  };
   const [compactMode, setCompactMode] = useState<boolean>(false);
   const [inputTape, setInputTape] = useState<string>('');
   const [cipherTape, setCipherTape] = useState<string>('');
@@ -268,6 +343,10 @@ export default function App() {
               setInputTape={setInputTape}
               cipherTape={cipherTape}
               setCipherTape={setCipherTape}
+              batteryLevel={batteryLevel}
+              batteryMode={batteryMode}
+              onSetBatteryMode={handleSetBatteryMode}
+              onConsumePower={handleConsumePower}
             />
           )}
 
@@ -319,6 +398,9 @@ export default function App() {
       {/* Footer */}
       <Footer
         onOpenInfo={() => setIsInfoOpen(true)}
+        batteryLevel={batteryLevel}
+        batteryMode={batteryMode}
+        onRecharge={handleRecharge}
       />
 
       {/* Modals */}

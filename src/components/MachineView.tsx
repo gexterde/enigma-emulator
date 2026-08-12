@@ -71,6 +71,10 @@ interface MachineViewProps {
   setInputTape: React.Dispatch<React.SetStateAction<string>>;
   cipherTape: string;
   setCipherTape: React.Dispatch<React.SetStateAction<string>>;
+  batteryLevel: number;
+  batteryMode: BatterySwitchMode;
+  onSetBatteryMode: (mode: BatterySwitchMode) => void;
+  onConsumePower: () => void;
 }
 
 // Authentic Enigma M3/M4 Lampboard/Keyboard Layout (3 rows: 9, 8, 9 keys)
@@ -87,7 +91,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
   inputTape,
   setInputTape,
   cipherTape,
-  setCipherTape
+  setCipherTape,
+  batteryLevel,
+  batteryMode,
+  onSetBatteryMode,
+  onConsumePower
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
@@ -551,7 +559,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
       }
     } else if (rawChar === ' ') {
       setInputTape((prev) => prev + ' ');
-      if (batteryMode !== 'aus') {
+      if (batteryMode !== 'aus' && batteryLevel > 0) {
         setCipherTape((prev) => prev + ' ');
       }
     }
@@ -603,12 +611,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
     }
   };
 
-  // Battery rotary power switch mode ('hell' | 'dkl' | 'aus' | 'sammler')
-  const [batteryMode, setBatteryMode] = useLocalStorage<BatterySwitchMode>('enigma_battery_mode', 'hell');
-
   const handleSetBatteryMode = (mode: BatterySwitchMode) => {
-    setBatteryMode(mode);
-    playRotorClickSound(soundEnabled);
+    onSetBatteryMode(mode);
   };
 
   // Active signal path key
@@ -645,9 +649,10 @@ export const MachineView: React.FC<MachineViewProps> = ({
     // Mechanical rotor stepping occurs regardless of electrical power
     onUpdateConfig(nextConfig);
 
-    const isPowerOn = batteryMode !== 'aus';
+    const isPowerOn = batteryMode !== 'aus' && batteryLevel > 0;
 
     if (isPowerOn) {
+      onConsumePower();
       // Save actual trace result so visualizer matches paper tape exactly
       setLastTraceResult({
         inputChar: uppercaseChar,
@@ -1276,7 +1281,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     type="button"
                     onClick={() => {
                       setInputTape((prev) => prev + ' ');
-                      if (batteryMode !== 'aus') {
+                      if (batteryMode !== 'aus' && batteryLevel > 0) {
                         setCipherTape((prev) => prev + ' ');
                       }
                       mobileInputRef.current?.focus();
@@ -1312,6 +1317,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
           <LampboardPanel
             isCompact={true}
             batteryMode={batteryMode}
+            batteryLevel={batteryLevel}
             litLamp={litLamp}
             dimIdleLights={dimIdleLights}
             keySize={keySize}
@@ -1522,7 +1528,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 type="button"
                 onClick={() => {
                   setInputTape((prev) => prev + ' ');
-                  if (batteryMode !== 'aus') {
+                  if (batteryMode !== 'aus' && batteryLevel > 0) {
                     setCipherTape((prev) => prev + ' ');
                   }
                   mobileInputRef.current?.focus();
@@ -1558,6 +1564,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
       <LampboardPanel
         isCompact={false}
         batteryMode={batteryMode}
+        batteryLevel={batteryLevel}
         litLamp={litLamp}
         dimIdleLights={dimIdleLights}
         keySize={keySize}
