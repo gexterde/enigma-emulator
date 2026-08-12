@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
+import { useTheme, getTheme } from '../lib/theme';
+//import React from 'react';
 
 export type BatterySwitchMode = 'hell' | 'dkl' | 'aus' | 'sammler';
 
@@ -17,6 +19,8 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
   isPanel = false,
   onClose
 }) => {
+  const { theme } = useTheme();
+  const t = getTheme(theme);
   const getAngle = (m: BatterySwitchMode) => {
     switch (m) {
       case 'hell': return -54;
@@ -42,43 +46,43 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
       <defs>
         {/* Wrinkled dark metallic panel texture gradient */}
         <radialGradient id="panelGrad" cx="50%" cy="50%" r="70%">
-          <stop offset="0%" stopColor="#211b12" />
-          <stop offset="100%" stopColor="#0d0a06" />
+          <stop offset="0%" stopColor={theme === 'vintage' ? '#211b12' : '#f8fafc'} />
+          <stop offset="100%" stopColor={theme === 'vintage' ? '#0d0a06' : '#e2e8f0'} />
         </radialGradient>
 
         {/* Brass finish gradient */}
         <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#f7ea9b" />
-          <stop offset="40%" stopColor="#d8b240" />
-          <stop offset="80%" stopColor="#8f6f1c" />
-          <stop offset="100%" stopColor="#57420e" />
+          <stop offset="0%" stopColor={theme === 'vintage' ? '#f7ea9b' : '#3b82f6'} />
+          <stop offset="40%" stopColor={theme === 'vintage' ? '#d8b240' : '#2563eb'} />
+          <stop offset="80%" stopColor={theme === 'vintage' ? '#8f6f1c' : '#1d4ed8'} />
+          <stop offset="100%" stopColor={theme === 'vintage' ? '#57420e' : '#1e40af'} />
         </linearGradient>
 
         {/* Bakelite knob gradient */}
         <radialGradient id="bakeliteBody" cx="35%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#4a2d1d" />
-          <stop offset="40%" stopColor="#28170e" />
-          <stop offset="85%" stopColor="#140b06" />
-          <stop offset="100%" stopColor="#090402" />
+          <stop offset="0%" stopColor={theme === 'vintage' ? '#4a2d1d' : '#475569'} />
+          <stop offset="40%" stopColor={theme === 'vintage' ? '#28170e' : '#334155'} />
+          <stop offset="85%" stopColor={theme === 'vintage' ? '#140b06' : '#1e293b'} />
+          <stop offset="100%" stopColor={theme === 'vintage' ? '#090402' : '#0f172a'} />
         </radialGradient>
 
         {/* Arc plate filter shadow */}
         <filter id="plateShadow" x="-10%" y="-10%" width="120%" height="120%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.8" />
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity={theme === 'vintage' ? '0.8' : '0.15'} />
         </filter>
       </defs>
 
       {/* Background Textured Plate */}
-      <rect x="0" y="0" width="200" height="135" rx="6" fill="url(#panelGrad)" />
+      <rect x="0" y="0" width="200" height="135" rx="6" fill="url(#panelGrad)" stroke={theme === 'vintage' ? '#3b3426' : '#cbd5e1'} strokeWidth="1" />
 
       {/* Center Axle Screwhole */}
-      <circle cx="100" cy="92" r="6" fill="#080503" stroke="#2d2215" strokeWidth="1.2" />
+      <circle cx="100" cy="92" r="6" fill={theme === 'vintage' ? '#080503' : '#cbd5e1'} stroke={theme === 'vintage' ? '#2d2215' : '#94a3b8'} strokeWidth="1.2" />
 
       {/* Pure White Porcelain / Enamel Arc Scale Plate */}
       <path
         d="M 32,92 A 68,68 0 0,1 168,92"
         fill="none"
-        stroke="#120e09"
+        stroke={theme === 'vintage' ? '#120e09' : '#e2e8f0'}
         strokeWidth="28"
         strokeLinecap="round"
         filter="url(#plateShadow)"
@@ -164,14 +168,14 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
         }}
       >
         {/* Knob Base Outer Circle */}
-        <circle cx="0" cy="0" r="32" fill="#0a0604" stroke="#281a10" strokeWidth="1.2" />
-        <circle cx="0" cy="0" r="29" fill="url(#bakeliteBody)" stroke="#110a06" strokeWidth="0.8" />
+        <circle cx="0" cy="0" r="32" fill={theme === 'vintage' ? "#0a0604" : "#1e293b"} stroke={theme === 'vintage' ? "#281a10" : "#475569"} strokeWidth="1.2" />
+        <circle cx="0" cy="0" r="29" fill="url(#bakeliteBody)" stroke={theme === 'vintage' ? "#110a06" : "#334155"} strokeWidth="0.8" />
 
         {/* Raised Teardrop Bakelite Handle Bar */}
         <path
           d="M -10,-38 C -10,-44 10,-44 10,-38 L 12,38 C 12,44 -12,44 -12,38 Z"
           fill="url(#bakeliteBody)"
-          stroke="#050302"
+          stroke={theme === 'vintage' ? "#050302" : "#0f172a"}
           strokeWidth="1"
           filter="url(#plateShadow)"
         />
@@ -179,21 +183,21 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
         {/* Inner Handle Grip Ridge */}
         <path
           d="M -7,-34 L 7,-34 L 8,34 L -8,34 Z"
-          fill="#211209"
-          stroke="#382012"
+          fill={theme === 'vintage' ? "#211209" : "#334155"}
+          stroke={theme === 'vintage' ? "#382012" : "#475569"}
           strokeWidth="0.6"
         />
 
         {/* Center Brass Hub Screw */}
-        <circle cx="0" cy="0" r="5" fill="url(#brassGrad)" stroke="#2d1f07" strokeWidth="0.8" />
-        <circle cx="0" cy="0" r="1.8" fill="#120c04" />
+        <circle cx="0" cy="0" r="5" fill="url(#brassGrad)" stroke={theme === 'vintage' ? "#2d1f07" : "#475569"} strokeWidth="0.8" />
+        <circle cx="0" cy="0" r="1.8" fill={theme === 'vintage' ? "#120c04" : "#0f172a"} />
 
         {/* DOUBLE-ENDED BRASS ARROW INDICATOR */}
         <g transform="translate(0, 0)">
           {/* Top Arrow Pointer (Points directly to white arc scale label) */}
-          <path d="M 0,-28 L -5,-19 L -2,-19 L -2,-5 L 2,-5 L 2,-19 L 5,-19 Z" fill="url(#brassGrad)" stroke="#3d2c08" strokeWidth="0.5" />
+          <path d="M 0,-28 L -5,-19 L -2,-19 L -2,-5 L 2,-5 L 2,-19 L 5,-19 Z" fill="url(#brassGrad)" stroke={theme === 'vintage' ? "#3d2c08" : "#1e40af"} strokeWidth="0.5" />
           {/* Bottom Arrow Pointer */}
-          <path d="M 0,28 L -5,19 L -2,19 L -2,5 L 2,5 L 2,19 L 5,19 Z" fill="url(#brassGrad)" stroke="#3d2c08" strokeWidth="0.5" />
+          <path d="M 0,28 L -5,19 L -2,19 L -2,5 L 2,5 L 2,19 L 5,19 Z" fill="url(#brassGrad)" stroke={theme === 'vintage' ? "#3d2c08" : "#1e40af"} strokeWidth="0.5" />
         </g>
       </g>
     </svg>
@@ -202,11 +206,11 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
   // If rendering as a standalone Panel (Card layout)
   if (isPanel) {
     return (
-      <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal transition-all animate-fade-in flex flex-col h-full select-none w-full">
+      <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} transition-all animate-fade-in flex flex-col h-full select-none w-full`}>
         {/* Panel Header */}
-        <div className="flex justify-between items-center mb-4 pb-2 border-b border-[#3b3426]">
-          <h2 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-widest flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm text-[#ebc238]">bolt</span>
+        <div className={`flex justify-between items-center mb-4 pb-2 border-b ${t.borderBase}`}>
+          <h2 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-widest flex items-center gap-2`}>
+            <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>bolt</span>
             BATTERIESCHALTER
           </h2>
           {onClose && (
@@ -216,7 +220,7 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
                 e.stopPropagation();
                 onClose();
               }}
-              className="text-[10px] sm:text-[11px] font-monospaced-technical text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-1 cursor-pointer border border-[#4e453b] px-2.5 py-1 rounded-md bg-[#120e04]/60 transition-all font-bold tracking-wider"
+              className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textMuted} hover:${t.textAccent} flex items-center gap-1 cursor-pointer border ${t.borderBase} px-2.5 py-1 rounded-md ${t.panelInner}/60 transition-all font-bold tracking-wider`}
               title="Close Battery Switch"
             >
               <span className="material-symbols-outlined text-xs">close</span>
@@ -227,13 +231,13 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
 
         {/* Switch Graphical Dial */}
         <div className="flex-1 flex flex-col justify-center items-center py-2">
-          <div className="relative flex items-center justify-center bg-[#18130b] rounded-lg border border-[#2d2518] p-1.5 shadow-inner w-full max-w-[240px] h-32 sm:h-36 my-1">
+          <div className={`relative flex items-center justify-center ${t.panelBg} rounded-lg border ${t.borderBase} p-1.5 shadow-inner w-full max-w-[240px] h-32 sm:h-36 my-1`}>
             {renderSvgElement('h-32 sm:h-36')}
           </div>
         </div>
 
         {/* Buttons underneath */}
-        <div className="flex items-center justify-center gap-2 mt-4 w-full font-monospaced-technical text-xs">
+        <div className={`flex items-center justify-center gap-2 mt-4 w-full ${t.fontMono} text-xs`}>
           {modes.map((m) => (
             <button
               key={m.id}
@@ -242,9 +246,9 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
               className={`min-w-[54px] sm:min-w-[64px] text-center rounded border transition-all cursor-pointer font-bold px-2 py-1.5 text-xs ${
                 mode === m.id
                   ? m.id === 'aus'
-                    ? 'bg-[#b91c1c] text-white border-[#b91c1c] shadow-md shadow-[#b91c1c]/20'
-                    : 'bg-[#ebc238] text-[#25190b] border-[#ebc238] shadow-md shadow-[#ebc238]/20 font-extrabold'
-                  : 'bg-[#1a140a] text-[#8c7e6a] hover:text-[#ede1cd] border-[#3b3426] hover:border-[#4e453b]'
+                    ? 'bg-red-600 text-white border-red-600 shadow-md'
+                    : `${t.buttonHighlight} font-extrabold shadow-md`
+                  : `${t.buttonPrimary}`
               }`}
               title={`Set Power Switch to ${m.label}`}
             >
@@ -259,13 +263,13 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
   // Original compact/nested representation
   return (
     <div
-      className={`relative flex flex-col items-center bg-[#100d07] rounded-xl border border-[#3b3426] shadow-2xl select-none w-full transition-all ${
+      className={`relative flex flex-col items-center ${t.panelBg} rounded-xl border ${t.borderBase} shadow-2xl select-none w-full transition-all ${
         compact ? 'p-1.5 max-w-[145px]' : 'p-2 max-w-[160px]'
       }`}
     >
-      <div className="w-full flex items-center justify-between gap-1 mb-1 border-b border-[#3b3426]/40 pb-1">
-        <div className={`font-monospaced-technical text-[#a89983] uppercase tracking-wider font-bold flex items-center gap-1 ${compact ? 'text-[8px]' : 'text-[9px]'}`}>
-          <span className="material-symbols-outlined text-xs text-[#ebc238]">bolt</span>
+      <div className={`w-full flex items-center justify-between gap-1 mb-1 border-b ${t.borderBase}/40 pb-1`}>
+        <div className={`${t.fontMono} ${t.textMuted} uppercase tracking-wider font-bold flex items-center gap-1 ${compact ? 'text-[8px]' : 'text-[9px]'}`}>
+          <span className={`material-symbols-outlined text-xs ${t.textAccent}`}>bolt</span>
           BATTERIESCHALTER
         </div>
         {onClose && (
@@ -275,7 +279,7 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
               e.stopPropagation();
               onClose();
             }}
-            className="text-[8px] sm:text-[9px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] hover:border-[#ebc238]/40 flex items-center gap-0.5 cursor-pointer border border-[#3b3426] px-1 py-0.5 rounded bg-[#120e04] transition-colors shadow-sm"
+            className={`text-[8px] sm:text-[9px] ${t.fontHeader} ${t.textMuted} hover:${t.textAccent} hover:${t.borderAccent}/40 flex items-center gap-0.5 cursor-pointer border ${t.borderBase} px-1 py-0.5 rounded ${t.panelInner} transition-colors shadow-sm`}
             title="Close Battery Switch"
           >
             <span className="material-symbols-outlined text-[10px] sm:text-[12px] leading-none">close</span>
@@ -284,12 +288,12 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
         )}
       </div>
 
-      <div className={`relative flex items-center justify-center bg-[#18130b] rounded-lg border border-[#2d2518] p-1 shadow-inner w-full ${compact ? 'h-20 my-0.5' : 'h-24 my-0.5'}`}>
+      <div className={`relative flex items-center justify-center ${t.panelBg} rounded-lg border ${t.borderBase} p-1 shadow-inner w-full ${compact ? 'h-20 my-0.5' : 'h-24 my-0.5'}`}>
         {renderSvgElement(compact ? 'h-20' : 'h-24')}
       </div>
 
       {/* Quick Select Mode Buttons */}
-      <div className={`flex items-center gap-1 w-full justify-center ${compact ? 'mt-0.5 text-[8px]' : 'mt-1 text-[9px]'} font-monospaced-technical`}>
+      <div className={`flex items-center gap-1 w-full justify-center ${compact ? 'mt-0.5 text-[8px]' : 'mt-1 text-[9px]'} ${t.fontMono}`}>
         {modes.map((m) => (
           <button
             key={m.id}
@@ -298,9 +302,9 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
             className={`rounded transition-all cursor-pointer font-bold ${compact ? 'px-1 py-0.2' : 'px-1.5 py-0.5'} ${
               mode === m.id
                 ? m.id === 'aus'
-                  ? 'bg-[#ff3b30] text-white shadow-md'
-                  : 'bg-[#ebc238] text-[#25190b] shadow-md ring-1 ring-[#fff5d6]'
-                : 'bg-[#1b160b] text-[#9e8d78] hover:text-[#e2d7c5] border border-[#2b2416]'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : `${t.buttonHighlight} shadow-md`
+                : `${t.buttonPrimary}`
             }`}
             title={`Set Power Switch to ${m.label}`}
           >

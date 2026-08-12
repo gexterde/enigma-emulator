@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
+import { useTheme, getTheme } from '../lib/theme';
+//import React, { useState, useMemo } from 'react';
 import { EnigmaConfig } from '../types';
 
 interface FrequencyAnalysisViewProps {
@@ -27,6 +29,8 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
   inputTape,
   cipherTape,
 }) => {
+  const { theme } = useTheme();
+  const t = getTheme(theme);
   const [inputText, setInputText] = useState<string>('');
   const [outputText, setOutputText] = useState<string>('');
   const [referenceType, setReferenceType] = useState<'english' | 'german' | 'uniform'>('english');
@@ -151,13 +155,13 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="border-b border-[#3b3426] pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className={`border-b ${t.borderBase} pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4`}>
         <div>
-          <h1 className="text-rotor-label font-rotor-label text-[#ebc238] text-xl md:text-2xl flex items-center gap-2">
+          <h1 className={`text-rotor-label ${t.fontRotor} ${t.textAccent} text-xl md:text-2xl flex items-center gap-2`}>
             <span className="material-symbols-outlined text-2xl">analytics</span>
             Frequency Analysis & Cryptanalysis Tool
           </h1>
-          <p className="text-[#d1c4b7] text-xs font-ui-body">
+          <p className={`${t.textMuted} text-xs ${t.fontBody}`}>
             Examine letter distribution profiles, verify the absolute derangement property, and analyze plugboard scrambling.
           </p>
         </div>
@@ -165,10 +169,14 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
           <button
             onClick={handleImportTapes}
             disabled={!inputTape && !cipherTape}
-            className={`text-xs font-ui-header px-3 py-1.5 rounded border transition-colors cursor-pointer flex items-center gap-1.5 ${
+            className={`text-xs ${t.fontHeader} px-3 py-1.5 rounded border transition-colors cursor-pointer flex items-center gap-1.5 ${
               inputTape || cipherTape
-                ? 'bg-[#ebc238]/20 border-[#ebc238] text-[#ede1cd] hover:bg-[#ebc238]/30'
-                : 'bg-[#252015] border-[#3b3426] text-[#8c7e6a] cursor-not-allowed'
+                ? theme === 'vintage'
+                  ? 'bg-[#ebc238]/20 border-[#ebc238] text-[#ede1cd] hover:bg-[#ebc238]/30'
+                  : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                : theme === 'vintage'
+                ? 'bg-[#252015] border-[#3b3426] text-[#8c7e6a] cursor-not-allowed'
+                : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
             }`}
           >
             <span className="material-symbols-outlined text-xs">sync_alt</span>
@@ -176,13 +184,13 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
           </button>
           <button
             onClick={() => handleLoadDemo('german_plain')}
-            className="text-xs font-ui-header bg-[#3b3426] hover:bg-[#4e453b] text-[#e3c193] border border-[#8b6f47] px-3 py-1.5 rounded transition-colors cursor-pointer"
+            className={`text-xs ${t.fontHeader} ${t.panelBg} ${theme === 'vintage' ? 'hover:bg-[#4e453b]' : 'hover:bg-slate-50'} ${t.textSecondary} border ${t.borderAccent} px-3 py-1.5 rounded transition-colors cursor-pointer`}
           >
             Load German Demo
           </button>
           <button
             onClick={() => handleLoadDemo('lorem')}
-            className="text-xs font-ui-header bg-[#3b3426] hover:bg-[#4e453b] text-[#e3c193] border border-[#8b6f47] px-3 py-1.5 rounded transition-colors cursor-pointer"
+            className={`text-xs ${t.fontHeader} ${t.panelBg} ${theme === 'vintage' ? 'hover:bg-[#4e453b]' : 'hover:bg-slate-50'} ${t.textSecondary} border ${t.borderAccent} px-3 py-1.5 rounded transition-colors cursor-pointer`}
           >
             Load English Demo
           </button>
@@ -196,26 +204,26 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
         <div className="lg:col-span-4 space-y-6">
           
           {/* Text Areas */}
-          <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal space-y-4">
-            <h3 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-wider pb-1 border-b border-[#3b3426]">
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-4`}>
+            <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider pb-1 border-b ${t.borderBase}`}>
               Interactive Input Data
             </h3>
             
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-monospaced-technical text-[#d1c4b7] uppercase tracking-wider block mb-1">
+                <label className={`text-[10px] ${t.fontMono} ${t.textMuted} uppercase tracking-wider block mb-1`}>
                   Plaintext (Original Message)
                 </label>
                 <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="Type or paste plain text here to see frequency changes..."
-                  className="w-full h-24 p-2 bg-[#120e04] border border-[#3b3426] rounded text-[#ede1cd] font-monospaced-technical text-xs focus:outline-none focus:border-[#ebc238] placeholder-[#8c7e6a]/60 resize-none"
+                  className={`w-full h-24 p-2 ${t.panelInner} border ${t.borderBase} rounded ${t.textPrimary} ${t.fontMono} text-xs focus:outline-none focus:${t.borderAccent} placeholder-current/40 resize-none`}
                 />
-                <div className="flex justify-between text-[10px] font-monospaced-technical text-[#8c7e6a] mt-0.5">
+                <div className={`flex justify-between text-[10px] ${t.fontMono} ${t.textMuted} mt-0.5`}>
                   <span>Letters counted: {inputStats.total}</span>
                   {inputText && (
-                    <button onClick={() => setInputText('')} className="hover:text-[#ffdad6] cursor-pointer">
+                    <button onClick={() => setInputText('')} className={`hover:${t.textPrimary} cursor-pointer`}>
                       Clear
                     </button>
                   )}
@@ -223,19 +231,19 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
               </div>
 
               <div>
-                <label className="text-[10px] font-monospaced-technical text-[#d1c4b7] uppercase tracking-wider block mb-1">
+                <label className={`text-[10px] ${t.fontMono} ${t.textMuted} uppercase tracking-wider block mb-1`}>
                   Ciphertext (Enigma Output)
                 </label>
                 <textarea
                   value={outputText}
                   onChange={(e) => setOutputText(e.target.value)}
                   placeholder="Type or paste cipher text here to analyze distribution flatness..."
-                  className="w-full h-24 p-2 bg-[#120e04] border border-[#3b3426] rounded text-[#ebc238] font-monospaced-technical text-xs focus:outline-none focus:border-[#ebc238] placeholder-[#8c7e6a]/60 resize-none"
+                  className={`w-full h-24 p-2 ${t.panelInner} border ${t.borderBase} rounded ${t.textAccent} ${t.fontMono} text-xs focus:outline-none focus:${t.borderAccent} placeholder-current/40 resize-none`}
                 />
-                <div className="flex justify-between text-[10px] font-monospaced-technical text-[#8c7e6a] mt-0.5">
+                <div className={`flex justify-between text-[10px] ${t.fontMono} ${t.textMuted} mt-0.5`}>
                   <span>Letters counted: {outputStats.total}</span>
                   {outputText && (
-                    <button onClick={() => setOutputText('')} className="hover:text-[#ffdad6] cursor-pointer">
+                    <button onClick={() => setOutputText('')} className={`hover:${t.textPrimary} cursor-pointer`}>
                       Clear
                     </button>
                   )}
@@ -245,40 +253,40 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
           </div>
 
           {/* Reference Distribution Selection */}
-          <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal space-y-3">
-            <h3 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-wider pb-1 border-b border-[#3b3426]">
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-3`}>
+            <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider pb-1 border-b ${t.borderBase}`}>
               Reference Baseline
             </h3>
-            <p className="text-[11px] text-[#d1c4b7]">
+            <p className={`text-[11px] ${t.textMuted}`}>
               Compare your text's frequency characteristics with standard historical profiles:
             </p>
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => setReferenceType('english')}
-                className={`py-2 text-xs font-ui-header rounded border transition-colors cursor-pointer ${
+                className={`py-2 text-xs ${t.fontHeader} rounded border transition-colors cursor-pointer ${
                   referenceType === 'english'
-                    ? 'bg-[#ebc238]/20 border-[#ebc238] text-[#ede1cd] font-semibold'
-                    : 'bg-[#120e04] border-[#3b3426] text-[#d1c4b7] hover:bg-[#2f291c]'
+                    ? `${t.buttonHighlight} font-semibold shadow-sm`
+                    : `${t.buttonPrimary}`
                 }`}
               >
                 English
               </button>
               <button
                 onClick={() => setReferenceType('german')}
-                className={`py-2 text-xs font-ui-header rounded border transition-colors cursor-pointer ${
+                className={`py-2 text-xs ${t.fontHeader} rounded border transition-colors cursor-pointer ${
                   referenceType === 'german'
-                    ? 'bg-[#ebc238]/20 border-[#ebc238] text-[#ede1cd] font-semibold'
-                    : 'bg-[#120e04] border-[#3b3426] text-[#d1c4b7] hover:bg-[#2f291c]'
+                    ? `${t.buttonHighlight} font-semibold shadow-sm`
+                    : `${t.buttonPrimary}`
                 }`}
               >
                 German
               </button>
               <button
                 onClick={() => setReferenceType('uniform')}
-                className={`py-2 text-xs font-ui-header rounded border transition-colors cursor-pointer ${
+                className={`py-2 text-xs ${t.fontHeader} rounded border transition-colors cursor-pointer ${
                   referenceType === 'uniform'
-                    ? 'bg-[#ebc238]/20 border-[#ebc238] text-[#ede1cd] font-semibold'
-                    : 'bg-[#120e04] border-[#3b3426] text-[#d1c4b7] hover:bg-[#2f291c]'
+                    ? `${t.buttonHighlight} font-semibold shadow-sm`
+                    : `${t.buttonPrimary}`
                 }`}
               >
                 Uniform
@@ -287,28 +295,28 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
           </div>
 
           {/* Index of Coincidence Card */}
-          <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal space-y-4">
-            <div className="flex items-center gap-2 pb-1 border-b border-[#3b3426]">
-              <span className="material-symbols-outlined text-sm text-[#ebc238]">grid_view</span>
-              <h3 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-wider">
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-4`}>
+            <div className={`flex items-center gap-2 pb-1 border-b ${t.borderBase}`}>
+              <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>grid_view</span>
+              <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider`}>
                 Index of Coincidence (I.C.)
               </h3>
             </div>
             
-            <p className="text-[11px] text-[#d1c4b7] leading-relaxed">
+            <p className={`text-[11px] ${t.textMuted} leading-relaxed`}>
               I.C. measures how much a text deviates from a random uniform alphabet (0.0385). High values point to natural language fingerprint.
             </p>
 
             <div className="space-y-4 pt-1">
               {/* Plaintext I.C. */}
               <div className="space-y-1">
-                <div className="flex justify-between text-xs font-monospaced-technical">
-                  <span className="text-[#d1c4b7]">Plaintext I.C.</span>
-                  <span className="font-bold text-[#ede1cd]">
+                <div className={`flex justify-between text-xs ${t.fontMono}`}>
+                  <span className={`${t.textMuted}`}>Plaintext I.C.</span>
+                  <span className={`font-bold ${t.textPrimary}`}>
                     {inputStats.total > 1 ? inputIC.toFixed(4) : '—'}
                   </span>
                 </div>
-                <div className="h-2 bg-[#120e04] rounded-full overflow-hidden relative border border-[#3b3426]">
+                <div className={`h-2 ${t.panelInner} rounded-full overflow-hidden relative border ${t.borderBase}`}>
                   {inputStats.total > 1 && (
                     <div
                       className="h-full bg-amber-500 rounded-full transition-all duration-500"
@@ -323,13 +331,13 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
 
               {/* Ciphertext I.C. */}
               <div className="space-y-1">
-                <div className="flex justify-between text-xs font-monospaced-technical">
-                  <span className="text-[#ebc238]">Ciphertext I.C.</span>
-                  <span className="font-bold text-[#ebc238]">
+                <div className={`flex justify-between text-xs ${t.fontMono}`}>
+                  <span className={`${t.textAccent}`}>Ciphertext I.C.</span>
+                  <span className={`font-bold ${t.textAccent}`}>
                     {outputStats.total > 1 ? outputIC.toFixed(4) : '—'}
                   </span>
                 </div>
-                <div className="h-2 bg-[#120e04] rounded-full overflow-hidden relative border border-[#3b3426]">
+                <div className={`h-2 ${t.panelInner} rounded-full overflow-hidden relative border ${t.borderBase}`}>
                   {outputStats.total > 1 && (
                     <div
                       className="h-full bg-[#ebc238] rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(235,194,56,0.6)]"
@@ -343,10 +351,10 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-[#120e04] p-2.5 rounded border border-[#3b3426] text-[10px] text-[#d1c4b7] font-monospaced-technical">
+            <div className={`flex items-center gap-2 ${t.panelInner} p-2.5 rounded border ${t.borderBase} text-[10px] ${t.textMuted} ${t.fontMono}`}>
               <span className="material-symbols-outlined text-xs text-blue-400">info</span>
               <span>
-                Enigma encryption diffuses letters, pushing Ciphertext I.C. down near <strong className="text-[#ebc238]">0.0385</strong>. This flattened profile conceals standard letter frequencies.
+                Enigma encryption diffuses letters, pushing Ciphertext I.C. down near <strong className={`${t.textAccent}`}>0.0385</strong>. This flattened profile conceals standard letter frequencies.
               </span>
             </div>
           </div>
@@ -357,23 +365,23 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
         <div className="lg:col-span-8 space-y-6">
           
           {/* The Frequency Bar Chart */}
-          <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-5 shadow-panel texture-metal space-y-4">
-            <div className="flex justify-between items-center pb-1 border-b border-[#3b3426]">
-              <h3 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-wider flex items-center gap-2">
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-4`}>
+            <div className={`flex justify-between items-center pb-1 border-b ${t.borderBase}`}>
+              <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider flex items-center gap-2`}>
                 <span className="material-symbols-outlined text-sm">equalizer</span>
                 Visual Monographic Frequency Profile (A-Z)
               </h3>
-              <div className="flex gap-4 text-[10px] font-monospaced-technical text-[#d1c4b7]">
+              <div className={`flex gap-4 text-[10px] ${t.fontMono} ${t.textMuted}`}>
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-2.5 h-2.5 bg-[#ede1cd] rounded-sm" />
+                  <span className={`inline-block w-2.5 h-2.5 ${theme === 'vintage' ? 'bg-[#ede1cd]' : 'bg-slate-400'} rounded-sm`} />
                   Plaintext
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-2.5 h-2.5 bg-[#ebc238] rounded-sm shadow-[0_0_4px_rgba(235,194,56,0.5)]" />
+                  <span className={`inline-block w-2.5 h-2.5 ${theme === 'vintage' ? 'bg-[#ebc238] shadow-[0_0_4px_rgba(235,194,56,0.5)]' : 'bg-blue-600 shadow-[0_0_4px_rgba(59,130,246,0.5)]'} rounded-sm`} />
                   Ciphertext
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-2.5 h-2.5 border border-dashed border-[#8b6f47] bg-transparent rounded-sm" />
+                  <span className={`inline-block w-2.5 h-2.5 border border-dashed ${t.borderAccent} bg-transparent rounded-sm`} />
                   Baseline ({referenceType.toUpperCase()})
                 </span>
               </div>
@@ -385,11 +393,11 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
                 <div className="min-w-[640px] h-72 flex items-end justify-between px-2 pb-6 relative">
                   
                   {/* Grid Y-lines */}
-                  <div className="absolute inset-0 flex flex-col justify-between pointer-events-none text-[9px] font-monospaced-technical text-[#8c7e6a]/40 pb-6">
-                    <div className="border-b border-[#3b3426]/40 w-full pt-1"><span>{maxPercent.toFixed(0)}%</span></div>
-                    <div className="border-b border-[#3b3426]/40 w-full"><span>{(maxPercent * 0.75).toFixed(0)}%</span></div>
-                    <div className="border-b border-[#3b3426]/40 w-full"><span>{(maxPercent * 0.5).toFixed(0)}%</span></div>
-                    <div className="border-b border-[#3b3426]/40 w-full"><span>{(maxPercent * 0.25).toFixed(0)}%</span></div>
+                  <div className={`absolute inset-0 flex flex-col justify-between pointer-events-none text-[9px] ${t.fontMono} ${t.textMuted}/40 pb-6`}>
+                    <div className={`border-b ${t.borderBase}/40 w-full pt-1`}><span>{maxPercent.toFixed(0)}%</span></div>
+                    <div className={`border-b ${t.borderBase}/40 w-full`}><span>{(maxPercent * 0.75).toFixed(0)}%</span></div>
+                    <div className={`border-b ${t.borderBase}/40 w-full`}><span>{(maxPercent * 0.5).toFixed(0)}%</span></div>
+                    <div className={`border-b ${t.borderBase}/40 w-full`}><span>{(maxPercent * 0.25).toFixed(0)}%</span></div>
                     <div className="w-full"><span>0%</span></div>
                   </div>
 
@@ -417,68 +425,68 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
                       >
                         {/* Hover Overlay highlight */}
                         {isHovered && (
-                          <div className="absolute inset-x-0 top-0 bottom-6 bg-[#ebc238]/5 rounded-sm pointer-events-none border-x border-[#ebc238]/10" />
+                          <div className={`absolute inset-x-0 top-0 bottom-6 ${theme === 'vintage' ? 'bg-[#ebc238]/5' : 'bg-blue-500/10'} rounded-sm pointer-events-none border-x ${t.borderAccent}/10`} />
                         )}
 
                         <div className="w-full flex items-end justify-center h-full relative gap-[2px] pb-1 z-10">
-                          {/* Reference Bar (Dashed brass wire behind) */}
+                          {/* Reference Bar (Dashed wire behind) */}
                           <div
-                            className="absolute w-full border border-dashed border-[#8b6f47]/60 bg-transparent rounded-t-sm"
+                            className={`absolute w-full border border-dashed ${t.borderAccent}/60 bg-transparent rounded-t-sm`}
                             style={{ height: refHeight, bottom: 4 }}
                           />
 
-                          {/* Plaintext Bar (Light timber-offwhite column) */}
+                          {/* Plaintext Bar */}
                           <div
-                            className="w-1/2 bg-[#ede1cd]/40 group-hover:bg-[#ede1cd]/60 rounded-t-sm transition-all duration-300"
+                            className={`w-1/2 ${theme === 'vintage' ? 'bg-[#ede1cd]/40 group-hover:bg-[#ede1cd]/60' : 'bg-slate-300 group-hover:bg-slate-400'} rounded-t-sm transition-all duration-300`}
                             style={{ height: inHeight }}
                           />
 
-                          {/* Ciphertext Bar (Amber-gold brass cylinder column) */}
+                          {/* Ciphertext Bar */}
                           <div
-                            className="w-1/2 bg-[#ebc238] group-hover:bg-[#f3d05a] rounded-t-sm transition-all duration-300 shadow-[0_0_6px_rgba(235,194,56,0.25)] group-hover:shadow-[0_0_10px_rgba(235,194,56,0.5)]"
+                            className={`w-1/2 ${theme === 'vintage' ? 'bg-[#ebc238] group-hover:bg-[#f3d05a] shadow-[0_0_6px_rgba(235,194,56,0.25)] group-hover:shadow-[0_0_10px_rgba(235,194,56,0.5)]' : 'bg-blue-600 group-hover:bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.25)] group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]'} rounded-t-sm transition-all duration-300`}
                             style={{ height: outHeight }}
                           />
                         </div>
 
                         {/* X-axis Label & Steckerbrett Indicator */}
                         <div className="absolute bottom-0 flex flex-col items-center">
-                          <span className={`text-xs font-rotor-label font-bold transition-colors duration-200 ${
-                            isHovered ? 'text-[#ebc238]' : isPlugged ? 'text-cyan-400' : 'text-[#d1c4b7]'
+                          <span className={`text-xs ${t.fontRotor} font-bold transition-colors duration-200 ${
+                            isHovered ? t.textAccent : isPlugged ? 'text-cyan-500' : t.textMuted
                           }`}>
                             {char}
                           </span>
                           {isPlugged && (
-                            <span className="w-1 h-1 rounded-full bg-cyan-400 mt-0.5" title={`Plugged to ${isPlugged}`} />
+                            <span className="w-1 h-1 rounded-full bg-cyan-500 mt-0.5" title={`Plugged to ${isPlugged}`} />
                           )}
                         </div>
 
                         {/* Interactive Tooltip Card */}
                         {isHovered && (
-                          <div className="absolute bottom-28 bg-[#181307] border-2 border-[#8b6f47] rounded p-3 w-48 shadow-2xl z-50 text-left font-monospaced-technical text-[10px] leading-tight space-y-1.5 pointer-events-none transform -translate-y-2">
-                            <div className="flex justify-between items-center pb-1 border-b border-[#3b3426]">
-                              <span className="font-bold text-sm text-[#ebc238] font-rotor-label">Letter {char}</span>
+                          <div className={`absolute bottom-28 ${t.panelBg} border-2 ${t.borderAccent} rounded p-3 w-48 shadow-2xl z-50 text-left ${t.fontMono} text-[10px] leading-tight space-y-1.5 pointer-events-none transform -translate-y-2`}>
+                            <div className={`flex justify-between items-center pb-1 border-b ${t.borderBase}`}>
+                              <span className={`font-bold text-sm ${t.textAccent} ${t.fontRotor}`}>Letter {char}</span>
                               {isPlugged ? (
-                                <span className="bg-cyan-950 text-cyan-400 px-1.5 py-0.5 rounded border border-cyan-800/50 uppercase font-bold text-[8px]">
+                                <span className={`${theme === 'vintage' ? 'bg-cyan-950 text-cyan-400 border-cyan-800/50' : 'bg-cyan-50 text-cyan-700 border-cyan-200'} px-1.5 py-0.5 rounded border uppercase font-bold text-[8px]`}>
                                   🔌 Plugged to {isPlugged}
                                 </span>
                               ) : (
-                                <span className="text-[#8c7e6a] text-[8px]">Unplugged</span>
+                                <span className={`${t.textMuted} text-[8px]`}>Unplugged</span>
                               )}
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-[#d1c4b7]">Plaintext:</span>
-                              <span className="font-bold text-[#ede1cd]">{inPct.toFixed(1)}% ({inCount})</span>
+                              <span className={`${t.textMuted}`}>Plaintext:</span>
+                              <span className={`font-bold ${t.textPrimary}`}>{inPct.toFixed(1)}% ({inCount})</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-[#ebc238]">Ciphertext:</span>
-                              <span className="font-bold text-[#ebc238]">{outPct.toFixed(1)}% ({outCount})</span>
+                              <span className={`${t.textAccent}`}>Ciphertext:</span>
+                              <span className={`font-bold ${t.textAccent}`}>{outPct.toFixed(1)}% ({outCount})</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-[#8c7e6a]">Baseline ({referenceType.toUpperCase()}):</span>
-                              <span className="font-bold text-[#8c7e6a]">{refPct.toFixed(1)}%</span>
+                              <span className={`${t.textMuted}`}>Baseline ({referenceType.toUpperCase()}):</span>
+                              <span className={`font-bold ${t.textMuted}`}>{refPct.toFixed(1)}%</span>
                             </div>
-                            <div className="flex justify-between border-t border-[#3b3426]/50 pt-1">
-                              <span className="text-[#d1c4b7]">Deviation:</span>
+                            <div className={`flex justify-between border-t ${t.borderBase}/50 pt-1`}>
+                              <span className={`${t.textMuted}`}>Deviation:</span>
                               <span className={`font-bold ${(outPct - refPct) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                                 {(outPct - refPct) >= 0 ? '+' : ''}{(outPct - refPct).toFixed(1)}%
                               </span>
@@ -497,29 +505,29 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* Self-Encryption / Derangement Property Check */}
-            <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-5 shadow-panel texture-metal space-y-3.5">
-              <div className="flex items-center gap-2 pb-1 border-b border-[#3b3426]">
-                <span className="material-symbols-outlined text-sm text-[#93000a]">cancel</span>
-                <h3 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-wider">
+            <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-3.5`}>
+              <div className={`flex items-center gap-2 pb-1 border-b ${t.borderBase}`}>
+                <span className="material-symbols-outlined text-sm text-red-500">cancel</span>
+                <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider`}>
                   Self-Encryption Check (Crib Analysis)
                 </h3>
               </div>
 
-              <div className="flex items-center justify-between bg-[#120e04] p-3 rounded border border-[#3b3426]">
+              <div className={`flex items-center justify-between ${t.panelInner} p-3 rounded border ${t.borderBase}`}>
                 <div>
-                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] block uppercase">
+                  <span className={`text-[10px] ${t.fontMono} ${t.textMuted} block uppercase`}>
                     Letters Mapping to Themselves
                   </span>
-                  <span className="font-rotor-label text-lg font-bold text-[#ede1cd]">
+                  <span className={`${t.fontRotor} text-lg font-bold ${t.textPrimary}`}>
                     {selfEncryptionDetails.matches} / {selfEncryptionDetails.totalAnalyzed} analyzed
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] block uppercase">
+                  <span className={`text-[10px] ${t.fontMono} ${t.textMuted} block uppercase`}>
                     Conflict Rate
                   </span>
-                  <span className={`font-rotor-label text-lg font-bold ${
-                    selfEncryptionDetails.hasIssues ? 'text-red-400' : 'text-green-400'
+                  <span className={`${t.fontRotor} text-lg font-bold ${
+                    selfEncryptionDetails.hasIssues ? 'text-red-500' : 'text-green-500'
                   }`}>
                     {selfEncryptionDetails.rate.toFixed(1)}%
                   </span>
@@ -527,24 +535,24 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
               </div>
 
               {selfEncryptionDetails.totalAnalyzed === 0 ? (
-                <p className="text-[11px] text-[#8c7e6a] italic">
+                <p className={`text-[11px] ${t.textMuted} italic`}>
                   Import text on both sides to run the self-encryption check.
                 </p>
               ) : !selfEncryptionDetails.hasIssues ? (
                 <div className="space-y-2">
-                  <div className="p-2.5 bg-green-950/20 text-green-300 border border-green-900/50 rounded flex items-start gap-2 text-[10px] font-monospaced-technical leading-relaxed">
+                  <div className={`p-2.5 ${theme === 'vintage' ? 'bg-green-950/20 text-green-300 border-green-900/50' : 'bg-green-50 text-green-800 border-green-200'} border rounded flex items-start gap-2 text-[10px] ${t.fontMono} leading-relaxed`}>
                     <span className="material-symbols-outlined text-xs shrink-0 mt-0.5">verified_user</span>
                     <span>
                       <strong>Bletchley Park Audit: Perfect Derangement verified!</strong> Zero letters encrypt to themselves. This strict constraint is an inherent mathematical property of the Enigma reflector circuit.
                     </span>
                   </div>
-                  <p className="text-[10px] text-[#d1c4b7] leading-relaxed">
+                  <p className={`text-[10px] ${t.textMuted} leading-relaxed`}>
                     <strong>The Cribbing Strategy:</strong> Because Enigma could never encrypt a letter to itself (e.g. "E" to "E"), codebreakers at Bletchley Park used paper strips to slide guessed plaintexts (like "WETTERVORHERSAGE" - weather forecast) over ciphertext blocks. If any letter matched, they knew that alignment was invalid. When no letters matched, they had a potential 'crib' alignment, saving weeks of rotor configuration search.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <div className="p-2.5 bg-[#93000a]/10 text-red-300 border border-red-900/40 rounded flex items-start gap-2 text-[10px] font-monospaced-technical leading-relaxed">
+                  <div className={`p-2.5 ${theme === 'vintage' ? 'bg-red-950/20 text-red-300 border-red-900/40' : 'bg-red-50 text-red-800 border-red-200'} border rounded flex items-start gap-2 text-[10px] ${t.fontMono} leading-relaxed`}>
                     <span className="material-symbols-outlined text-xs shrink-0 mt-0.5">warning</span>
                     <span>
                       <strong>Warning: Self-Encryption detected!</strong> Some letters map to themselves (e.g. index {selfEncryptionDetails.conflictIndices.slice(0, 3).map((v) => `#${v + 1}`).join(', ')}). This text cannot be a pure Enigma transmission, or the plain and cipher strings are misaligned.
@@ -555,35 +563,35 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
             </div>
 
             {/* Plugboard Effects Analysis */}
-            <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-5 shadow-panel texture-metal space-y-3.5">
-              <div className="flex items-center gap-2 pb-1 border-b border-[#3b3426]">
+            <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-3.5`}>
+              <div className={`flex items-center gap-2 pb-1 border-b ${t.borderBase}`}>
                 <span className="material-symbols-outlined text-sm text-cyan-400">power_input</span>
-                <h3 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-wider">
+                <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider`}>
                   Plugboard (Steckerbrett) Effects
                 </h3>
               </div>
 
-              <p className="text-[10px] text-[#d1c4b7] leading-relaxed">
+              <p className={`text-[10px] ${t.textMuted} leading-relaxed`}>
                 The plugboard swaps pairs of letters at the very beginning and end of the electrical current. This changes the monographic frequency profile that enters the rotor scrambler.
               </p>
 
               <div className="space-y-2">
-                <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] uppercase tracking-wider block">
+                <span className={`text-[10px] ${t.fontMono} ${t.textMuted} uppercase tracking-wider block`}>
                   Active Cable Swaps ({Object.keys(plugboardMap).length / 2})
                 </span>
                 
                 {Object.keys(plugboardMap).length === 0 ? (
-                  <div className="p-3 bg-[#120e04] rounded border border-[#3b3426] text-center text-[10px] text-[#8c7e6a] italic">
+                  <div className={`p-3 ${t.panelInner} rounded border ${t.borderBase} text-center text-[10px] ${t.textMuted} italic`}>
                     No plugboard connections active. Letters enter the rotor scrambler unmodified.
                   </div>
                 ) : (
-                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto bg-[#120e04] p-2 rounded border border-[#3b3426]">
+                  <div className={`flex flex-wrap gap-1.5 max-h-24 overflow-y-auto ${t.panelInner} p-2 rounded border ${t.borderBase}`}>
                     {Object.entries(plugboardMap)
                       .filter(([k, v]) => k < v) // show only one direction pairs
                       .map(([k, v]) => (
                         <div
                           key={k}
-                          className="px-2 py-1 text-[10px] font-monospaced-technical rounded bg-cyan-950/40 text-cyan-400 border border-cyan-900/50 flex items-center gap-1 shadow-inner"
+                          className={`px-2 py-1 text-[10px] ${t.fontMono} rounded bg-cyan-950/40 text-cyan-400 border border-cyan-900/50 flex items-center gap-1 shadow-inner`}
                         >
                           <span className="font-bold">{k}</span>
                           <span className="material-symbols-outlined text-[8px] text-cyan-500">sync_alt</span>
@@ -593,7 +601,7 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
                   </div>
                 )}
 
-                <p className="text-[10px] text-[#d1c4b7] leading-relaxed pt-1">
+                <p className={`text-[10px] ${t.textMuted} leading-relaxed pt-1`}>
                   <strong>Frequency Scrambling:</strong> Because high frequency letters (like "E") are plugged to other letters, their natural high-frequency enters the scrambling rotor core through a completely different wire, and vice-versa. This prevents simple single-letter frequency solvers from breaking Enigma without finding the correct rotor paths first.
                 </p>
               </div>

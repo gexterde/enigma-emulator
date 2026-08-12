@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
+import { useTheme, getTheme } from '../lib/theme';
+//import React, { useState, useMemo } from 'react';
 import { EnigmaConfig } from '../types';
 import { playRotorClickSound } from '../lib/audio';
 import { encryptChar, charToNum, numToChar } from '../lib/enigmaEngine';
@@ -60,6 +62,8 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
   setShowBroadcastModal,
   onApplyRotorGrundstellung,
 }) => {
+  const { theme } = useTheme();
+  const t = getTheme(theme);
   const lettersCount = inputTape.replace(/[^A-Z]/gi, '').length;
 
   // Historical Indicator (Spruchschlüssel) Encryption Assistant Modal state
@@ -132,19 +136,19 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
     <div
       className={`${
         isCompact
-          ? 'bg-[#1b1710]/90 p-3.5 rounded-xl border border-[#3d3526] shadow-lg space-y-3'
-          : 'bg-[#17130b] border border-[#3b3426] p-3.5 rounded-lg space-y-3.5'
+          ? (theme === 'vintage' ? 'bg-[#1b1710]/90 border-[#3d3526]' : 'bg-white/90 border-slate-200') + ' p-3.5 rounded-xl border shadow-lg space-y-3'
+          : (theme === 'vintage' ? 'bg-[#17130b] border-[#3b3426]' : 'bg-slate-50 border-slate-200') + ' border p-3.5 rounded-lg space-y-3.5'
       } animate-fade-in`}
     >
-      <div className="flex items-center justify-between border-b border-[#3b3426] pb-1.5">
+      <div className={`flex items-center justify-between border-b ${t.borderBase} pb-1.5`}>
         <div className="flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-[15px] text-[#ebc238]">fact_check</span>
-          <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase tracking-wider font-bold">
+          <span className={`material-symbols-outlined text-[15px] ${t.textAccent}`}>fact_check</span>
+          <span className={`text-[10px] ${t.fontMono} ${t.textAccent} uppercase tracking-wider font-bold`}>
             Funktelegramm Header (Message Header)
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[9px] text-[#8c7e6a] font-mono uppercase tracking-widest hidden sm:inline">
+          <span className={`text-[9px] ${t.textMuted} font-mono uppercase tracking-widest hidden sm:inline`}>
             M3 / M4 Procedure
           </span>
           <button
@@ -152,7 +156,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
             onClick={() => setHeaderCollapsed(!headerCollapsed)}
             className={`text-[10px] ${
               isCompact ? 'sm:text-[11px]' : ''
-            } font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-0.5 cursor-pointer border border-[#3b3426] px-1.5 py-0.5 rounded bg-[#120e04]`}
+            } font-ui-header ${theme === 'vintage' ? 'text-[#d1c4b7] hover:text-[#ebc238] border-[#3b3426] bg-[#120e04]' : 'text-slate-600 hover:text-blue-600 border-slate-300 bg-slate-100'} flex items-center gap-0.5 cursor-pointer border px-1.5 py-0.5 rounded`}
             title={headerCollapsed ? 'Show Message Header' : 'Close Message Header'}
           >
             <span className="material-symbols-outlined text-sm">
@@ -168,20 +172,20 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
           <div className={`grid grid-cols-1 ${isCompact ? 'sm:grid-cols-3' : 'md:grid-cols-3'} gap-3`}>
             {/* 1. Preamble */}
             <div
-              className={`border border-[#4e453b]/60 rounded ${
+              className={`border ${t.borderBase}/60 rounded ${
                 isCompact ? 'p-2' : 'p-2.5'
-              } bg-[#120e04]/50 flex flex-col justify-between`}
+              } ${theme === 'vintage' ? 'bg-[#120e04]/50' : 'bg-white'} flex flex-col justify-between`}
             >
               <div className={`flex items-center justify-between ${isCompact ? 'mb-1' : 'mb-1.5'}`}>
-                <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                <span className={`text-[10px] ${t.fontMono} ${t.textMuted} font-bold uppercase`}>
                   1. Preamble (Präambel)
                 </span>
-                <span className="text-[9px] text-[#8c7e6a] font-mono">Cleartext</span>
+                <span className={`text-[9px] ${t.textMuted} font-mono`}>Cleartext</span>
               </div>
               <div className={`grid grid-cols-3 ${isCompact ? 'gap-1' : 'gap-1.5'}`}>
                 <div>
                   <label
-                    className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5"
+                    className={`text-[8px] ${t.textMuted} uppercase ${t.fontMono} block mb-0.5`}
                     title="Sender Call Sign"
                   >
                     Sender
@@ -195,15 +199,15 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                       )
                     }
                     placeholder="DFS"
-                    className={`w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded ${
+                    className={`w-full ${theme === 'vintage' ? 'bg-[#1b160e] ' + t.textAccent : 'bg-white text-blue-600'} border ${t.borderBase} rounded ${
                       isCompact ? 'px-1 py-0.5' : 'px-1.5 py-1'
-                    } text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors`}
+                    } text-xs font-monospaced-technical font-bold text-center focus:outline-none ${theme === 'vintage' ? 'focus:border-[#ebc238]' : 'focus:border-blue-500'} transition-colors`}
                     title="Sender identification call sign (Clear text)"
                   />
                 </div>
                 <div>
                   <label
-                    className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5 flex justify-between items-center"
+                    className={`text-[8px] ${t.textMuted} uppercase ${t.fontMono} block mb-0.5 flex justify-between items-center`}
                     title="Time of Transmission"
                   >
                     <span>Time</span>
@@ -216,7 +220,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                         setTransmissionTime(`${hours}${mins}`);
                         playRotorClickSound(soundEnabled);
                       }}
-                      className="text-[8px] text-[#ebc238] hover:underline cursor-pointer font-bold"
+                      className={`text-[8px] ${t.textAccent} hover:underline cursor-pointer font-bold`}
                       title="Set to Current Time"
                     >
                       Now
@@ -227,21 +231,21 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                     value={transmissionTime}
                     onChange={(e) => setTransmissionTime(e.target.value.replace(/[^0-9]/g, '').substring(0, 4))}
                     placeholder="1200"
-                    className={`w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded ${
+                    className={`w-full ${theme === 'vintage' ? 'bg-[#1b160e] ' + t.textAccent : 'bg-white text-blue-600'} border ${t.borderBase} rounded ${
                       isCompact ? 'px-1 py-0.5' : 'px-1.5 py-1'
-                    } text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors`}
+                    } text-xs font-monospaced-technical font-bold text-center focus:outline-none ${theme === 'vintage' ? 'focus:border-[#ebc238]' : 'focus:border-blue-500'} transition-colors`}
                     title="Time of transmission (HHMM clear text)"
                   />
                 </div>
                 <div>
                   <label
-                    className="text-[8px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-0.5"
+                    className={`text-[8px] ${t.textMuted} uppercase ${t.fontMono} block mb-0.5`}
                     title="Letter Count"
                   >
                     Letters
                   </label>
                   <div
-                    className={`w-full bg-[#1b160e]/50 text-[#ede1cd] border border-[#3b3426] rounded ${
+                    className={`w-full ${theme === 'vintage' ? 'bg-[#1b160e]/50 ' + t.textPrimary : 'bg-slate-50 text-slate-400'} border ${t.borderBase} rounded ${
                       isCompact ? 'py-0.5' : 'py-1'
                     } text-xs font-monospaced-technical font-bold text-center select-none`}
                     title="Automatically computed letter count of ciphertext tape"
@@ -254,25 +258,25 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
 
             {/* 2. Key Identifier */}
             <div
-              className={`border border-[#4e453b]/60 rounded ${
+              className={`border ${t.borderBase}/60 rounded ${
                 isCompact ? 'p-2' : 'p-2.5'
-              } bg-[#120e04]/50 flex flex-col justify-between`}
+              } ${theme === 'vintage' ? 'bg-[#120e04]/50' : 'bg-white'} flex flex-col justify-between`}
             >
               <div className={`flex items-center justify-between ${isCompact ? 'mb-1' : 'mb-1.5'}`}>
-                <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                <span className={`text-[10px] ${t.fontMono} ${t.textMuted} font-bold uppercase`}>
                   2. Kenngruppe (Key ID)
                 </span>
                 {onRandomKey ? (
                   <button
                     type="button"
                     onClick={onRandomKey}
-                    className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono"
+                    className={`text-[9px] ${t.textAccent} hover:underline cursor-pointer font-bold font-mono`}
                     title="Randomly select indicator group from currently active daily key"
                   >
                     🎲 Random Key
                   </button>
                 ) : (
-                  <span className="text-[9px] text-[#8c7e6a] font-mono">3-Letter</span>
+                  <span className={`text-[9px] ${t.textMuted} font-mono`}>3-Letter</span>
                 )}
               </div>
               <div className="flex gap-2 items-center">
@@ -281,14 +285,14 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                   value={kenngruppe}
                   onChange={(e) => setKenngruppe(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 3))}
                   placeholder="UIO"
-                  className={`w-20 bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded ${
+                  className={`w-20 ${theme === 'vintage' ? 'bg-[#1b160e] ' + t.textAccent : 'bg-white text-blue-600'} border ${t.borderBase} rounded ${
                     isCompact ? 'px-1 py-0.5' : 'px-1.5 py-1'
-                  } text-xs font-monospaced-technical font-bold text-center focus:outline-none focus:border-[#ebc238] transition-colors`}
+                  } text-xs font-monospaced-technical font-bold text-center focus:outline-none ${theme === 'vintage' ? 'focus:border-[#ebc238]' : 'focus:border-blue-500'} transition-colors`}
                   title="3-letter indicator of the daily key sheet being used"
                 />
-                <div className="text-[9px] text-[#8c7e6a] leading-tight flex-1">
+                <div className={`text-[9px] ${t.textMuted} leading-tight flex-1`}>
                   Identifies key day:{' '}
-                  <span className="text-[#ebc238] font-bold font-monospaced-technical">
+                  <span className={`${t.textAccent} font-bold ${t.fontMono}`}>
                     {kenngruppe || '—'}
                   </span>
                 </div>
@@ -297,12 +301,12 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
 
             {/* 3. Indicators */}
             <div
-              className={`border border-[#4e453b]/60 rounded ${
+              className={`border ${t.borderBase}/60 rounded ${
                 isCompact ? 'p-2' : 'p-2.5'
-              } bg-[#120e04]/50 flex flex-col justify-between`}
+              } ${theme === 'vintage' ? 'bg-[#120e04]/50' : 'bg-white'} flex flex-col justify-between`}
             >
               <div className={`flex items-center justify-between ${isCompact ? 'mb-1' : 'mb-1.5'}`}>
-                <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] font-bold uppercase">
+                <span className={`text-[10px] ${t.fontMono} ${t.textMuted} font-bold uppercase`}>
                   3. Indicators (Spruchschlüssel)
                 </span>
                 <button
@@ -311,7 +315,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                     handleCalculateIndicator();
                     setShowIndicatorModal(true);
                   }}
-                  className="text-[9px] text-[#ebc238] hover:underline cursor-pointer font-bold font-mono flex items-center gap-1"
+                  className={`text-[9px] ${t.textAccent} hover:underline cursor-pointer font-bold font-mono flex items-center gap-1`}
                   title="Open Authentic Message Key Indicator Procedural Assistant"
                 >
                   <span className="material-symbols-outlined text-[11px]">key_visualizer</span>
@@ -325,9 +329,9 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                     value={localGrundstellung}
                     onChange={handleGrundstellungChange}
                     onBlur={onGrundstellungBlur}
-                    className={`w-full bg-[#1b160e] text-[#ebc238] border border-[#4e453b] rounded ${
+                    className={`w-full ${theme === 'vintage' ? 'bg-[#1b160e] ' + t.textAccent : 'bg-white text-blue-600'} border ${t.borderBase} rounded ${
                       isCompact ? 'px-1 py-0.5' : 'px-1.5 py-1'
-                    } text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none focus:border-[#ebc238] transition-colors`}
+                    } text-xs font-monospaced-technical font-bold tracking-widest text-center focus:outline-none ${theme === 'vintage' ? 'focus:border-[#ebc238]' : 'focus:border-blue-500'} transition-colors`}
                     placeholder="AAA"
                     title={
                       config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma'
@@ -341,7 +345,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                       onClick={handleStepAllForward}
                       className={`${
                         isCompact ? 'text-[7px] px-0.5 py-0.2' : 'text-[8px] px-1 py-0.5'
-                      } font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20 rounded cursor-pointer font-bold`}
+                      } font-monospaced-technical ${theme === 'vintage' ? 'bg-[#221c11] border-[#4e453b] text-[#ebc238] hover:bg-[#ebc238]/20' : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'} border rounded cursor-pointer font-bold`}
                       title="Step all rotors and reflector forward"
                     >
                       +1 ALL
@@ -351,7 +355,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                       onClick={handleResetAllToA}
                       className={`${
                         isCompact ? 'text-[7px] px-0.5 py-0.2' : 'text-[8px] px-1 py-0.5'
-                      } font-monospaced-technical bg-[#221c11] border border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20 rounded cursor-pointer`}
+                      } font-monospaced-technical ${theme === 'vintage' ? 'bg-[#221c11] border-[#4e453b] text-[#ede1cd] hover:bg-[#ebc238]/20' : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'} border rounded cursor-pointer`}
                       title="Reset all rotors and reflector to A"
                     >
                       RESET
@@ -359,10 +363,10 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                   </div>
                 </div>
               </div>
-              <div className="text-[9px] text-[#8c7e6a] mt-1.5 italic font-mono leading-tight border-t border-[#3b3426]/30 pt-1 flex justify-between items-center">
+              <div className={`text-[9px] ${t.textMuted} mt-1.5 italic font-mono leading-tight border-t ${t.borderBase}/30 pt-1 flex justify-between items-center`}>
                 <span>
                   Start position:{' '}
-                  <span className="text-[#ebc238] font-bold font-monospaced-technical">
+                  <span className={`${t.textAccent} font-bold ${t.fontMono}`}>
                     {localGrundstellung || '—'}
                   </span>
                 </span>
@@ -372,7 +376,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                     handleCalculateIndicator();
                     setShowIndicatorModal(true);
                   }}
-                  className="text-[8px] text-[#ebc238] hover:text-amber-300 underline font-mono cursor-pointer"
+                  className={`text-[8px] ${t.textAccent} hover:text-amber-300 underline font-mono cursor-pointer`}
                 >
                   Encrypted Indicator Workflow
                 </button>
@@ -381,7 +385,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
           </div>
 
           {/* Action buttons */}
-          <div className={`flex ${isCompact ? 'flex-nowrap overflow-x-auto pb-1.5 justify-start' : 'flex-wrap justify-end'} gap-1.5 sm:gap-2 pt-2 border-t border-[#3b3426]/60 scrollbar-none`}>
+          <div className={`flex ${isCompact ? 'flex-nowrap overflow-x-auto pb-1.5 justify-start' : 'flex-wrap justify-end'} gap-1.5 sm:gap-2 pt-2 border-t ${t.borderBase}/60 scrollbar-none`}>
             <button
               type="button"
               onClick={handleCopyHeader}
@@ -390,7 +394,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${
                 headerCopied
                   ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                  : 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]'
+                  : (theme === 'vintage' ? 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-400')
               }`}
               title="Copy the Funktelegramm header/preamble to clipboard"
             >
@@ -408,10 +412,10 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                 isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
               } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${
                 !cipherTape
-                  ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
+                  ? (theme === 'vintage' ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]' : 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-300 border-slate-200')
                   : fullMessageCopied
                   ? 'bg-[#1b5e20] text-[#e8f5e9] border-[#2e7d32]'
-                  : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
+                  : (theme === 'vintage' ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]' : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-500')
               }`}
               title="Copy full transmission (Header + Ciphertext) to clipboard"
             >
@@ -426,7 +430,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               onClick={() => setShowImportModal(true)}
               className={`shrink-0 ${
                 isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
-              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]`}
+              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${theme === 'vintage' ? 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-400'}`}
               title="Import transmission or message and optional header"
             >
               <span className="material-symbols-outlined text-[13px]">file_upload</span>
@@ -438,7 +442,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               onClick={() => setShowBroadcastModal(true)}
               className={`shrink-0 ${
                 isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
-              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]`}
+              } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer ${theme === 'vintage' ? 'bg-[#221c11] text-[#ede1cd] border-[#4e453b] hover:bg-[#ebc238]/10 hover:text-[#ebc238] hover:border-[#ebc238]' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-400'}`}
               title="Broadcast message via Morse code audio and visual signal"
             >
               <span className="material-symbols-outlined text-[13px]">rss_feed</span>
@@ -451,29 +455,29 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
       {/* Indicator Procedure Modal (Spruchschlüssel Double Encryption) */}
       {showIndicatorModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#1b170e] border border-[#4e453b] rounded-lg max-w-xl w-full p-6 space-y-4 shadow-2xl relative texture-metal max-h-[90vh] overflow-y-auto">
+          <div className={`${theme === 'vintage' ? 'bg-[#1b170e]' : 'bg-white'} border ${t.borderBase} rounded-lg max-w-xl w-full p-6 space-y-4 shadow-2xl relative ${theme === 'vintage' ? 'texture-metal' : ''} max-h-[90vh] overflow-y-auto`}>
             <button
               type="button"
               onClick={() => setShowIndicatorModal(false)}
-              className="absolute top-4 right-4 text-[#8c7e6a] hover:text-[#ede1cd] transition-colors cursor-pointer"
+              className={`absolute top-4 right-4 ${t.textMuted} hover:${t.textPrimary} transition-colors cursor-pointer`}
             >
               <span className="material-symbols-outlined">close</span>
             </button>
 
-            <div className="flex items-center gap-2 border-b border-[#3b3426] pb-3">
+            <div className={`flex items-center gap-2 border-b ${t.borderBase} pb-3`}>
               <span className="material-symbols-outlined text-amber-500">key_visualizer</span>
-              <h3 className="text-sm font-bold text-[#e3c193] font-ui-header uppercase tracking-wider">
+              <h3 className={`text-sm font-bold ${t.textSecondary} ${t.fontHeader} uppercase tracking-wider`}>
                 Authentic Indicator Procedure (Spruchschlüssel Workflow)
               </h3>
             </div>
 
-            <p className="text-xs text-[#d1c4b7] leading-relaxed font-monospaced-technical">
+            <p className={`text-xs ${t.textMuted} leading-relaxed ${t.fontMono}`}>
               Historically, transmitting raw Grundstellung settings directly violated security protocols. Operators chose a random message key (<span className="text-amber-400 font-bold">Spruchschlüssel</span>) and encrypted it at the daily key position before transmitting it in the preamble.
             </p>
 
             {/* Mode Switcher: Double Encryption (Pre-May 1940) vs Single Encryption (Post-May 1940) */}
             <div className="space-y-1.5">
-              <label className="text-[10px] text-[#8c7e6a] uppercase font-monospaced-technical block font-bold">
+              <label className={`text-[10px] ${t.textMuted} uppercase ${t.fontMono} block font-bold`}>
                 Procedure Variant
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -483,10 +487,10 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                     setIndicatorMode('double');
                     playRotorClickSound(soundEnabled);
                   }}
-                  className={`py-2 px-2 text-[11px] rounded border transition-colors cursor-pointer font-ui-header flex flex-col items-center gap-0.5 ${
+                  className={`py-2 px-2 text-[11px] rounded border transition-colors cursor-pointer ${t.fontHeader} flex flex-col items-center gap-0.5 ${
                     indicatorMode === 'double'
-                      ? 'bg-[#ebc238]/15 border-[#ebc238] text-[#ede1cd] font-bold'
-                      : 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]'
+                      ? (theme === 'vintage' ? 'bg-[#ebc238]/15 border-[#ebc238] text-[#ede1cd] font-bold' : 'bg-blue-600/10 border-blue-600 text-blue-700 font-bold')
+                      : (theme === 'vintage' ? 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100')
                   }`}
                 >
                   <span className="flex items-center gap-1">
@@ -501,10 +505,10 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                     setIndicatorMode('single');
                     playRotorClickSound(soundEnabled);
                   }}
-                  className={`py-2 px-2 text-[11px] rounded border transition-colors cursor-pointer font-ui-header flex flex-col items-center gap-0.5 ${
+                  className={`py-2 px-2 text-[11px] rounded border transition-colors cursor-pointer ${t.fontHeader} flex flex-col items-center gap-0.5 ${
                     indicatorMode === 'single'
-                      ? 'bg-[#ebc238]/15 border-[#ebc238] text-[#ede1cd] font-bold'
-                      : 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]'
+                      ? (theme === 'vintage' ? 'bg-[#ebc238]/15 border-[#ebc238] text-[#ede1cd] font-bold' : 'bg-blue-600/10 border-blue-600 text-blue-700 font-bold')
+                      : (theme === 'vintage' ? 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100')
                   }`}
                 >
                   <span className="flex items-center gap-1">
@@ -517,17 +521,17 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
             </div>
 
             {/* Interactive Steps Visualizer */}
-            <div className="bg-[#120e04] border border-[#3b3426] rounded-lg p-3 space-y-3 font-monospaced-technical text-xs">
-              <div className="flex items-center justify-between border-b border-[#3b3426] pb-2">
+            <div className={`${t.panelInner} border ${t.borderBase} rounded-lg p-3 space-y-3 ${t.fontMono} text-xs`}>
+              <div className={`flex items-center justify-between border-b ${t.borderBase} pb-2`}>
                 <span className="text-amber-400 font-bold uppercase text-[10px] tracking-wider">
                   Step-by-Step Procedure Steps
                 </span>
-                <span className="text-[10px] text-[#8c7e6a]">
+                <span className={`text-[10px] ${t.textMuted}`}>
                   Daily Key: <span className="text-amber-300 font-bold">{currentDailyGrundstellung}</span>
                 </span>
               </div>
 
-              <div className="space-y-2 text-[#ede1cd]">
+              <div className={`space-y-2 ${t.textPrimary}`}>
                 <div className="flex items-start gap-2">
                   <span className="w-5 h-5 rounded-full bg-amber-950 border border-amber-600/60 text-amber-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
                     1
@@ -548,7 +552,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                         type="text"
                         value={messageKeyInput}
                         onChange={(e) => setMessageKeyInput(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 3))}
-                        className="w-24 bg-[#1b160e] text-amber-400 border border-[#4e453b] rounded px-2 py-1 text-center font-bold tracking-widest focus:outline-none focus:border-amber-400"
+                        className={`w-24 ${theme === 'vintage' ? 'bg-[#1b160e] text-amber-400 border-' + t.borderBase : 'bg-white text-blue-600 border-slate-300'} border rounded px-2 py-1 text-center font-bold tracking-widest focus:outline-none focus:border-amber-400`}
                         placeholder="XQF"
                       />
                       <button
@@ -560,7 +564,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                           setMessageKeyInput(rnd);
                           playRotorClickSound(soundEnabled);
                         }}
-                        className="px-2 py-1 bg-[#221c11] hover:bg-amber-600/20 text-amber-400 border border-[#4e453b] rounded text-[10px] font-bold cursor-pointer"
+                        className={`px-2 py-1 ${theme === 'vintage' ? 'bg-[#221c11] hover:bg-amber-600/20 text-amber-400' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} border ${t.borderBase} rounded text-[10px] font-bold cursor-pointer`}
                       >
                         🎲 Random Key
                       </button>
@@ -574,7 +578,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                   </span>
                   <div className="flex-1 space-y-1">
                     <span className="font-bold text-amber-300">Encrypt Message Key via Machine:</span>
-                    <div className="flex items-center justify-between bg-[#1b170e] p-2 rounded border border-[#3b3426] text-xs">
+                    <div className={`flex items-center justify-between ${theme === 'vintage' ? 'bg-[#1b170e]' : 'bg-slate-50'} p-2 rounded border ${t.borderBase} text-xs`}>
                       <span>Pattern: <span className="font-bold text-amber-300">{indicatorMode === 'double' ? `${messageKeyInput}${messageKeyInput}` : messageKeyInput}</span></span>
                       <button
                         type="button"
@@ -593,7 +597,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                   </span>
                   <div className="flex-1 space-y-1">
                     <span className="font-bold text-amber-300">Encrypted Indicator Output (transmitted in header):</span>
-                    <div className="bg-[#1b170e] p-2 rounded border border-amber-600/50 flex items-center justify-between">
+                    <div className={`${theme === 'vintage' ? 'bg-[#1b170e] border-amber-600/50' : 'bg-blue-50 border-blue-200'} p-2 rounded border flex items-center justify-between`}>
                       <span className="font-bold text-amber-400 tracking-widest text-sm">
                         {encryptedIndicatorResult || '—'}
                       </span>
@@ -616,7 +620,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                   </span>
                   <div>
                     <span className="font-bold text-amber-300">Decrypt & Set Rotors for Message Body:</span>
-                    <p className="text-[10px] text-[#8c7e6a] mt-0.5 leading-snug">
+                    <p className={`text-[10px] ${t.textMuted} mt-0.5 leading-snug`}>
                       Receiver decrypts <span className="text-amber-300">{encryptedIndicatorResult || 'indicator'}</span> at daily key position back to secret key <span className="text-amber-300">{messageKeyInput}</span>, then resets machine rotors to <span className="text-amber-400 font-bold">{messageKeyInput}</span> to encipher/decipher the actual message text!
                     </p>
                   </div>
@@ -628,7 +632,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               <button
                 type="button"
                 onClick={handleApplyMessageKeyToMachine}
-                className="px-3 py-1.5 bg-[#221c11] hover:bg-amber-600/20 text-amber-400 border border-[#4e453b] hover:border-amber-600/60 rounded text-xs font-bold font-ui-header cursor-pointer flex items-center gap-1"
+                className={`px-3 py-1.5 ${theme === 'vintage' ? 'bg-[#221c11] hover:bg-amber-600/20 text-amber-400 border-' + t.borderBase + ' hover:border-amber-600/60' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-300 hover:border-slate-400'} border rounded text-xs font-bold ${t.fontHeader} cursor-pointer flex items-center gap-1`}
                 title="Set machine rotors to secret message key position"
               >
                 <span className="material-symbols-outlined text-sm">precision_manufacturing</span>
@@ -638,7 +642,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               <button
                 type="button"
                 onClick={() => setShowIndicatorModal(false)}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold font-ui-header cursor-pointer"
+                className={`px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold ${t.fontHeader} cursor-pointer`}
               >
                 Done
               </button>

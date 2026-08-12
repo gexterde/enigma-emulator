@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme, getTheme } from '../lib/theme';
 
 interface HeaderProps {
   onToggleMobileMenu: () => void;
@@ -15,26 +16,29 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenShare,
   onOpenShortcuts
 }) => {
+  const { theme } = useTheme();
+  const t = getTheme(theme);
+
   return (
-    <header className="shadow-[inset_0_-2px_4px_rgba(0,0,0,0.6)] bg-[#3b3426] shadow-md flex justify-between items-center w-full px-4 md:px-8 h-16 shrink-0 z-50">
+    <header className={`${t.modalHeaderBg} shadow-md flex justify-between items-center w-full px-4 md:px-8 h-16 shrink-0 z-50`}>
       <div className="flex items-center gap-2 md:gap-4">
         <button
           onClick={onToggleMobileMenu}
-          className="w-11 h-11 flex items-center justify-center text-[#d1c4b7] hover:bg-[#2f291c] rounded-full transition-colors cursor-pointer"
+          className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:${t.textAccent} hover:bg-black/5 rounded-full transition-colors cursor-pointer`}
           id="mobile-menu-btn"
           aria-label="Toggle menu"
           title="Toggle Navigation Menu"
         >
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <span className="text-rotor-label font-rotor-label text-[#e3c193] tracking-widest uppercase text-lg md:text-2xl truncate">
+        <span className={`${t.fontRotor} tracking-widest uppercase text-lg md:text-2xl truncate`}>
           Enigma Emulator
         </span>
       </div>
       <div className="flex items-center gap-1 md:gap-2">
         <button
           onClick={onOpenShortcuts}
-          className="w-11 h-11 flex items-center justify-center text-[#d1c4b7] hover:bg-[#2f291c] hover:text-[#ebc238] transition-colors rounded-full transform active:scale-95 transition-all"
+          className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
           title="Keyboard Shortcuts (F9 / ?)"
           aria-label="Keyboard Shortcuts"
         >
@@ -42,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
         <button
           onClick={onOpenSettings}
-          className="w-11 h-11 flex items-center justify-center text-[#d1c4b7] hover:bg-[#2f291c] transition-colors rounded-full transform active:scale-95 transition-all"
+          className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
           title="Settings (F6 / ^S)"
           aria-label="Settings"
         >
@@ -50,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
         <button
           onClick={onOpenInfo}
-          className="w-11 h-11 flex items-center justify-center text-[#d1c4b7] hover:bg-[#2f291c] transition-colors rounded-full transform active:scale-95 transition-all"
+          className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
           title="Historical Information (F7 / ^H)"
           aria-label="Info"
         >
@@ -58,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
         <button
           onClick={onOpenShare}
-          className="w-11 h-11 flex items-center justify-center text-[#d1c4b7] hover:bg-[#2f291c] transition-colors rounded-full transform active:scale-95 transition-all hidden md:flex"
+          className={`w-11 h-11 hidden md:flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
           title="Share Configuration (F8 / ^Shift+S)"
           aria-label="Share"
         >

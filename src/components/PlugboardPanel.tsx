@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useTheme, getTheme } from '../lib/theme';
 import { EnigmaConfig } from '../types';
 import { playPlugConnectSound } from '../lib/audio';
 
@@ -38,39 +39,43 @@ interface PlugboardSocketProps {
   socketRef: (el: HTMLButtonElement | null) => void;
 }
 
-const PlugboardSocket: React.FC<PlugboardSocketProps> = ({ char, isConnected, isSelected, partner, colorClassIndex, onClick, socketRef }) => (
-  <div className="flex flex-col items-center gap-1 sm:gap-2 z-20">
-    <span className="text-[#f6dfc7] font-lamp-char font-bold text-xs sm:text-base drop-shadow-md">
-      {char}
-    </span>
-    <button
-      type="button"
-      ref={socketRef}
-      onClick={() => onClick(char)}
-      className={`bg-[#1a1510] border-2 rounded-full p-1 cursor-pointer flex flex-col gap-1 items-center justify-center transition-all min-w-[34px] min-h-[50px] sm:min-w-[44px] sm:min-h-[58px] ${
-        isSelected
-          ? 'border-[#ebc238] shadow-[0_0_12px_#ebc238] scale-110'
-          : isConnected && colorClassIndex !== -1
-          ? `cable-border-${colorClassIndex} shadow-md`
-          : 'border-[#2a221a] hover:border-[#9a8f83]'
-      }`}
-      aria-label={`Socket ${char}`}
-      title={partner ? `Plugged to ${partner}` : 'Click to connect'}
-    >
-      {/* Double pin holes (stecker sockets) */}
-      <div
-        className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border border-[#000] shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] ${
-          isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : 'bg-[#111]'
+const PlugboardSocket: React.FC<PlugboardSocketProps> = ({ char, isConnected, isSelected, partner, colorClassIndex, onClick, socketRef }) => {
+  const { theme } = useTheme();
+  const t = getTheme(theme);
+  return (
+    <div className="flex flex-col items-center gap-1 sm:gap-2 z-20">
+      <span className={`${t.textPrimary} font-lamp-char font-bold text-xs sm:text-base drop-shadow-md`}>
+        {char}
+      </span>
+      <button
+        type="button"
+        ref={socketRef}
+        onClick={() => onClick(char)}
+        className={`${theme === 'vintage' ? 'bg-[#1a1510]' : 'bg-slate-200'} border-2 rounded-full p-1 cursor-pointer flex flex-col gap-1 items-center justify-center transition-all min-w-[34px] min-h-[50px] sm:min-w-[44px] sm:min-h-[58px] ${
+          isSelected
+            ? `${theme === 'vintage' ? 'border-[#ebc238] shadow-[0_0_12px_#ebc238]' : 'border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.5)]'} scale-110`
+            : isConnected && colorClassIndex !== -1
+            ? `cable-border-${colorClassIndex} shadow-md`
+            : theme === 'vintage' ? 'border-[#2a221a] hover:border-[#9a8f83]' : 'border-slate-300 hover:border-blue-400'
         }`}
-      />
-      <div
-        className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border border-[#000] shadow-[inset_0_2px_4px_rgba(0,0,0,0.9)] ${
-          isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : 'bg-[#111]'
-        }`}
-      />
-    </button>
-  </div>
-);
+        aria-label={`Socket ${char}`}
+        title={partner ? `Plugged to ${partner}` : 'Click to connect'}
+      >
+        {/* Double pin holes (stecker sockets) */}
+        <div
+          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border ${theme === 'vintage' ? 'border-[#000]' : 'border-slate-400'} shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] ${
+            isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : theme === 'vintage' ? 'bg-[#111]' : 'bg-slate-700'
+          }`}
+        />
+        <div
+          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border ${theme === 'vintage' ? 'border-[#000]' : 'border-slate-400'} shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] ${
+            isConnected && colorClassIndex !== -1 ? `cable-bg-${colorClassIndex}` : theme === 'vintage' ? 'bg-[#111]' : 'bg-slate-700'
+          }`}
+        />
+      </button>
+    </div>
+  );
+};
 
 export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
   config,
@@ -78,6 +83,8 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
   soundEnabled,
   showTitle = true
 }) => {
+  const { theme } = useTheme();
+  const t = getTheme(theme);
   const [selectedSocket, setSelectedSocket] = useState<string | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -246,14 +253,14 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
   return (
     <div className="space-y-4">
       {/* Plugboard Header & Quick Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-2 border-b border-[#3b3426]">
+      <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-2 border-b ${t.borderBase}`}>
         {showTitle ? (
-          <span className="text-ui-header font-ui-header text-[#ede1cd] text-xs uppercase tracking-widest flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm text-[#ebc238]">settings_ethernet</span>
+          <span className={`${t.fontHeader} ${t.textPrimary} text-xs uppercase tracking-widest flex items-center gap-2`}>
+            <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>settings_ethernet</span>
             Plugboard Socket Board (Steckerbrett)
           </span>
         ) : (
-          <span className="text-monospaced-technical text-xs text-[#ebc238]">
+          <span className={`${t.fontMono} text-xs ${t.textAccent}`}>
             Connected Pairs: {pairs.length} / 13
           </span>
         )}
@@ -261,14 +268,14 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
           <button
             type="button"
             onClick={handlePresetStandard}
-            className="text-[11px] font-ui-header bg-[#3b3426] hover:bg-[#4e453b] text-[#e3c193] border border-[#8b6f47] px-2.5 py-1 rounded transition-colors cursor-pointer"
+            className={`text-[11px] ${t.fontHeader} ${t.buttonPrimary} px-2.5 py-1 rounded transition-colors cursor-pointer`}
           >
             Sample Patch Wiring
           </button>
           <button
             type="button"
             onClick={handleClearAll}
-            className="text-[11px] font-ui-header bg-[#93000a]/30 hover:bg-[#93000a] text-[#ffdad6] border border-red-800/40 px-2.5 py-1 rounded transition-colors cursor-pointer"
+            className={`text-[11px] ${t.fontHeader} ${t.buttonDanger} px-2.5 py-1 rounded transition-colors cursor-pointer`}
           >
             Clear ({pairs.length}/13)
           </button>
@@ -276,27 +283,27 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
       </div>
 
       {warningMessage && (
-        <div className="bg-[#241010] border border-[#801818] text-[#f5d0d0] text-xs px-3 py-2 rounded-lg flex items-center gap-2 animate-fade-in">
-          <span className="material-symbols-outlined text-sm text-[#e05252]">warning</span>
+        <div className={`text-xs px-3 py-2 rounded-lg flex items-center gap-2 animate-fade-in ${t.dangerBg}`}>
+          <span className={`material-symbols-outlined text-sm ${theme === 'vintage' ? 'text-[#e05252]' : 'text-red-600'}`}>warning</span>
           <span>{warningMessage}</span>
         </div>
       )}
 
       {/* Physical Wooden Steckerbrett Housing with SVG Patch Cables */}
       <div className="w-full overflow-x-auto pb-2 rounded-xl focus:outline-none">
-        <div className="sm:hidden text-center text-[10px] font-monospaced-technical text-[#ebc238] flex items-center justify-center gap-1 mb-1.5 opacity-90">
+        <div className={`sm:hidden text-center text-[10px] font-monospaced-technical ${t.textAccent} flex items-center justify-center gap-1 mb-1.5 opacity-90`}>
           <span className="material-symbols-outlined text-xs">swap_horiz</span>
           Scroll horizontally to view all plugboard sockets (A–Z)
         </div>
         <div
           ref={containerRef}
-          className="relative bg-[#3b2a1a] rounded-xl p-3 sm:p-6 border-[6px] border-[#2f291c] shadow-[inset_0_0_40px_rgba(0,0,0,0.8),0_10px_30px_rgba(0,0,0,0.8)] min-w-[620px]"
+          className={`relative rounded-xl p-3 sm:p-6 border-[6px] min-w-[620px] ${theme === 'vintage' ? 'bg-[#3b2a1a] border-[#2f291c] shadow-[inset_0_0_40px_rgba(0,0,0,0.8),0_10px_30px_rgba(0,0,0,0.8)]' : 'bg-slate-100 border-slate-300 shadow-sm'}`}
         >
           {/* SVG Cable Overlay Canvas */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
             <defs>
               <filter id="cableShadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="8" stdDeviation="4" floodColor="#000000" floodOpacity="0.7" />
+                <feDropShadow dx="0" dy="8" stdDeviation="4" floodColor={theme === 'vintage' ? "#000000" : "#94a3b8"} floodOpacity="0.7" />
               </filter>
             </defs>
             {cablePaths.map(({ a, b, path, color }) => (
@@ -305,7 +312,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
                 <path
                   d={path}
                   fill="none"
-                  stroke="#000000"
+                  stroke={theme === 'vintage' ? "#000000" : "#cbd5e1"}
                   strokeWidth="10"
                   strokeLinecap="round"
                   opacity="0.4"
@@ -315,7 +322,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
                 <path
                   d={path}
                   fill="none"
-                  stroke="#1a1510"
+                  stroke={theme === 'vintage' ? "#1a1510" : "#475569"}
                   strokeWidth="7"
                   strokeLinecap="round"
                 />
@@ -350,8 +357,8 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
 
       {/* Active Plug Cables Summary */}
       {pairs.length > 0 && (
-        <div className="bg-[#120e04] border border-[#3b3426] rounded p-3">
-          <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] uppercase block mb-2">
+        <div className={`${t.panelInner} rounded p-3`}>
+          <span className={`text-[10px] ${t.fontMono} ${t.textMuted} uppercase block mb-2`}>
             Active Cable Connections ({pairs.length}):
           </span>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -360,20 +367,20 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
               return (
                 <div
                   key={`${a}-${b}`}
-                  className="bg-[#201b0f] border border-[#3b3426] px-2 py-1.5 rounded flex items-center justify-between"
+                  className={`${t.panelBg} px-2 py-1.5 rounded flex items-center justify-between`}
                 >
                   <div className="flex items-center gap-1.5">
                     <div
                       className={`w-2.5 h-2.5 rounded-full shadow-xs cable-bg-${colorIdx}`}
                     />
-                    <span className="font-monospaced-technical text-xs text-[#ede1cd] font-bold">
+                    <span className={`${t.fontMono} text-xs ${t.textPrimary} font-bold`}>
                       {a} ↔ {b}
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleSocketClick(a)}
-                    className="text-[#d1c4b7] hover:text-[#ffb4ab] text-xs p-0.5 cursor-pointer"
+                    className={`${t.textMuted} hover:text-red-500 text-xs p-0.5 cursor-pointer`}
                     title="Remove plug"
                   >
                     <span className="material-symbols-outlined text-xs">close</span>

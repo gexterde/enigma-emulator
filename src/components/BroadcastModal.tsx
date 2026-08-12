@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
+import { useTheme, getTheme } from '../lib/theme';
+//import React, { useState, useEffect, useRef } from 'react';
 import { textToMorseTokens, MorseToken } from '../lib/morse';
 
 interface BroadcastModalProps {
@@ -21,6 +23,8 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
   headerString,
   soundEnabled: initialSoundEnabled,
 }) => {
+  const { theme } = useTheme();
+  const t = getTheme(theme);
   const [source, setSource] = useState<BroadcastSource>('ciphertext');
   const [wpm, setWpm] = useState<number>(15); // Words per minute
   const [frequency, setFrequency] = useState<number>(700); // Hz
@@ -371,18 +375,18 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-      <div className="bg-[#18130a] border-2 border-[#ebc238]/70 rounded-lg shadow-2xl w-full max-w-2xl p-6 text-[#ede1cd] flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div className={`${t.modalBg} border-2 ${t.borderAccent}/70 rounded-lg shadow-2xl w-full max-w-2xl p-6 ${t.textPrimary} flex flex-col gap-4 max-h-[90vh] overflow-y-auto`}>
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#3b3426] pb-3">
+        <div className={`flex items-center justify-between border-b ${t.borderBase} pb-3`}>
           <div className="flex items-center gap-3">
-            <div className={`w-3.5 h-3.5 rounded-full border transition-all ${isToneActive ? 'bg-[#ebc238] border-[#ffe066] shadow-[0_0_12px_#ebc238]' : 'bg-[#2a2214] border-[#4e453b]'}`} />
+            <div className={`w-3.5 h-3.5 rounded-full border transition-all ${isToneActive ? 'bg-[#ebc238] border-[#ffe066] shadow-[0_0_12px_#ebc238]' : 'bg-[#2a2214] ${t.borderBase}'}`} />
             <div>
-              <h3 className="text-base sm:text-lg font-bold font-monospaced-technical text-[#ebc238] uppercase tracking-wide flex items-center gap-2">
+              <h3 className={`text-base sm:text-lg font-bold ${t.fontMono} ${t.textAccent} uppercase tracking-wide flex items-center gap-2`}>
                 <span className="material-symbols-outlined text-[20px]">rss_feed</span>
                 Funktelegramm Radio Broadcast (Morse Code)
               </h3>
-              <p className="text-xs text-[#8c7e6a] font-mono">
+              <p className={`text-xs ${t.textMuted} font-mono`}>
                 Audio-visual Morse code transmitter operating at {frequency}Hz ({wpm} WPM)
               </p>
             </div>
@@ -393,7 +397,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
               stopPlayback();
               onClose();
             }}
-            className="text-[#8c7e6a] hover:text-[#ede1cd] p-1.5 rounded transition-colors cursor-pointer bg-[#221c11] border border-[#4e453b]"
+            className={`${t.textMuted} hover:${t.textPrimary} p-1.5 rounded transition-colors cursor-pointer bg-[#221c11] border ${t.borderBase}`}
             title="Close Broadcast"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
@@ -403,7 +407,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
         {/* Source Selector & Audio Toggle */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#8c7e6a] uppercase font-monospaced-technical tracking-wider">
+            <span className={`text-[10px] ${t.textMuted} uppercase ${t.fontMono} tracking-wider`}>
               Select Transmission Source:
             </span>
             <button
@@ -414,7 +418,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
                 if (!newSound) stopBackgroundNoise();
                 else if (isPlaying) startBackgroundNoise();
               }}
-              className={`text-[10px] font-monospaced-technical font-bold uppercase px-2.5 py-1 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`text-[10px] ${t.fontMono} font-bold uppercase px-2.5 py-1 rounded border transition-all flex items-center gap-1.5 cursor-pointer ${
                 localSound
                   ? 'bg-[#1b5e20]/40 text-[#e8f5e9] border-[#2e7d32]'
                   : 'bg-[#2a1a1a] text-[#ff8a80] border-[#5c2b2b]'
@@ -434,7 +438,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
                 stopPlayback();
                 setSource('ciphertext');
               }}
-              className={`py-2 px-3 rounded text-xs font-monospaced-technical font-bold uppercase border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`py-2 px-3 rounded text-xs ${t.fontMono} font-bold uppercase border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 source === 'ciphertext'
                   ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]'
                   : 'bg-[#1b160e] text-[#d1c4b7] border-[#4e453b] hover:bg-[#261f14]'
@@ -449,7 +453,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
                 stopPlayback();
                 setSource('plaintext');
               }}
-              className={`py-2 px-3 rounded text-xs font-monospaced-technical font-bold uppercase border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`py-2 px-3 rounded text-xs ${t.fontMono} font-bold uppercase border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 source === 'plaintext'
                   ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]'
                   : 'bg-[#1b160e] text-[#d1c4b7] border-[#4e453b] hover:bg-[#261f14]'
@@ -464,7 +468,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
                 stopPlayback();
                 setSource('full');
               }}
-              className={`py-2 px-3 rounded text-xs font-monospaced-technical font-bold uppercase border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`py-2 px-3 rounded text-xs ${t.fontMono} font-bold uppercase border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 source === 'full'
                   ? 'bg-[#ebc238] text-[#17130b] border-[#ebc238]'
                   : 'bg-[#1b160e] text-[#d1c4b7] border-[#4e453b] hover:bg-[#261f14]'
@@ -477,13 +481,13 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
         </div>
 
         {/* Display Active Text & Morse Ticker */}
-        <div className="bg-[#120e04] border border-[#4e453b] rounded-lg p-3 flex flex-col gap-2.5 min-h-[110px] shadow-inner">
-          <div className="flex items-center justify-between text-[10px] text-[#8c7e6a] uppercase font-monospaced-technical border-b border-[#3b3426] pb-1.5">
+        <div className={`${t.panelInner} border ${t.borderBase} rounded-lg p-3 flex flex-col gap-2.5 min-h-[110px] shadow-inner`}>
+          <div className={`flex items-center justify-between text-[10px] ${t.textMuted} uppercase ${t.fontMono} border-b ${t.borderBase} pb-1.5`}>
             <span>Transmission Content Preview</span>
             <span>Character {Math.min(currentIndex + 1, tokens.length)} of {tokens.length}</span>
           </div>
 
-          <div className="font-monospaced-technical text-sm sm:text-base tracking-widest leading-relaxed break-all max-h-[80px] overflow-y-auto px-1">
+          <div className={`${t.fontMono} text-sm sm:text-base tracking-widest leading-relaxed break-all max-h-[80px] overflow-y-auto px-1`}>
             {tokens.map((t, idx) => {
               const isCurrent = idx === currentIndex && (isPlaying || isPaused);
               return (
@@ -505,9 +509,9 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
 
           {/* Current Morse symbol indicator */}
           {isPlaying && tokens[currentIndex] && (
-            <div className="flex items-center gap-2 pt-1.5 border-t border-[#3b3426]/50">
-              <span className="text-[10px] text-[#8c7e6a] uppercase font-mono">Current Morse:</span>
-              <span className="text-xs font-mono font-bold text-[#ebc238] tracking-widest bg-[#221c11] px-2 py-0.5 rounded border border-[#4e453b]">
+            <div className={`flex items-center gap-2 pt-1.5 border-t ${t.borderBase}/50`}>
+              <span className={`text-[10px] ${t.textMuted} uppercase font-mono`}>Current Morse:</span>
+              <span className={`text-xs font-mono font-bold ${t.textAccent} tracking-widest bg-[#221c11] px-2 py-0.5 rounded border ${t.borderBase}`}>
                 {tokens[currentIndex].morse.split('').map((sym, sIdx) => (
                   <span
                     key={sIdx}
@@ -522,11 +526,11 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
         </div>
 
         {/* Controls & Sliders */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#141007] p-3.5 rounded-lg border border-[#3b3426]">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#141007] p-3.5 rounded-lg border ${t.borderBase}`}>
           <div className="flex flex-col gap-1.5">
-            <div className="flex justify-between text-xs font-monospaced-technical">
-              <span className="text-[#8c7e6a] uppercase">Speed (WPM):</span>
-              <span className="text-[#ebc238] font-bold">{wpm} WPM</span>
+            <div className={`flex justify-between text-xs ${t.fontMono}`}>
+              <span className={`${t.textMuted} uppercase`}>Speed (WPM):</span>
+              <span className={`${t.textAccent} font-bold`}>{wpm} WPM</span>
             </div>
             <input
               type="range"
@@ -540,9 +544,9 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <div className="flex justify-between text-xs font-monospaced-technical">
-              <span className="text-[#8c7e6a] uppercase">Tone Pitch (Hz):</span>
-              <span className="text-[#ebc238] font-bold">{frequency} Hz</span>
+            <div className={`flex justify-between text-xs ${t.fontMono}`}>
+              <span className={`${t.textMuted} uppercase`}>Tone Pitch (Hz):</span>
+              <span className={`${t.textAccent} font-bold`}>{frequency} Hz</span>
             </div>
             <input
               type="range"
@@ -557,9 +561,9 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
         </div>
 
         {/* Background Radio Noise Settings */}
-        <div className="bg-[#141007] p-3.5 rounded-lg border border-[#3b3426] flex flex-col gap-3">
-          <div className="flex items-center justify-between text-xs font-monospaced-technical border-b border-[#3b3426] pb-2">
-            <span className="text-[#ebc238] uppercase font-bold flex items-center gap-1.5">
+        <div className={`bg-[#141007] p-3.5 rounded-lg border ${t.borderBase} flex flex-col gap-3`}>
+          <div className={`flex items-center justify-between text-xs ${t.fontMono} border-b ${t.borderBase} pb-2`}>
+            <span className={`${t.textAccent} uppercase font-bold flex items-center gap-1.5`}>
               <span className="material-symbols-outlined text-[16px]">waves</span>
               Radio Static & Atmospheric Noise
             </span>
@@ -582,9 +586,9 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <div className="flex justify-between text-xs font-monospaced-technical">
-              <span className="text-[#8c7e6a] uppercase">Static Volume:</span>
-              <span className="text-[#ebc238] font-bold">{noiseVolume}%</span>
+            <div className={`flex justify-between text-xs ${t.fontMono}`}>
+              <span className={`${t.textMuted} uppercase`}>Static Volume:</span>
+              <span className={`${t.textAccent} font-bold`}>{noiseVolume}%</span>
             </div>
             <input
               type="range"
@@ -599,8 +603,8 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-2 border-t border-[#3b3426]">
-          <div className="text-[10px] text-[#8c7e6a] font-mono italic">
+        <div className={`flex items-center justify-between pt-2 border-t ${t.borderBase}`}>
+          <div className={`text-[10px] ${t.textMuted} font-mono italic`}>
             {!localSound ? '⚠️ Audio output is muted' : isPlaying ? '🔊 Broadcasting with radio static active' : '🔊 Ready to broadcast'}
           </div>
 
@@ -609,7 +613,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
               <button
                 type="button"
                 onClick={pausePlayback}
-                className="text-xs font-monospaced-technical font-bold uppercase px-4 py-2 rounded border border-[#ebc238] bg-[#ebc238]/20 text-[#ebc238] hover:bg-[#ebc238]/30 transition-all cursor-pointer flex items-center gap-1.5"
+                className={`text-xs ${t.fontMono} font-bold uppercase px-4 py-2 rounded border ${t.borderAccent} bg-[#ebc238]/20 ${t.textAccent} hover:bg-[#ebc238]/30 transition-all cursor-pointer flex items-center gap-1.5`}
               >
                 <span className="material-symbols-outlined text-[16px]">pause</span>
                 Pause
@@ -619,7 +623,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
                 type="button"
                 onClick={resumePlayback}
                 disabled={!activeText.trim()}
-                className="text-xs font-monospaced-technical font-bold uppercase px-4 py-2 rounded border border-[#ebc238] bg-[#ebc238] text-[#17130b] hover:bg-[#f6d258] transition-all cursor-pointer flex items-center gap-1.5 shadow"
+                className={`text-xs ${t.fontMono} font-bold uppercase px-4 py-2 rounded border ${t.borderAccent} bg-[#ebc238] text-[#17130b] hover:bg-[#f6d258] transition-all cursor-pointer flex items-center gap-1.5 shadow`}
               >
                 <span className="material-symbols-outlined text-[16px]">play_arrow</span>
                 Resume
@@ -629,7 +633,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
                 type="button"
                 onClick={startPlayback}
                 disabled={!activeText.trim()}
-                className={`text-xs font-monospaced-technical font-bold uppercase px-5 py-2 rounded border transition-all cursor-pointer flex items-center gap-1.5 shadow ${
+                className={`text-xs ${t.fontMono} font-bold uppercase px-5 py-2 rounded border transition-all cursor-pointer flex items-center gap-1.5 shadow ${
                   !activeText.trim()
                     ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
                     : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
@@ -644,7 +648,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
               <button
                 type="button"
                 onClick={stopPlayback}
-                className="text-xs font-monospaced-technical font-bold uppercase px-3 py-2 rounded border border-[#4e453b] bg-[#221c11] text-[#ede1cd] hover:bg-[#2e2619] transition-all cursor-pointer flex items-center gap-1"
+                className={`text-xs ${t.fontMono} font-bold uppercase px-3 py-2 rounded border ${t.borderBase} bg-[#221c11] ${t.textPrimary} hover:bg-[#2e2619] transition-all cursor-pointer flex items-center gap-1`}
                 title="Stop transmission"
               >
                 <span className="material-symbols-outlined text-[16px]">stop</span>

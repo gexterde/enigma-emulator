@@ -13,6 +13,7 @@ import { CryptanalysisView } from './components/CryptanalysisView';
 import { SettingsModal, InfoModal, ShareModal, ShortcutsModal } from './components/Modals';
 import { ActiveTab, EnigmaConfig, LogEntry } from './types';
 import { DEFAULT_ENIGMA_CONFIG } from './lib/enigmaEngine';
+import { useTheme, getTheme } from './lib/theme';
 
 function isValidRotorState(obj: unknown): boolean {
   if (!obj || typeof obj !== 'object') return false;
@@ -220,8 +221,11 @@ export default function App() {
     setLogs((prev) => [...prev, entry]);
   };
 
+  const { theme } = useTheme();
+  const t = getTheme(theme);
+
   return (
-    <div className="bg-[#181307] text-[#ede1cd] min-h-screen flex flex-col font-ui-body text-ui-body texture-wood overflow-hidden">
+    <div className={`${t.appBg} min-h-screen flex flex-col ${t.fontBody} text-ui-body ${theme === 'vintage' ? 'texture-wood' : ''} overflow-hidden`}>
       {/* Top Header */}
       <Header
         onToggleMobileMenu={() => setIsMenuOpen((prev) => !prev)}

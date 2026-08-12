@@ -11,6 +11,7 @@ import {
   charToNum
 } from '../lib/enigmaEngine';
 import { playKeyClickSound, playRotorClickSound } from '../lib/audio';
+import { useTheme, getTheme } from '../lib/theme';
 import { SignalPathAnimation } from './SignalPathAnimation';
 import { PlugboardPanel } from './PlugboardPanel';
 import { HISTORICAL_CODEBOOKS, CodebookSheet, CodebookEntry } from './CodebookView';
@@ -73,11 +74,6 @@ interface MachineViewProps {
 }
 
 // Authentic Enigma M3/M4 Lampboard/Keyboard Layout (3 rows: 9, 8, 9 keys)
-const ENIGMA_KEYBOARD_ROWS = [
-  ['Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O'],
-  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K'],
-  ['P', 'Y', 'X', 'C', 'V', 'B', 'N', 'M', 'L']
-];
 
 
 
@@ -93,6 +89,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
   cipherTape,
   setCipherTape
 }) => {
+  const { theme } = useTheme();
+  const t = getTheme(theme);
+  
   const [litLamp, setLitLamp] = useState<string | null>(null);
   const [pressedKey, setPressedKey] = useState<string | null>(null);
   const [activeGroupSize, setActiveGroupSize] = useState<number>(0);
@@ -781,12 +780,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#3b3426] pb-4 gap-3">
+      <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center border-b ${t.borderBase} pb-4 gap-3`}>
         <div>
-          <h1 className="text-rotor-label font-rotor-label text-[#ebc238] text-xl md:text-2xl">
+          <h1 className={`${t.fontHeader} text-xl md:text-2xl ${t.textPrimary} font-bold`}>
             Machine Dashboard
           </h1>
-          <p className="text-[#d1c4b7] text-xs font-ui-body">
+          <p className={`${t.textSecondary} text-xs ${t.fontBody}`}>
             Enigma M3/M4 Scrambler, Plugboard, Lampboard & Bakelite Keyboard. Type directly on your keyboard or click buttons.
           </p>
         </div>
@@ -797,7 +796,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
           <button
             type="button"
             onClick={handleOpenMobileKeyboard}
-            className="text-xs font-ui-header px-2.5 py-1.5 rounded border border-[#ebc238]/60 bg-[#251b0a] text-[#ebc238] hover:bg-[#ebc238] hover:text-[#181307] transition-all flex items-center gap-1.5 font-bold shadow-[0_0_10px_rgba(235,194,56,0.25)] cursor-pointer"
+            className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-all flex items-center gap-1.5 font-bold cursor-pointer ${
+              theme === 'vintage'
+                ? 'border-[#ebc238]/60 bg-[#251b0a] text-[#ebc238] hover:bg-[#ebc238] hover:text-[#181307] shadow-[0_0_10px_rgba(235,194,56,0.25)]'
+                : 'border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 shadow-sm'
+            }`}
             title="Open phone native virtual keyboard"
           >
             <span className="material-symbols-outlined text-sm">smartphone</span>
@@ -808,10 +811,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
           <button
             type="button"
             onClick={handleToggleKeySize}
-            className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-colors gap-1.5 cursor-pointer ${
+            className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
               keySize === 'large'
-                ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
-                : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                ? theme === 'vintage'
+                  ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
+                  : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
+                : `${t.buttonPrimary}`
             }`}
             title="Toggle between normal and large key/lamp sizes"
           >
@@ -824,10 +829,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
           <button
             type="button"
             onClick={handleToggleCompactMode}
-            className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+            className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
               isCompactMode
-                ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
-                : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                ? theme === 'vintage'
+                  ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
+                  : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
+                : `${t.buttonPrimary}`
             }`}
             title="Toggle Compact Enigma Machine Mode"
           >
@@ -840,10 +847,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
           <button
             type="button"
             onClick={() => setKeyboardBulbsOnly(!keyboardBulbsOnly)}
-            className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+            className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
               keyboardBulbsOnly
-                ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
-                : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                ? theme === 'vintage'
+                  ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
+                  : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
+                : `${t.buttonPrimary}`
             }`}
             title="Show only the Lampboard (Bulbs) and Keyboard"
           >
@@ -856,10 +865,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
           <button
             type="button"
             onClick={handleToggleDimIdleLights}
-            className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+            className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
               dimIdleLights
-                ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
-                : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                ? theme === 'vintage'
+                  ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-[0_0_12px_rgba(235,194,56,0.4)]'
+                  : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
+                : `${t.buttonPrimary}`
             }`}
             title="Apply realistic dim glow & flickering effect to idle lampboard bulbs"
           >
@@ -874,10 +885,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowChamber(!showChamber)}
-                className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                   showChamber
-                    ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
-                    : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                    ? theme === 'vintage'
+                      ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
+                      : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
+                    : `${t.buttonPrimary}`
                 }`}
                 title="Toggle Rotors / Scrambler Chamber Visibility"
               >
@@ -890,10 +903,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowBatterySwitch(!showBatterySwitch)}
-                className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                   showBatterySwitch
-                    ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
-                    : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                    ? theme === 'vintage'
+                      ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
+                      : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
+                    : `${t.buttonPrimary}`
                 }`}
                 title="Toggle Battery Switch Visibility"
               >
@@ -914,10 +929,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     setHeaderCollapsed(true);
                   }
                 }}
-                className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                   showTape && !tapeCollapsed && !headerCollapsed
-                    ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
-                    : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                    ? theme === 'vintage'
+                      ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
+                      : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
+                    : `${t.buttonPrimary}`
                 }`}
                 title="Toggle Funktelegramm Message Header Visibility"
               >
@@ -932,10 +949,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 onClick={() => {
                   setShowTape(!showTape);
                 }}
-                className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                   showTape
-                    ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
-                    : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                    ? theme === 'vintage'
+                      ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
+                      : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
+                    : `${t.buttonPrimary}`
                 }`}
                 title="Toggle Paper Tape Visibility"
               >
@@ -949,10 +968,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowSignalAnimation(!showSignalAnimation)}
-                  className={`text-xs font-ui-header px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  className={`text-xs ${t.fontHeader} px-2.5 py-1.5 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
                     showSignalAnimation
-                      ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
-                      : 'bg-[#120e04] text-[#83715d] border-[#3b3426] hover:text-[#d1c4b7]'
+                      ? theme === 'vintage'
+                        ? 'bg-[#3b3426] text-[#e3c193] border-[#8b6f47] hover:bg-[#4e453b]'
+                        : 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
+                      : `${t.buttonPrimary}`
                   }`}
                   title="Toggle Signal Path Visualizer"
                 >
@@ -963,16 +984,20 @@ export const MachineView: React.FC<MachineViewProps> = ({
             </>
           )}
 
-          <div className="text-monospaced-technical text-xs text-[#e3c193] bg-[#120e04] px-3 py-1.5 rounded border border-[#3b3426]">
+          <div className={`text-xs ${t.fontMono} px-3 py-1.5 rounded border ${
+            theme === 'vintage'
+              ? 'text-[#e3c193] bg-[#120e04] border-[#3b3426]'
+              : 'text-slate-700 bg-slate-100 border-slate-200'
+          }`}>
             Config: {generateConfigString(config, ringFormat)}
           </div>
         </div>
       </div>
 
       {isCompactMode ? (
-        <div className="wood-texture p-3 sm:p-5 rounded-2xl border border-[#4a3e2e] shadow-2xl space-y-4 max-w-2xl mx-auto">
+        <div className={`${theme === 'vintage' ? 'wood-texture border-[#4a3e2e]' : 'bg-slate-100/70 border-slate-200'} p-3 sm:p-5 rounded-2xl border shadow-2xl space-y-4 max-w-2xl mx-auto`}>
           {keyboardBulbsOnly && (
-            <div className="bg-[#120e04] border border-[#ebc238]/40 text-[#ebc238] rounded-lg p-2.5 text-center text-xs font-monospaced-technical flex items-center justify-between shadow-panel">
+            <div className={`rounded-lg p-2.5 text-center text-xs ${t.fontMono} flex items-center justify-between shadow-panel ${t.panelInner} border ${t.borderBase} ${t.textAccent}`}>
               <span className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">lightbulb</span>
                 Keys & Bulbs Only View Active (Minimalist Compact View)
@@ -980,7 +1005,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
               <button
                 type="button"
                 onClick={() => setKeyboardBulbsOnly(false)}
-                className="text-white hover:text-[#ebc238] underline font-ui-header cursor-pointer ml-2"
+                className={`${t.textPrimary} hover:${t.textAccent} underline ${t.fontHeader} cursor-pointer ml-2`}
               >
                 Show All Panels
               </button>
@@ -989,26 +1014,26 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
           {/* Output Tape in Compact Mode */}
           {!keyboardBulbsOnly && showTape && (
-            <div className="bg-[#1b1710]/90 p-3 rounded-xl border border-[#3d3526] shadow-lg flex flex-col gap-2 w-full animate-fade-in">
-              <div className="flex flex-wrap items-center justify-between gap-2 px-1 border-b border-[#3d3526]/50 pb-2">
-                <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] tracking-wider uppercase flex items-center gap-1.5 font-bold">
-                  <span className="material-symbols-outlined text-xs text-[#ebc238]">receipt_long</span>
+            <div className={`${t.panelBg} p-3 rounded-xl border ${t.borderBase} shadow-lg flex flex-col gap-2 w-full animate-fade-in`}>
+              <div className={`flex flex-wrap items-center justify-between gap-2 px-1 border-b ${t.borderBase}/50 pb-2`}>
+                <span className={`text-[10px] ${t.fontMono} ${t.textMuted} tracking-wider uppercase flex items-center gap-1.5 font-bold`}>
+                  <span className={`material-symbols-outlined text-xs ${t.textAccent}`}>receipt_long</span>
                   OUTPUT TAPE
                 </span>
 
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   {/* Grouping: 5s, 4s, None */}
                   <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-monospaced-technical text-[#8c7e6a] hidden xs:inline">Group:</span>
+                    <span className={`text-[9px] ${t.fontMono} ${t.textMuted} hidden xs:inline`}>Group:</span>
                     {[5, 4, 0].map((size) => (
                       <button
                         key={size}
                         type="button"
                         onClick={() => setActiveGroupSize(size)}
-                        className={`text-[9px] sm:text-[10px] font-monospaced-technical px-1.5 sm:px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                        className={`text-[9px] sm:text-[10px] ${t.fontMono} px-1.5 sm:px-2 py-0.5 rounded border transition-colors cursor-pointer ${
                           activeGroupSize === size
-                            ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-sm'
-                            : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426] hover:bg-[#3b3426]'
+                            ? `${t.buttonHighlight} font-bold shadow-sm`
+                            : `${t.buttonPrimary}`
                         }`}
                         title={size === 0 ? 'No grouping' : `Group text into ${size}-letter blocks`}
                       >
@@ -1024,7 +1049,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                       setInputTape('');
                       setCipherTape('');
                     }}
-                    className="text-[9px] sm:text-[10px] font-monospaced-technical text-[#ffdad6] bg-[#93000a]/40 hover:bg-[#93000a] px-2 py-0.5 rounded border border-red-800/40 transition-colors flex items-center gap-1 cursor-pointer font-bold"
+                    className={`text-[9px] sm:text-[10px] ${t.fontMono} ${theme === 'vintage' ? 'text-red-400 bg-red-950/30 border-red-900/50 hover:bg-red-900/40' : 'text-red-500 bg-red-50 hover:bg-red-100 border-red-200'} px-2 py-0.5 rounded border transition-colors flex items-center gap-1 cursor-pointer font-bold`}
                     title="Clear Tape Content"
                   >
                     <span className="material-symbols-outlined text-[12px]">backspace</span>
@@ -1038,8 +1063,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     disabled={!cipherTape}
                     className={`p-1 rounded border transition-colors cursor-pointer flex items-center ${
                       cipherTape
-                        ? 'text-[#8c7e6a] hover:text-[#ebc238] border-[#3b3426] hover:border-[#ebc238]/40 bg-[#18130a]'
-                        : 'opacity-40 text-[#554e42] border-transparent cursor-not-allowed'
+                        ? `${t.textMuted} hover:${t.textAccent} ${t.borderBase} ${t.panelInner}`
+                        : 'opacity-40 text-slate-400 border-transparent cursor-not-allowed'
                     }`}
                     title="Copy Output Tape"
                     aria-label="Copy Output"
@@ -1053,7 +1078,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     onClick={() => {
                       setTapeCollapsed(!tapeCollapsed);
                     }}
-                    className="text-[10px] sm:text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-0.5 cursor-pointer ml-0.5 border border-[#3b3426] px-1.5 py-0.5 rounded bg-[#120e04]"
+                    className={`text-[10px] sm:text-[11px] ${t.fontHeader} ${t.textSecondary} hover:${t.textAccent} flex items-center gap-0.5 cursor-pointer ml-0.5 border ${t.borderBase} px-1.5 py-0.5 rounded ${t.panelInner}`}
                     title={tapeCollapsed ? 'Show Output Tape' : 'Close Output Tape'}
                   >
                     <span className="material-symbols-outlined text-sm">
@@ -1065,8 +1090,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
               </div>
 
               {!tapeCollapsed && (
-                <div className="paper-tape min-h-[44px] max-h-[80px] w-full px-3 py-2 font-monospaced-technical text-[#2b261f] overflow-y-auto break-all tracking-widest text-sm sm:text-base font-bold rounded shadow-inner flex items-center justify-between">
-                  <span>{formatTapeText(cipherTape) || <span className="text-[#8c7e6a] italic font-normal text-xs">Tape output will appear here as you type...</span>}</span>
+                <div className={`${t.paperTapeBg} min-h-[44px] max-h-[80px] w-full px-3 py-2 ${t.fontMono} ${theme === 'vintage' ? 'text-[#2b261f]' : 'text-slate-800'} border ${t.paperTapeBorder} overflow-y-auto break-all tracking-widest text-sm sm:text-base font-bold rounded shadow-inner flex items-center justify-between`}>
+                  <span>{formatTapeText(cipherTape) || <span className={`${t.textMuted} italic font-normal text-xs`}>Tape output will appear here as you type...</span>}</span>
                 </div>
               )}
             </div>
@@ -1108,25 +1133,25 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
           {/* Rotor Bay (Walzenlage) */}
           {!keyboardBulbsOnly && showChamber && (
-            <div className="metal-plate p-3 rounded-xl shadow-md animate-fade-in">
-              <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#3d3526]/60 px-1">
-                <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] tracking-widest uppercase flex items-center gap-1 font-bold">
-                  <span className="material-symbols-outlined text-xs text-[#ebc238]">tune</span>
+            <div className={`${t.panelBg} p-3 rounded-xl border ${t.borderBase} shadow-md animate-fade-in`}>
+              <div className={`flex items-center justify-between mb-2 pb-1 border-b ${t.borderBase}/60 px-1`}>
+                <span className={`text-[10px] ${t.fontMono} ${t.textSecondary} tracking-widest uppercase flex items-center gap-1 font-bold`}>
+                  <span className={`material-symbols-outlined text-xs ${t.textAccent}`}>tune</span>
                   SCRAMBLER CHAMBER (WALZEN)
                 </span>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 text-[10px] font-monospaced-technical">
+                  <div className={`flex items-center gap-1 text-[10px] ${t.fontMono}`}>
                     <button
                       type="button"
                       onClick={() => handleSetRingFormat('number')}
-                      className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'number' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
+                      className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'number' ? `${t.buttonHighlight} font-bold` : `${t.textMuted} hover:${t.textSecondary}`}`}
                     >
                       01–26
                     </button>
                     <button
                       type="button"
                       onClick={() => handleSetRingFormat('letter')}
-                      className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'letter' ? 'bg-[#ebc238] text-[#25190b] font-bold' : 'text-[#83715d] hover:text-[#d1c4b7]'}`}
+                      className={`px-1.5 py-0.5 rounded cursor-pointer ${ringFormat === 'letter' ? `${t.buttonHighlight} font-bold` : `${t.textMuted} hover:${t.textSecondary}`}`}
                     >
                       A–Z
                     </button>
@@ -1134,7 +1159,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowChamber(false)}
-                    className="text-[10px] sm:text-[11px] font-monospaced-technical text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-1 cursor-pointer border border-[#4e453b] px-2.5 py-1 rounded-md bg-[#120e04]/60 transition-all font-bold"
+                    className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textSecondary} hover:${t.textAccent} flex items-center gap-1 cursor-pointer border ${t.borderBase} px-2.5 py-1 rounded-md ${t.panelInner} transition-all font-bold`}
                     title="Close Scrambler Chamber"
                   >
                     <span className="material-symbols-outlined text-xs">close</span>
@@ -1144,12 +1169,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
               </div>
 
                   {/* Quick Settings Action Bar in front of Rotors */}
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3 bg-[#18130a] px-2 sm:px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
+              <div className={`flex flex-wrap items-center justify-between gap-2 mb-3 ${t.panelInner} px-2 sm:px-3 py-1.5 rounded-lg border ${t.borderBase} shadow-inner`}>
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => setShowRotorModal(true)}
-                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
                     title="Open Quick Rotor Settings Pop-Up Window"
                   >
                     <span className="material-symbols-outlined text-sm">settings_overscan</span>
@@ -1158,29 +1183,29 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowPlugModal(true)}
-                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
                     title="Open Quick Plugboard Settings Pop-Up Window"
                   >
                     <span className="material-symbols-outlined text-sm">settings_ethernet</span>
                     <span>PLUG SETTINGS</span>
-                    <span className="bg-[#ebc238]/20 text-[#ebc238] px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
+                    <span className="bg-blue-500/20 text-blue-600 px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
                       {Object.keys(config.plugboard || {}).length / 2} pairs
                     </span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowCodebookModal(true)}
-                    className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                    className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
                     title="Open Codebook Key Sheets Quick Window"
                   >
                     <span className="material-symbols-outlined text-sm">menu_book</span>
                     <span>CODEBOOK</span>
                   </button>
                 </div>
-                <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
-                  Reflector: <span className="text-[#ebc238] font-bold">{config.reflector.type}</span>
+                <div className={`text-[10px] ${t.fontMono} ${t.textMuted}`}>
+                  Reflector: <span className={`${t.textAccent} font-bold`}>{config.reflector.type}</span>
                   {isUKWDual && (
-                    <span className="text-[#e06c3a] font-bold ml-1">
+                    <span className="text-orange-500 font-bold ml-1">
                       (Pos: {formatRotorPos(config.reflector.current, ringFormat)})
                     </span>
                   )}
@@ -1188,7 +1213,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
               </div>
 
               <div className="space-y-3 max-w-xl mx-auto pt-1">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2 sm:p-2.5 rounded-xl border border-[#3b3426]">
+                <div className={`flex flex-col sm:flex-row items-center justify-center gap-3 ${t.panelInner} p-2 sm:p-2.5 rounded-xl border ${t.borderBase}`}>
                   <RotorChamber
                     config={config}
                     ringFormat={ringFormat}
@@ -1231,18 +1256,18 @@ export const MachineView: React.FC<MachineViewProps> = ({
             />
 
             {isMobileKeyboardOpen && (
-              <div className="bg-[#181307] border-2 border-[#ebc238] rounded-xl p-3 shadow-[0_0_20px_rgba(235,194,56,0.3)] animate-fade-in flex flex-col sm:flex-row items-center justify-between gap-2.5 my-1">
+              <div className={`${theme === 'vintage' ? 'bg-[#181307] border-[#ebc238] shadow-[0_0_20px_rgba(235,194,56,0.3)]' : 'bg-white border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]'} border-2 rounded-xl p-3 animate-fade-in flex flex-col sm:flex-row items-center justify-between gap-2.5 my-1`}>
                 <div
                   onClick={() => mobileInputRef.current?.focus()}
                   className="flex items-center gap-2.5 cursor-pointer flex-1 w-full"
                 >
-                  <div className="w-3 h-3 rounded-full bg-[#34ace0] animate-ping shrink-0" />
+                  <div className={`w-3 h-3 rounded-full ${theme === 'vintage' ? 'bg-[#ebc238]' : 'bg-blue-500'} animate-ping shrink-0`} />
                   <div>
-                    <div className="text-xs sm:text-sm font-ui-header text-[#ede1cd] flex items-center gap-1.5 font-bold">
-                      <span className="material-symbols-outlined text-sm text-[#ebc238]">smartphone</span>
+                    <div className={`text-xs sm:text-sm ${t.fontHeader} ${t.textPrimary} flex items-center gap-1.5 font-bold`}>
+                      <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>smartphone</span>
                       Mobile Keyboard Active
                     </div>
-                    <div className="text-[11px] font-monospaced-technical text-[#d1c4b7]">
+                    <div className={`text-[11px] ${t.fontMono} ${t.textMuted}`}>
                       Type on your device keyboard (A–Z) • Tap here to refocus keyboard
                     </div>
                   </div>
@@ -1250,7 +1275,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
                 <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto justify-end">
                   {/* Lamp hold duration switcher */}
-                  <div className="flex items-center gap-1 bg-[#120e04] px-1.5 py-0.5 rounded border border-[#3b3426] text-[10px] font-monospaced-technical text-[#8c7e6a]">
+                  <div className={`flex items-center gap-1 ${t.panelInner} px-1.5 py-0.5 rounded border ${t.borderBase} text-[10px] ${t.fontMono} ${t.textMuted}`}>
                     <span>Light:</span>
                     {(['400', '800', '1500', 'latch'] as const).map((dur) => (
                       <button
@@ -1263,8 +1288,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                         }}
                         className={`px-1 py-0.5 rounded text-[9px] font-bold cursor-pointer transition-all ${
                           mobileLampDuration === dur
-                            ? 'bg-[#ebc238] text-[#1c170d]'
-                            : 'text-[#8c7e6a] hover:text-[#ede1cd]'
+                            ? `${t.buttonHighlight}`
+                            : `${t.textMuted} hover:${t.textSecondary}`
                         }`}
                         title={dur === 'latch' ? 'Stays lit until next keypress' : `Lit for ${dur} milliseconds`}
                       >
@@ -1282,7 +1307,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                       }
                       mobileInputRef.current?.focus();
                     }}
-                    className="px-2 py-1 text-xs font-monospaced-technical rounded bg-[#2a2215] text-[#ede1cd] border border-[#4e453b] hover:border-[#ebc238] cursor-pointer"
+                    className={`px-2 py-1 text-xs ${t.fontMono} rounded ${t.buttonPrimary} cursor-pointer`}
                   >
                     Space
                   </button>
@@ -1292,14 +1317,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
                       handleBackspace();
                       mobileInputRef.current?.focus();
                     }}
-                    className="px-2 py-1 text-xs font-monospaced-technical rounded bg-[#93000a]/40 text-[#ffdad6] border border-red-800/50 hover:bg-[#93000a] cursor-pointer"
+                    className={`px-2 py-1 text-xs ${t.fontMono} rounded ${theme === 'vintage' ? 'bg-red-950/30 text-red-400 border-red-900/50 hover:bg-red-900/40' : 'bg-red-50 text-red-500 border-red-200 hover:bg-red-100'} border cursor-pointer font-bold transition-colors`}
                   >
                     Backspace (⌫)
                   </button>
                   <button
                     type="button"
                     onClick={handleCloseMobileKeyboard}
-                    className="px-3 py-1 text-xs font-monospaced-technical rounded bg-[#ebc238] text-[#1c170d] font-bold shadow hover:bg-[#f5cf47] cursor-pointer flex items-center gap-1"
+                    className={`px-3 py-1 text-xs ${t.fontMono} rounded ${t.buttonHighlight} font-bold shadow cursor-pointer flex items-center gap-1`}
                   >
                     <span className="material-symbols-outlined text-xs">keyboard_hide</span>
                     <span>Close</span>
@@ -1333,7 +1358,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
       ) : (
         <>
         {keyboardBulbsOnly && (
-          <div className="bg-[#120e04] border border-[#ebc238]/40 text-[#ebc238] rounded-lg p-2.5 text-center text-xs font-monospaced-technical flex items-center justify-between shadow-panel">
+          <div className={`rounded-lg p-2.5 text-center text-xs ${t.fontMono} flex items-center justify-between shadow-panel ${t.panelInner} border ${t.borderBase} ${t.textAccent}`}>
             <span className="flex items-center gap-2">
               <span className="material-symbols-outlined text-sm">lightbulb</span>
               Keys & Bulbs Only View Active (Minimalist Machine View)
@@ -1341,7 +1366,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
             <button
               type="button"
               onClick={() => setKeyboardBulbsOnly(false)}
-              className="text-white hover:text-[#ebc238] underline font-ui-header cursor-pointer ml-2"
+              className={`${t.textPrimary} hover:${t.textAccent} underline ${t.fontHeader} cursor-pointer ml-2`}
             >
               Show All Panels
             </button>
@@ -1352,20 +1377,20 @@ export const MachineView: React.FC<MachineViewProps> = ({
       {!keyboardBulbsOnly && (showChamber || showBatterySwitch) && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {showChamber && (
-            <div className={`${showBatterySwitch ? 'lg:col-span-8' : 'lg:col-span-12'} bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal transition-all animate-fade-in`}>
-              <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#3b3426]">
-                <h2 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-widest flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm text-[#ebc238]">tune</span>
+            <div className={`${showBatterySwitch ? 'lg:col-span-8' : 'lg:col-span-12'} ${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} transition-all animate-fade-in`}>
+              <div className={`flex justify-between items-center mb-3 pb-2 border-b ${t.borderBase}`}>
+                <h2 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-widest flex items-center gap-2`}>
+                  <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>tune</span>
                   SCRAMBLER CHAMBER (WALZEN)
                 </h2>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-[#120e04] px-2 py-0.5 rounded border border-[#3b3426] text-[10px]">
-                    <span className="text-[#e3c193] font-bold uppercase hidden sm:inline">Format:</span>
+                  <div className={`flex items-center gap-1 ${t.panelInner} px-2 py-0.5 rounded border ${t.borderBase} text-[10px]`}>
+                    <span className={`${t.textSecondary} font-bold uppercase hidden sm:inline`}>Format:</span>
                     <button
                       type="button"
                       onClick={() => handleSetRingFormat('number')}
-                      className={`px-1.5 py-0.5 rounded transition-all cursor-pointer font-mono font-bold ${
-                        ringFormat === 'number' ? 'bg-[#ebc238] text-[#25190b]' : 'text-[#83715d] hover:text-[#d1c4b7]'
+                      className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${t.fontMono} font-bold ${
+                        ringFormat === 'number' ? `${t.buttonHighlight}` : `${t.textMuted} hover:${t.textSecondary}`
                       }`}
                       title="Show 01-26 Numbers"
                     >
@@ -1374,8 +1399,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleSetRingFormat('letter')}
-                      className={`px-1.5 py-0.5 rounded transition-all cursor-pointer font-mono font-bold ${
-                        ringFormat === 'letter' ? 'bg-[#ebc238] text-[#25190b]' : 'text-[#83715d] hover:text-[#d1c4b7]'
+                      className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${t.fontMono} font-bold ${
+                        ringFormat === 'letter' ? `${t.buttonHighlight}` : `${t.textMuted} hover:${t.textSecondary}`
                       }`}
                       title="Show A-Z Letters"
                     >
@@ -1385,7 +1410,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowChamber(false)}
-                    className="text-[10px] sm:text-[11px] font-monospaced-technical text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-1 cursor-pointer border border-[#4e453b] px-2.5 py-1 rounded-md bg-[#120e04]/60 transition-all font-bold tracking-wider"
+                    className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textSecondary} hover:${t.textAccent} flex items-center gap-1 cursor-pointer border ${t.borderBase} px-2.5 py-1 rounded-md ${t.panelInner} transition-all font-bold tracking-wider`}
                     title="Close Scrambler Chamber"
                   >
                     <span className="material-symbols-outlined text-xs">close</span>
@@ -1395,12 +1420,12 @@ export const MachineView: React.FC<MachineViewProps> = ({
               </div>
 
               <div className="space-y-3 max-w-xl mx-auto pt-1">
-                <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18130a] px-2 sm:px-3 py-1.5 rounded-lg border border-[#3d3526] shadow-inner">
+                <div className={`flex flex-wrap items-center justify-between gap-2 ${t.panelInner} px-2 sm:px-3 py-1.5 rounded-lg border ${t.borderBase} shadow-inner`}>
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <button
                       type="button"
                       onClick={() => setShowRotorModal(true)}
-                      className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                      className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
                       title="Open Quick Rotor Settings Pop-Up Window"
                     >
                       <span className="material-symbols-outlined text-sm">settings_overscan</span>
@@ -1409,31 +1434,31 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowPlugModal(true)}
-                      className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                      className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
                       title="Open Quick Plugboard Settings Pop-Up Window"
                     >
                       <span className="material-symbols-outlined text-sm">settings_ethernet</span>
                       <span>PLUG SETTINGS</span>
-                      <span className="bg-[#ebc238]/20 text-[#ebc238] px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
+                      <span className="bg-blue-500/20 text-blue-600 px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
                         {Object.keys(config.plugboard || {}).length / 2} pairs
                       </span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowCodebookModal(true)}
-                      className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs font-monospaced-technical text-[#ebc238] bg-[#2a2215] hover:bg-[#ebc238] hover:text-[#1c170d] border border-[#ebc238]/40 hover:border-[#ebc238] rounded-md font-bold transition-all shadow-sm cursor-pointer"
+                      className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
                       title="Open Codebook Key Sheets Quick Window"
                     >
                       <span className="material-symbols-outlined text-sm">menu_book</span>
                       <span>CODEBOOK</span>
                     </button>
                   </div>
-                  <div className="text-[10px] font-monospaced-technical text-[#8c7e6a]">
-                    Reflector: <span className="text-[#ebc238] font-bold">{config.reflector.type}</span>
+                  <div className={`text-[10px] ${t.fontMono} ${t.textMuted}`}>
+                    Reflector: <span className={`${t.textAccent} font-bold`}>{config.reflector.type}</span>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-[#120e04]/80 p-2 sm:p-2.5 rounded-xl border border-[#3b3426]">
+                <div className={`flex flex-col sm:flex-row items-center justify-center gap-3 ${t.panelInner} p-2 sm:p-2.5 rounded-xl border ${t.borderBase}`}>
                   <RotorChamber
                     config={config}
                     ringFormat={ringFormat}
@@ -1477,18 +1502,18 @@ export const MachineView: React.FC<MachineViewProps> = ({
             aria-label="Mobile Keyboard Input Buffer"
           />
 
-          <div className="bg-[#181307] border-2 border-[#ebc238] rounded-xl p-3 shadow-[0_0_20px_rgba(235,194,56,0.3)] animate-fade-in flex flex-col sm:flex-row items-center justify-between gap-2.5 my-2">
+              <div className={`${theme === 'vintage' ? 'bg-[#181307] border-[#ebc238] shadow-[0_0_20px_rgba(235,194,56,0.3)]' : 'bg-white border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]'} border-2 rounded-xl p-3 animate-fade-in flex flex-col sm:flex-row items-center justify-between gap-2.5 my-2`}>
             <div
               onClick={() => mobileInputRef.current?.focus()}
               className="flex items-center gap-2.5 cursor-pointer flex-1 w-full"
             >
-              <div className="w-3 h-3 rounded-full bg-[#34ace0] animate-ping shrink-0" />
+              <div className={`w-3 h-3 rounded-full ${theme === 'vintage' ? 'bg-[#ebc238]' : 'bg-blue-500'} animate-ping shrink-0`} />
               <div>
-                <div className="text-xs sm:text-sm font-ui-header text-[#ede1cd] flex items-center gap-1.5 font-bold">
-                  <span className="material-symbols-outlined text-sm text-[#ebc238]">smartphone</span>
+                <div className={`text-xs sm:text-sm ${t.fontHeader} ${t.textPrimary} flex items-center gap-1.5 font-bold`}>
+                  <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>smartphone</span>
                   Mobile Keyboard Active
                 </div>
-                <div className="text-[11px] font-monospaced-technical text-[#d1c4b7]">
+                <div className={`text-[11px] ${t.fontMono} ${t.textMuted}`}>
                   Type on your device keyboard (A–Z) • Tap here to refocus keyboard
                 </div>
               </div>
@@ -1496,7 +1521,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
             <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto justify-end">
               {/* Lamp hold duration switcher */}
-              <div className="flex items-center gap-1 bg-[#120e04] px-1.5 py-0.5 rounded border border-[#3b3426] text-[10px] font-monospaced-technical text-[#8c7e6a]">
+              <div className={`flex items-center gap-1 ${t.panelInner} px-1.5 py-0.5 rounded border ${t.borderBase} text-[10px] ${t.fontMono} ${t.textMuted}`}>
                 <span>Light:</span>
                 {(['400', '800', '1500', 'latch'] as const).map((dur) => (
                   <button
@@ -1509,8 +1534,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     }}
                     className={`px-1 py-0.5 rounded text-[9px] font-bold cursor-pointer transition-all ${
                       mobileLampDuration === dur
-                        ? 'bg-[#ebc238] text-[#1c170d]'
-                        : 'text-[#8c7e6a] hover:text-[#ede1cd]'
+                        ? `${t.buttonHighlight}`
+                        : `${t.textMuted} hover:${t.textSecondary}`
                     }`}
                     title={dur === 'latch' ? 'Stays lit until next keypress' : `Lit for ${dur} milliseconds`}
                   >
@@ -1528,7 +1553,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   }
                   mobileInputRef.current?.focus();
                 }}
-                className="px-2 py-1 text-xs font-monospaced-technical rounded bg-[#2a2215] text-[#ede1cd] border border-[#4e453b] hover:border-[#ebc238] cursor-pointer"
+                className={`px-2 py-1 text-xs ${t.fontMono} rounded ${t.buttonPrimary} cursor-pointer`}
               >
                 Space
               </button>
@@ -1538,14 +1563,14 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   handleBackspace();
                   mobileInputRef.current?.focus();
                 }}
-                className="px-2 py-1 text-xs font-monospaced-technical rounded bg-[#93000a]/40 text-[#ffdad6] border border-red-800/50 hover:bg-[#93000a] cursor-pointer"
+                className={`px-2 py-1 text-xs ${t.fontMono} rounded bg-red-500/20 text-red-600 hover:bg-red-500/30 border border-red-500/40 cursor-pointer`}
               >
                 Backspace (⌫)
               </button>
               <button
                 type="button"
                 onClick={handleCloseMobileKeyboard}
-                className="px-3 py-1 text-xs font-monospaced-technical rounded bg-[#ebc238] text-[#1c170d] font-bold shadow hover:bg-[#f5cf47] cursor-pointer flex items-center gap-1"
+                className={`px-3 py-1 text-xs ${t.fontMono} rounded ${t.buttonHighlight} font-bold shadow cursor-pointer flex items-center gap-1`}
               >
                 <span className="material-symbols-outlined text-xs">keyboard_hide</span>
                 <span>Close</span>
@@ -1578,46 +1603,46 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
       {/* Paper Tape Strip Display */}
       {!keyboardBulbsOnly && showTape && (
-        <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal space-y-4 animate-fade-in">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-[#3b3426] pb-2">
+        <div className={`${t.lampboardPanelBg} rounded-lg p-4 space-y-4 animate-fade-in`}>
+          <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b ${t.borderBase} pb-2`}>
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm text-[#ebc238]">receipt_long</span>
-              <h3 className="text-ui-header font-ui-header text-[#ede1cd] text-xs uppercase">
+              <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>receipt_long</span>
+              <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase`}>
                 Encrypted Paper Tape Output
               </h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-monospaced-technical text-[#d1c4b7]">Grouping:</span>
+              <span className={`text-[10px] ${t.fontMono} ${t.textMuted}`}>Grouping:</span>
               {[5, 4, 0].map((size) => (
                 <button
                   key={size}
                   type="button"
                   onClick={() => setActiveGroupSize(size)}
-                  className={`text-[10px] font-monospaced-technical px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                  className={`text-[10px] ${t.fontMono} px-2 py-0.5 rounded border transition-colors cursor-pointer ${
                     activeGroupSize === size
-                      ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold'
-                      : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426] hover:bg-[#3b3426]'
+                      ? `${t.buttonHighlight} font-bold`
+                      : `${t.buttonPrimary}`
                   }`}
                 >
                   {size === 0 ? 'None' : `${size}s`}
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={() => {
-                  setInputTape('');
-                  setCipherTape('');
-                }}
-                className="text-[10px] font-monospaced-technical text-[#ffdad6] bg-[#93000a]/40 hover:bg-[#93000a] px-2 py-0.5 rounded border border-red-800/40 transition-colors ml-1 cursor-pointer"
-              >
-                Clear Tape
-              </button>
+            <button
+              type="button"
+              onClick={() => {
+                setInputTape('');
+                setCipherTape('');
+              }}
+              className={`text-[10px] ${t.fontMono} ${theme === 'vintage' ? 'text-red-400 bg-red-950/30 border-red-900/50 hover:bg-red-900/40' : 'text-red-600 bg-red-50 border-red-200 hover:bg-red-100'} px-2 py-0.5 rounded border transition-colors ml-1 cursor-pointer font-bold`}
+            >
+              Clear Tape
+            </button>
               <button
                 type="button"
                 onClick={() => {
                   setTapeCollapsed(!tapeCollapsed);
                 }}
-                className="text-[11px] font-ui-header text-[#d1c4b7] hover:text-[#ebc238] flex items-center gap-0.5 cursor-pointer ml-1 border border-[#3b3426] px-2 py-0.5 rounded bg-[#120e04]"
+                className={`text-[11px] ${t.fontHeader} ${t.textSecondary} hover:${t.textAccent} flex items-center gap-0.5 cursor-pointer ml-1 border ${t.borderBase} px-2 py-0.5 rounded ${t.panelInner}`}
                 title={tapeCollapsed ? 'Show Paper Tape Panel' : 'Close Paper Tape Panel'}
               >
                 <span className="material-symbols-outlined text-sm">
@@ -1697,26 +1722,26 @@ export const MachineView: React.FC<MachineViewProps> = ({
             <>
               {/* Input Text Tape */}
               <div>
-                <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] uppercase block mb-1">
+                <span className={`text-[10px] ${t.fontMono} ${t.textMuted} uppercase block mb-1`}>
                   Plaintext Input:
                 </span>
-                <div className="bg-[#f6dfc7] text-[#25190b] font-monospaced-technical p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold select-all">
+                <div className={`${t.paperTapeBg} ${theme === 'vintage' ? 'text-[#25190b]' : 'text-slate-800'} ${t.fontMono} p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold select-all border ${t.paperTapeBorder}`}>
                   {formatTapeText(inputTape) || <span className="opacity-40 italic">Type characters above...</span>}
                 </div>
               </div>
 
               {/* Ciphertext Output Tape */}
               <div>
-                <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase block mb-1">
+                <span className={`text-[10px] ${t.fontMono} ${t.textAccent} uppercase block mb-1 font-bold`}>
                   Ciphertext Output:
                 </span>
-                <div className="bg-[#f6dfc7] text-[#25190b] font-monospaced-technical p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold border-2 border-[#ebc238] select-all flex justify-between items-center">
+                <div className={`${t.paperTapeBg} ${theme === 'vintage' ? 'text-[#25190b]' : 'text-slate-800'} ${t.fontMono} p-3 rounded shadow-inner min-h-[42px] tracking-widest break-all font-bold border-2 ${theme === 'vintage' ? 'border-[#ebc238]' : 'border-blue-500'} select-all flex justify-between items-center`}>
                   <span>{formatTapeText(cipherTape) || <span className="opacity-40 italic">Ciphertext will appear here...</span>}</span>
                   {cipherTape && (
                     <button
                       type="button"
                       onClick={() => navigator.clipboard.writeText(formatTapeText(cipherTape))}
-                      className="text-[10px] bg-[#25190b] text-[#f6dfc7] hover:bg-[#3c2e1e] px-2 py-1 rounded shadow flex items-center gap-1 shrink-0 ml-2 cursor-pointer"
+                      className={`text-[10px] font-bold ${theme === 'vintage' ? 'bg-[#25190b] text-[#f6dfc7] hover:bg-[#3c2e1e]' : 'bg-blue-600 text-white hover:bg-blue-700'} px-2 py-1 rounded shadow flex items-center gap-1 shrink-0 ml-2 cursor-pointer transition-all active:scale-95`}
                       title="Copy Ciphertext"
                     >
                       <span className="material-symbols-outlined text-[12px]">content_copy</span>
@@ -1782,16 +1807,16 @@ export const MachineView: React.FC<MachineViewProps> = ({
       {/* Import Message Modal */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="bg-[#18130a] border-2 border-[#ebc238]/60 rounded-lg shadow-2xl w-full max-w-lg p-5 text-[#ede1cd] flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-[#3b3426] pb-3">
-              <h3 className="text-sm sm:text-base font-bold font-monospaced-technical text-[#ebc238] flex items-center gap-2 uppercase tracking-wide">
+          <div className={`${t.modalBg} border-2 ${t.borderBase} rounded-lg shadow-2xl w-full max-w-lg p-5 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200`}>
+            <div className={`flex items-center justify-between border-b ${t.borderBase} pb-3`}>
+              <h3 className={`text-sm sm:text-base font-bold ${t.fontMono} ${t.textAccent} flex items-center gap-2 uppercase tracking-wide`}>
                 <span className="material-symbols-outlined text-[18px]">file_upload</span>
                 Import Transmission / Message
               </h3>
               <button
                 type="button"
                 onClick={() => setShowImportModal(false)}
-                className="text-[#8c7e6a] hover:text-[#ede1cd] p-1 rounded transition-colors cursor-pointer"
+                className={`${t.textMuted} hover:${t.textPrimary} p-1 rounded transition-colors cursor-pointer`}
                 title="Close"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
@@ -1800,7 +1825,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-[10px] text-[#8c7e6a] uppercase font-monospaced-technical block mb-1">
+                <label className={`text-[10px] ${t.textMuted} uppercase ${t.fontMono} block mb-1`}>
                   Paste Full Message or Ciphertext:
                 </label>
                 <textarea
@@ -1808,7 +1833,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   onChange={(e) => setImportText(e.target.value)}
                   placeholder={`DFS 1200 15 UIO ABCDE\nHELLOWORLD...`}
                   rows={6}
-                  className="w-full bg-[#120e04] text-[#ede1cd] border border-[#4e453b] rounded p-2 text-xs font-monospaced-technical focus:outline-none focus:border-[#ebc238] resize-y"
+                  className={`w-full ${t.inputBg} ${t.textPrimary} border ${t.borderBase} rounded p-2 text-xs ${t.fontMono} focus:outline-none focus:border-blue-500 resize-y`}
                 />
               </div>
 
@@ -1818,23 +1843,23 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   id="importIncludeHeaderCheck"
                   checked={importIncludeHeader}
                   onChange={(e) => setImportIncludeHeader(e.target.checked)}
-                  className="rounded border-[#4e453b] bg-[#120e04] text-[#ebc238] focus:ring-0 cursor-pointer w-4 h-4"
+                  className={`rounded ${t.borderBase} ${t.inputBg} ${t.textAccent} focus:ring-0 cursor-pointer w-4 h-4`}
                 />
-                <label htmlFor="importIncludeHeaderCheck" className="text-xs font-monospaced-technical text-[#d1c4b7] cursor-pointer select-none">
+                <label htmlFor="importIncludeHeaderCheck" className={`text-xs ${t.fontMono} ${t.textSecondary} cursor-pointer select-none`}>
                   Include header (Funktelegramm preamble with callsign, time, count, key ID, and Grundstellung rotor settings)
                 </label>
               </div>
 
-              <div className="text-[10px] text-[#8c7e6a] italic leading-relaxed bg-[#120e04]/60 p-2.5 rounded border border-[#3b3426]/50">
+              <div className={`text-[10px] ${t.textMuted} italic leading-relaxed ${t.panelInner} p-2.5 rounded border ${t.borderBase}/50`}>
                 When header is enabled, the first line is parsed to automatically configure sender, transmission time, key ID, and rotor starting positions (Grundstellung). Subsequent lines (or full text if no header) form the plaintext message to encrypt.
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#3b3426]">
+            <div className={`flex items-center justify-end gap-2 pt-3 border-t ${t.borderBase}`}>
               <button
                 type="button"
                 onClick={() => setShowImportModal(false)}
-                className="text-xs font-monospaced-technical px-4 py-2 rounded border border-[#4e453b] bg-[#221c11] text-[#d1c4b7] hover:bg-[#2e2619] cursor-pointer uppercase font-bold"
+                className={`text-xs ${t.fontMono} px-4 py-2 rounded border ${t.borderBase} ${t.buttonPrimary} cursor-pointer uppercase font-bold`}
               >
                 Cancel
               </button>
@@ -1848,10 +1873,10 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   }
                 }}
                 disabled={!importText.trim()}
-                className={`text-xs font-monospaced-technical px-4 py-2 rounded border font-bold uppercase transition-all cursor-pointer ${
+                className={`text-xs ${t.fontMono} px-4 py-2 rounded border font-bold uppercase transition-all cursor-pointer ${
                   !importText.trim()
-                    ? 'opacity-40 cursor-not-allowed bg-[#1c1811] text-[#635848] border-[#2a241a]'
-                    : 'bg-[#ebc238] text-[#17130b] border-[#ebc238] hover:bg-[#f6d258]'
+                    ? `opacity-40 cursor-not-allowed ${t.panelInner} ${t.textMuted} ${t.borderBase}`
+                    : `${t.buttonHighlight}`
                 }`}
               >
                 Import & Process

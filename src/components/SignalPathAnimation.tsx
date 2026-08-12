@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { useTheme, getTheme } from '../lib/theme';
 import { EnigmaConfig, StepTrace } from '../types';
 import { encryptChar, ALPHABET, numToChar, formatRotorRing } from '../lib/enigmaEngine';
 import { playKeyClickSound } from '../lib/audio';
@@ -26,6 +27,8 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
   soundEnabled = true,
   lastTraceResult
 }) => {
+  const { theme } = useTheme();
+  const t = getTheme(theme);
   const [selectedChar, setSelectedChar] = useState<string>(activeKey || initialChar);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -242,23 +245,27 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
     <div
       className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
         isLit
-          ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
-          : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
+          ? theme === 'vintage' 
+            ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
+            : 'bg-yellow-400 text-yellow-950 border-yellow-200 shadow-[0_0_22px_rgba(250,204,21,0.5)] scale-105 z-20 font-bold'
+          : theme === 'vintage'
+            ? 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
+            : 'bg-white text-slate-600 border-slate-200'
       }`}
     >
       <div>
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[9px] font-monospaced-technical uppercase opacity-90">{title}</span>
-          <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#251f12] text-[#8b6f47]'}`}>
+          <span className={`text-[9px] ${t.fontMono} uppercase opacity-90`}>{title}</span>
+          <span className={`text-[9px] ${t.fontMono} px-1.5 py-0.5 rounded font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') + ' shadow' : (theme === 'vintage' ? 'bg-[#251f12] text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
             {statusLabel || (isLit ? '● LIT' : '● IDLE')}
           </span>
         </div>
-        <span className="text-sm font-rotor-label font-bold block">{value}</span>
+        <span className={`text-sm ${t.fontRotor} font-bold block`}>{value}</span>
       </div>
 
       <div className="mt-3 pt-2 border-t border-current/20">
-        <span className="text-[9px] font-monospaced-technical uppercase block opacity-90 font-semibold">{stepLabel}:</span>
-        <div className={`text-xs font-monospaced-technical font-bold mt-1 px-2 py-1 rounded text-center shadow ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#201b0f] text-[#ede1cd]'}`}>
+        <span className={`text-[9px] ${t.fontMono} uppercase block opacity-90 font-semibold`}>{stepLabel}:</span>
+        <div className={`text-xs ${t.fontMono} font-bold mt-1 px-2 py-1 rounded text-center shadow ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') : `${t.panelBg} ${t.textPrimary}`}`}>
           {stepValue}
         </div>
       </div>
@@ -283,41 +290,45 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
         key={stageSub}
         className={`p-3.5 rounded-lg border-2 transition-all flex flex-col justify-between ${
           isLit
-            ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
-            : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
+            ? theme === 'vintage'
+              ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] scale-105 z-20 font-bold'
+              : 'bg-yellow-400 text-yellow-950 border-yellow-200 shadow-[0_0_22px_rgba(250,204,21,0.5)] scale-105 z-20 font-bold'
+            : theme === 'vintage'
+              ? 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426]'
+              : 'bg-white text-slate-600 border-slate-200'
         }`}
       >
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[9px] font-monospaced-technical uppercase opacity-90">{label} ({rotorType})</span>
-            <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#251f12] text-[#8b6f47]'}`}>
+            <span className={`text-[9px] ${t.fontMono} uppercase opacity-90`}>{label} ({rotorType})</span>
+            <span className={`text-[9px] ${t.fontMono} px-1.5 py-0.5 rounded font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') + ' shadow' : (theme === 'vintage' ? 'bg-[#251f12] text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
               {isLit ? '● LIT' : '● IDLE'}
             </span>
           </div>
 
           {/* Rotor Window Dial */}
-          <div className={`my-1.5 p-1.5 rounded text-center border shadow-inner ${isLit ? 'bg-[#25190b] border-[#ebc238]' : 'bg-[#201b0f] border-[#3b3426]'}`}>
-            <span className="text-[9px] font-monospaced-technical uppercase block text-[#d1c4b7]">Position</span>
-            <span className={`text-2xl font-rotor-label font-bold ${isLit ? 'text-[#ebc238]' : 'text-[#ede1cd]'}`}>
+          <div className={`my-1.5 p-1.5 rounded text-center border shadow-inner ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.borderAccent}' : 'bg-yellow-50 border-yellow-200') : `${t.panelBg} ${t.borderBase}`}`}>
+            <span className={`text-[9px] ${t.fontMono} uppercase block ${t.textMuted}`}>Position</span>
+            <span className={`text-2xl ${t.fontRotor} font-bold ${isLit ? t.textAccent : t.textPrimary}`}>
               {numToChar(currentPos)}
             </span>
-            <span className="text-[8px] font-monospaced-technical block opacity-75">
+            <span className={`text-[8px] ${t.fontMono} block opacity-75`}>
               Ring: {formatRotorRing(ringVal)}
             </span>
           </div>
         </div>
 
         {/* Parameter Transformations */}
-        <div className="mt-2 pt-1.5 border-t border-current/20 space-y-1 text-[10px] font-monospaced-technical">
+        <div className={`mt-2 pt-1.5 border-t border-current/20 space-y-1 text-[10px] ${t.fontMono}`}>
           <div className="flex justify-between items-center">
             <span className="opacity-90">FWD:</span>
-            <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
+            <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? 'bg-[#251f12] ${t.textSecondary}' : 'bg-slate-50 text-slate-600')}`}>
               {fwdStep ? `${fwdStep.inChar} ➔ ${fwdStep.outChar}` : '-'}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="opacity-90">REV:</span>
-            <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#251f12] text-[#e3c193]'}`}>
+            <span className={`font-bold px-1.5 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? 'bg-[#251f12] ${t.textSecondary}' : 'bg-slate-50 text-slate-600')}`}>
               {revStep ? `${revStep.inChar} ➔ ${revStep.outChar}` : '-'}
             </span>
           </div>
@@ -327,39 +338,43 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
   };
 
   return (
-    <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 md:p-6 shadow-panel texture-metal space-y-6">
+    <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 md:p-6 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-6`}>
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[#3b3426] pb-4">
+      <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b ${t.borderBase} pb-4`}>
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-ui-header font-ui-header text-[#ebc238] text-sm md:text-base font-bold flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#ebc238]">route</span>
+            <h2 className={`text-ui-header ${t.fontHeader} ${t.textAccent} text-sm md:text-base font-bold flex items-center gap-2`}>
+              <span className={`material-symbols-outlined ${t.textAccent}`}>route</span>
               Interactive Signal Path Machine Visualizer
             </h2>
             {isKeyPressed && (
-              <span className="flex items-center gap-1.5 bg-[#ebc238] text-[#25190b] px-2.5 py-0.5 rounded font-monospaced-technical text-[10px] font-bold animate-pulse shadow-[0_0_12px_#ebc238]">
+              <span className={`flex items-center gap-1.5 ${theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] shadow-[0_0_12px_#ebc238]' : 'bg-yellow-400 text-yellow-950 shadow-sm'} px-2.5 py-0.5 rounded ${t.fontMono} text-[10px] font-bold animate-pulse`}>
                 <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
                 KEY ACTIVE: '{selectedChar}' ➔ LAMP '{outputChar}'
               </span>
             )}
           </div>
-          <p className="text-[#d1c4b7] text-xs font-ui-body">
+          <p className={`${t.textMuted} text-xs ${t.fontBody}`}>
             Real-time physical current path through the Enigma components with input/output parameters.
           </p>
         </div>
 
         {/* Character selector buttons */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] font-monospaced-technical text-[#d1c4b7] mr-1">Select Key:</span>
+          <span className={`text-[10px] ${t.fontMono} ${t.textMuted} mr-1`}>Select Key:</span>
           {['A', 'E', 'G', 'M', 'R', 'S', 'T', 'Z'].map((char) => (
             <button
               key={char}
               type="button"
               onClick={() => handleSelectChar(char)}
-              className={`w-7 h-7 rounded font-rotor-label text-xs font-bold transition-all cursor-pointer ${
+              className={`w-7 h-7 rounded ${t.fontRotor} text-xs font-bold transition-all cursor-pointer ${
                 selectedChar === char
-                  ? 'bg-[#ebc238] text-[#25190b] border-2 border-white shadow-md scale-105'
-                  : 'bg-[#120e04] text-[#d1c4b7] border border-[#3b3426] hover:bg-[#3b3426]'
+                  ? theme === 'vintage'
+                    ? 'bg-[#ebc238] text-[#25190b] border-2 border-white shadow-md scale-105'
+                    : 'bg-yellow-400 text-yellow-950 border-2 border-yellow-200 shadow-sm scale-105'
+                  : theme === 'vintage'
+                    ? 'bg-[#120e04] text-[#d1c4b7] border border-[#3b3426] hover:bg-[#3b3426]'
+                    : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
               }`}
             >
               {char}
@@ -369,7 +384,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
           <select
             value={selectedChar}
             onChange={(e) => handleSelectChar(e.target.value)}
-            className="bg-[#3b3426] text-[#e3c193] border border-[#8b6f47] text-xs rounded px-2 py-1 font-rotor-label cursor-pointer"
+            className={`${t.panelBg} ${t.textSecondary} border ${t.borderAccent} text-xs rounded px-2 py-1 ${t.fontRotor} cursor-pointer`}
           >
             {ALPHABET.split('').map((c) => (
               <option key={c} value={c}>
@@ -381,12 +396,12 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
       </div>
 
       {/* Animation Playback Control Toolbar */}
-      <div className="bg-[#120e04] border border-[#3b3426] rounded-lg p-3 flex flex-wrap items-center justify-between gap-3">
+      <div className={`${t.panelInner} border ${t.borderBase} rounded-lg p-3 flex flex-wrap items-center justify-between gap-3`}>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handlePlayPause}
-            className="bg-[#3b3426] hover:bg-[#4e453b] text-[#ebc238] border border-[#8b6f47] px-3 py-1.5 rounded text-xs font-ui-header font-bold flex items-center gap-1.5 transition-colors cursor-pointer min-h-[36px]"
+            className={`${t.panelBg} hover:opacity-80 ${t.textAccent} border ${t.borderAccent} px-3 py-1.5 rounded text-xs ${t.fontHeader} font-bold flex items-center gap-1.5 transition-colors cursor-pointer min-h-[36px]`}
           >
             <span className="material-symbols-outlined text-sm">
               {isPlaying ? 'pause' : currentStep >= totalStages - 1 ? 'replay' : 'play_arrow'}
@@ -398,7 +413,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
             type="button"
             onClick={handleStepBackward}
             disabled={currentStep === 0}
-            className="bg-[#251f12] hover:bg-[#3b3426] disabled:opacity-30 text-[#e3c193] border border-[#3b3426] p-1.5 rounded transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
+            className={`${theme === 'vintage' ? 'bg-[#251f12]' : t.panelInner} hover:opacity-80 disabled:opacity-30 ${t.textSecondary} border ${t.borderBase} p-1.5 rounded transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center`}
             title="Step Backward"
           >
             <span className="material-symbols-outlined text-sm">skip_previous</span>
@@ -408,7 +423,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
             type="button"
             onClick={handleStepForward}
             disabled={currentStep >= totalStages - 1}
-            className="bg-[#251f12] hover:bg-[#3b3426] disabled:opacity-30 text-[#e3c193] border border-[#3b3426] p-1.5 rounded transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
+            className={`${theme === 'vintage' ? 'bg-[#251f12]' : t.panelInner} hover:opacity-80 disabled:opacity-30 ${t.textSecondary} border ${t.borderBase} p-1.5 rounded transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center`}
             title="Step Forward"
           >
             <span className="material-symbols-outlined text-sm">skip_next</span>
@@ -417,7 +432,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
           <button
             type="button"
             onClick={handleReset}
-            className="bg-[#251f12] hover:bg-[#3b3426] text-[#d1c4b7] border border-[#3b3426] px-2.5 py-1.5 rounded text-xs font-monospaced-technical transition-colors cursor-pointer min-h-[36px]"
+            className={`${theme === 'vintage' ? 'bg-[#251f12]' : t.panelInner} hover:opacity-80 ${t.textMuted} border ${t.borderBase} px-2.5 py-1.5 rounded text-xs ${t.fontMono} transition-colors cursor-pointer min-h-[36px]`}
           >
             Reset
           </button>
@@ -425,7 +440,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
 
         {/* Speed Selector */}
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-monospaced-technical text-[#d1c4b7]">Speed:</span>
+          <span className={`text-[10px] ${t.fontMono} ${t.textMuted}`}>Speed:</span>
           {[
             { label: '0.5x', ms: 1400 },
             { label: '1x', ms: 900 },
@@ -435,10 +450,14 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
               key={sp.label}
               type="button"
               onClick={() => setSpeedMs(sp.ms)}
-              className={`text-[10px] font-monospaced-technical px-2 py-1 rounded border transition-colors cursor-pointer ${
+              className={`text-[10px] ${t.fontMono} px-2 py-1 rounded border transition-colors cursor-pointer ${
                 speedMs === sp.ms
-                  ? 'bg-[#ebc238] text-[#25190b] font-bold border-[#ebc238]'
-                  : 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426] hover:bg-[#251f12]'
+                  ? theme === 'vintage'
+                    ? 'bg-[#ebc238] text-[#25190b] font-bold border-[#ebc238]'
+                    : 'bg-blue-600 text-white font-bold border-blue-600 shadow-sm'
+                  : theme === 'vintage'
+                    ? 'bg-[#120e04] text-[#d1c4b7] border-[#3b3426] hover:bg-[#251f12]'
+                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
               }`}
             >
               {sp.label}
@@ -447,34 +466,34 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
         </div>
 
         {/* Current Step Counter */}
-        <div className="text-monospaced-technical text-xs text-[#ebc238] bg-[#251f12] px-3 py-1 rounded border border-[#3b3426]">
+        <div className={`text-monospaced-technical text-xs ${t.textAccent} ${t.panelInner} px-3 py-1 rounded border ${t.borderBase}`}>
           Step {currentStep + 1} / {totalStages}
         </div>
       </div>
 
       {/* PHYSICAL MACHINE SCHEMATIC DIAGRAM WITH LIVE SIGNAL LIGHT & PARAMETERS */}
-      <div className="bg-[#120e04] border-2 border-[#3b3426] rounded-xl p-4 md:p-6 relative overflow-hidden shadow-inner">
-        <div className="text-[10px] font-monospaced-technical text-[#8b6f47] uppercase tracking-widest mb-4 flex items-center justify-between">
+      <div className={`${t.panelInner} border-2 ${t.borderBase} rounded-xl p-4 md:p-6 relative overflow-hidden shadow-inner`}>
+        <div className={`text-[10px] ${t.fontMono} ${t.textMuted} uppercase tracking-widest mb-4 flex items-center justify-between`}>
           <span className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm text-[#ebc238]">developer_board</span>
+            <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>developer_board</span>
             {isM4Active ? 'ENIGMA M4' : 'ENIGMA M3'} PHYSICAL SCHEMATIC & SIGNAL FLOW
           </span>
-          <span className="text-[#ebc238] font-bold bg-[#201b0f] px-2.5 py-1 rounded border border-[#3b3426]">
+          <span className={`${t.textAccent} font-bold ${t.panelBg} px-2.5 py-1 rounded border ${t.borderBase}`}>
             ● Active Stage: {activeStage.name}
           </span>
         </div>
 
         {/* Physical Layout Enclosure Diagram */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-[#181307] p-4 rounded-lg border border-[#2f291c] relative">
+        <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 ${t.panelInner} p-4 rounded-lg border ${t.borderBase} relative`}>
           
           {/* Top Chamber - Scrambler Mechanism (Walzen & Reflector) */}
-          <div className="md:col-span-4 bg-[#201b0f] p-4 rounded-lg border-2 border-[#4e453b] relative shadow-lg">
-            <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#3b3426]">
-              <span className="text-xs font-ui-header font-bold text-[#ebc238] uppercase tracking-wider flex items-center gap-2">
+          <div className={`md:col-span-4 ${t.panelBg} p-4 rounded-lg border-2 ${t.borderBase} relative shadow-lg`}>
+            <div className={`flex justify-between items-center mb-3 pb-2 border-b ${t.borderBase}`}>
+              <span className={`text-xs ${t.fontHeader} font-bold ${t.textAccent} uppercase tracking-wider flex items-center gap-2`}>
                 <span className="material-symbols-outlined text-sm">tune</span>
                 Top Chamber: Rotor Assembly (Walzensatz) & Reflector
               </span>
-              <span className="text-[10px] font-monospaced-technical text-[#d1c4b7]">
+              <span className={`text-[10px] ${t.fontMono} ${t.textMuted}`}>
                  Signal Path: ETW ➔ Right Rotor ➔ Mid Rotor ➔ Left Rotor {isM4Active ? '➔ 4th Rotor ' : ''}➔ Reflector ➔ Return Pass
               </span>
             </div>
@@ -532,23 +551,27 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
               <div
                 className={`md:col-span-2 p-3.5 rounded-lg border-2 transition-all ${
                   isLit
-                    ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_20px_rgba(235,194,56,0.8)] font-bold z-20'
-                    : 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426]'
+                    ? theme === 'vintage'
+                      ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_20px_rgba(235,194,56,0.8)] font-bold z-20'
+                      : 'bg-yellow-400 text-yellow-950 border-yellow-200 shadow-[0_0_20px_rgba(250,204,21,0.5)] font-bold z-20'
+                    : theme === 'vintage'
+                      ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426]'
+                      : 'bg-white text-slate-600 border-slate-200'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[9px] font-monospaced-technical uppercase font-bold">
+                  <span className={`text-[9px] ${t.fontMono} uppercase font-bold`}>
                     Middle Deck: Lampboard (Glühlampenfeld)
                   </span>
-                  <span className={`text-[9px] font-monospaced-technical px-2 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238] font-bold' : 'bg-[#120e04] text-[#8b6f47]'}`}>
+                  <span className={`text-[9px] ${t.fontMono} px-2 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent} font-bold' : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? '${t.panelInner} text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
                     {isLit ? '● BULB LIT' : '● BULB OFF'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between bg-[#120e04]/80 p-2.5 rounded border border-current/30">
-                  <span className="text-xs font-ui-header font-bold">Output Lamp</span>
+                <div className={`flex items-center justify-between ${theme === 'vintage' ? 'bg-[#201b0f]/80' : 'bg-slate-50'} p-2.5 rounded border border-current/30`}>
+                  <span className={`text-xs ${t.fontHeader} font-bold`}>Output Lamp</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-monospaced-technical opacity-80">Active Bulb:</span>
-                    <span className={`text-xl font-rotor-label font-bold px-3 py-0.5 rounded shadow ${isLit ? 'bg-[#ebc238] text-[#25190b]' : 'bg-[#251f12] text-[#ebc238]'}`}>
+                    <span className={`text-[10px] ${t.fontMono} opacity-80`}>Active Bulb:</span>
+                    <span className={`text-xl ${t.fontRotor} font-bold px-3 py-0.5 rounded shadow ${isLit ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b]' : 'bg-yellow-400 text-yellow-950') : (theme === 'vintage' ? 'bg-[#251f12] ${t.textAccent}' : 'bg-slate-200 text-slate-600')}`}>
                       '{outputChar}'
                     </span>
                   </div>
@@ -566,21 +589,25 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                 <div
                   className={`p-3.5 rounded-lg border-2 transition-all ${
                     isLit
-                      ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_20px_rgba(235,194,56,0.8)] font-bold z-20'
-                      : 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426]'
+                      ? theme === 'vintage'
+                        ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_20px_rgba(235,194,56,0.8)] font-bold z-20'
+                        : 'bg-yellow-400 text-yellow-950 border-yellow-200 shadow-[0_0_20px_rgba(250,204,21,0.5)] font-bold z-20'
+                      : theme === 'vintage'
+                        ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426]'
+                        : 'bg-white text-slate-600 border-slate-200'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[9px] font-monospaced-technical uppercase font-bold">
+                    <span className={`text-[9px] ${t.fontMono} uppercase font-bold`}>
                       Keyboard (Tastatur)
                     </span>
-                    <span className={`text-[9px] font-monospaced-technical px-1.5 py-0.2 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#120e04] text-[#8b6f47]'}`}>
+                    <span className={`text-[9px] ${t.fontMono} px-1.5 py-0.2 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-900 text-yellow-100') : (theme === 'vintage' ? '${t.panelInner} text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
                       {isLit ? '● PRESSED' : '● READY'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-ui-header font-bold">Input Key</span>
-                    <span className={`text-base font-rotor-label font-bold px-2.5 py-0.5 rounded ${isLit ? 'bg-[#25190b] text-[#ebc238]' : 'bg-[#120e04] text-[#ede1cd]'}`}>
+                    <span className={`text-xs ${t.fontHeader} font-bold`}>Input Key</span>
+                    <span className={`text-base ${t.fontRotor} font-bold px-2.5 py-0.5 rounded ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent}' : 'bg-yellow-400 text-yellow-950 shadow-sm') : `${t.panelInner} ${t.textPrimary}`}`}>
                       '{inputChar}'
                     </span>
                   </div>
@@ -597,24 +624,28 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                 <div
                   className={`p-3.5 rounded-lg border-2 transition-all ${
                     isLit
-                      ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] font-bold z-20'
-                      : 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426]'
+                      ? theme === 'vintage'
+                        ? 'bg-[#ebc238] text-[#25190b] border-white shadow-[0_0_22px_rgba(235,194,56,0.8)] font-bold z-20'
+                        : 'bg-yellow-400 text-yellow-950 border-yellow-200 shadow-[0_0_22px_rgba(250,204,21,0.5)] font-bold z-20'
+                      : theme === 'vintage'
+                        ? 'bg-[#201b0f] text-[#d1c4b7] border-[#3b3426]'
+                        : 'bg-white text-slate-600 border-slate-200'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[9px] font-monospaced-technical uppercase font-bold">
+                    <span className={`text-[9px] ${t.fontMono} uppercase font-bold`}>
                       Steckerbrett (Plugboard)
                     </span>
-                    <span className={`text-[9px] font-monospaced-technical px-2 py-0.5 rounded font-bold ${isLit ? 'bg-[#25190b] text-[#ebc238] shadow' : 'bg-[#120e04] text-[#8b6f47]'}`}>
+                    <span className={`text-[9px] ${t.fontMono} px-2 py-0.5 rounded font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.textAccent} shadow' : 'bg-yellow-900 text-yellow-100 shadow-sm') : (theme === 'vintage' ? '${t.panelInner} text-[#8b6f47]' : 'bg-slate-100 text-slate-400')}`}>
                       {isLit ? '● ACTIVE' : '● IDLE'}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs font-monospaced-technical">
-                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? 'bg-[#25190b] border-[#ebc238] text-[#ebc238]' : 'bg-[#120e04] border-[#3b3426] text-[#e3c193]'}`}>
+                  <div className={`grid grid-cols-2 gap-2 text-xs ${t.fontMono}`}>
+                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.borderAccent} ${t.textAccent}' : 'bg-yellow-900 text-yellow-100 border-yellow-800') : `${t.panelInner} ${t.borderBase} ${t.textSecondary}`}`}>
                       <span className="text-[8px] block opacity-80 uppercase">IN PASS</span>
                       {pbInStep ? `${pbInStep.inChar} ↔ ${pbInStep.outChar}` : `${inputChar} ↔ ${config.plugboard?.[inputChar] || inputChar}`}
                     </div>
-                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? 'bg-[#25190b] border-[#ebc238] text-[#ebc238]' : 'bg-[#120e04] border-[#3b3426] text-[#e3c193]'}`}>
+                    <div className={`p-1.5 rounded text-center border font-bold ${isLit ? (theme === 'vintage' ? 'bg-[#25190b] ${t.borderAccent} ${t.textAccent}' : 'bg-yellow-900 text-yellow-100 border-yellow-800') : `${t.panelInner} ${t.borderBase} ${t.textSecondary}`}`}>
                       <span className="text-[8px] block opacity-80 uppercase">OUT PASS</span>
                       {pbOutStep ? `${pbOutStep.inChar} ↔ ${pbOutStep.outChar}` : `${outputChar} ↔ ${config.plugboard?.[outputChar] || outputChar}`}
                     </div>
@@ -631,11 +662,12 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
       <div className="relative overflow-x-auto pb-2 pt-1">
         <div className="flex items-center min-w-[850px] relative px-4">
           {/* Wire Background */}
-          <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1 bg-[#3b3426] z-0 rounded">
+          <div className={`absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1 ${t.panelBg} z-0 rounded`}>
             <div
-              className="h-full bg-gradient-to-r from-[#8b6f47] via-[#ebc238] to-[#fff5d6] transition-all duration-300 rounded shadow-[0_0_8px_#ebc238] step-progress-fill"
+              className="h-full bg-gradient-to-r from-slate-400 via-blue-500 to-blue-300 transition-all duration-300 rounded shadow-sm step-progress-fill"
               style={{
-                '--progress-width': `${(currentStep / (totalStages - 1)) * 100}%`
+                '--progress-width': `${(currentStep / (totalStages - 1)) * 100}%`,
+                background: theme === 'vintage' ? 'linear-gradient(to right, #8b6f47, #ebc238, #fff5d6)' : undefined
               } as React.CSSProperties}
             />
           </div>
@@ -658,28 +690,34 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
                 <div
                   className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                     isActive
-                      ? 'bg-[#ebc238] border-white text-[#25190b] shadow-[0_0_16px_#ebc238] scale-125'
+                      ? theme === 'vintage'
+                        ? 'bg-[#ebc238] border-white text-[#25190b] shadow-[0_0_16px_#ebc238] scale-125'
+                        : 'bg-blue-600 border-white text-white shadow-[0_0_16px_rgba(37,99,235,0.4)] scale-125'
                       : isCompleted
-                      ? 'bg-[#8b6f47] border-[#ebc238] text-white shadow-md'
-                      : 'bg-[#120e04] border-[#3b3426] text-[#d1c4b7] group-hover:border-[#8b6f47]'
+                      ? theme === 'vintage'
+                        ? 'bg-[#8b6f47] border-[#ebc238] text-white shadow-md'
+                        : 'bg-blue-100 border-blue-400 text-blue-700 shadow-sm'
+                      : theme === 'vintage'
+                        ? 'bg-[#120e04] border-[#3b3426] text-[#d1c4b7] group-hover:border-[#8b6f47]'
+                        : 'bg-slate-50 border-slate-200 text-slate-400 group-hover:border-slate-400'
                   }`}
                 >
                   <span className="material-symbols-outlined text-sm">{details.icon}</span>
                 </div>
 
                 <span
-                  className={`mt-1.5 font-rotor-label text-xs font-bold px-1.5 py-0.5 rounded transition-all ${
+                  className={`mt-1.5 ${t.fontRotor} text-xs font-bold px-1.5 py-0.5 rounded transition-all ${
                     isActive
-                      ? 'bg-[#ebc238] text-[#25190b] shadow'
+                      ? theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] shadow' : 'bg-blue-600 text-white shadow-sm'
                       : isCompleted
-                      ? 'text-[#e3c193]'
-                      : 'text-[#d1c4b7]'
+                      ? theme === 'vintage' ? 'text-[#e3c193]' : 'text-blue-500'
+                      : theme === 'vintage' ? 'text-[#d1c4b7]' : 'text-slate-400'
                   }`}
                 >
                   {details.outChar}
                 </span>
 
-                <span className="text-[9px] font-monospaced-technical text-[#d1c4b7] text-center max-w-[65px] truncate mt-0.5">
+                <span className={`text-[9px] ${t.fontMono} ${t.textMuted} text-center max-w-[65px] truncate mt-0.5`}>
                   {details.name.split(' ')[0]}
                 </span>
               </div>
@@ -689,52 +727,52 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
       </div>
 
       {/* Active Stage Parameters Callout Spotlight */}
-      <div className="bg-[#120e04] border-2 border-[#ebc238] rounded-lg p-4 shadow-[0_0_15px_rgba(235,194,56,0.15)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className={`${t.panelInner} border-2 ${t.borderAccent} rounded-lg p-4 shadow-[0_0_15px_rgba(235,194,56,0.15)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4`}>
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-full bg-[#ebc238]/20 border border-[#ebc238] flex items-center justify-center shrink-0 text-[#ebc238] shadow-[0_0_10px_rgba(235,194,56,0.3)]">
+          <div className={`w-12 h-12 rounded-full ${theme === 'vintage' ? 'bg-[#ebc238]/20 border-[#ebc238] shadow-[0_0_10px_rgba(235,194,56,0.3)]' : 'bg-blue-50 border-blue-200 shadow-sm'} flex items-center justify-center shrink-0 ${t.textAccent}`}>
             <span className="material-symbols-outlined text-2xl">{activeStage.icon}</span>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-monospaced-technical text-[#ebc238] uppercase tracking-wider">
+              <span className={`text-[10px] ${t.fontMono} ${t.textAccent} uppercase tracking-wider`}>
                 Stage {currentStep + 1} / {totalStages}
               </span>
-              <span className="text-xs font-ui-header font-bold text-[#ede1cd]">
+              <span className={`text-xs ${t.fontHeader} font-bold ${t.textPrimary}`}>
                 {activeStage.name}
               </span>
-              <span className="text-[10px] font-monospaced-technical bg-[#3b3426] text-[#e3c193] px-2 py-0.5 rounded">
+              <span className={`text-[10px] ${t.fontMono} ${t.panelBg} ${t.textSecondary} px-2 py-0.5 rounded`}>
                 Location: {activeStage.location}
               </span>
             </div>
-            <p className="text-xs font-ui-body text-[#d1c4b7] mt-1">
+            <p className={`text-xs ${t.fontBody} ${t.textMuted} mt-1`}>
               {activeStage.note}
             </p>
           </div>
         </div>
 
         {/* Input and Output Parameter Indicators */}
-        <div className="flex items-center gap-3 bg-[#201b0f] p-3 rounded border border-[#3b3426] shrink-0 self-stretch md:self-auto justify-center">
+        <div className={`flex items-center gap-3 ${t.panelBg} p-3 rounded border ${t.borderBase} shrink-0 self-stretch md:self-auto justify-center`}>
           <div className="text-center">
-            <span className="text-[9px] font-monospaced-technical text-[#d1c4b7] block uppercase">
+            <span className={`text-[9px] ${t.fontMono} ${t.textMuted} block uppercase`}>
               Input Parameter
             </span>
-            <span className="font-rotor-label font-bold text-lg text-[#ede1cd]">
+            <span className={`${t.fontRotor} font-bold text-lg ${t.textPrimary}`}>
               '{activeStage.inChar}'
             </span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="material-symbols-outlined text-[#ebc238] text-sm animate-pulse">
+            <span className={`material-symbols-outlined ${t.textAccent} text-sm animate-pulse`}>
               arrow_forward
             </span>
-            <span className="text-[8px] font-monospaced-technical text-[#ebc238]">
+            <span className={`text-[8px] ${t.fontMono} ${t.textAccent}`}>
               {activeStage.direction}
             </span>
           </div>
           <div className="text-center">
-            <span className="text-[9px] font-monospaced-technical text-[#ebc238] block uppercase">
+            <span className={`text-[9px] ${t.fontMono} ${t.textAccent} block uppercase`}>
               Output Parameter
             </span>
-            <span className="font-rotor-label font-bold text-xl text-[#ebc238]">
+            <span className={`${t.fontRotor} font-bold text-xl ${t.textAccent}`}>
               '{activeStage.outChar}'
             </span>
           </div>

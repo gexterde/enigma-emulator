@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { EnigmaConfig } from '../types';
 import { generateConfigString } from '../lib/enigmaEngine';
+import { useTheme, getTheme, ThemeName } from '../lib/theme';
 
 interface ModalProps {
   isOpen: boolean;
@@ -11,36 +12,42 @@ interface ModalProps {
 }
 
 export const BaseModal: React.FC<ModalProps> = ({ isOpen, onClose, title, icon, children }) => {
+  const { theme, setTheme } = useTheme();
+  const t = getTheme(theme);
+
+
+
+  
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fade-in">
       <div
-        className="bg-[#201b0f] border border-[#4e453b] text-[#ede1cd] rounded-lg max-w-lg w-full shadow-2xl texture-metal overflow-hidden flex flex-col max-h-[90vh]"
+        className={`${t.modalBg} rounded-lg max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-4 bg-[#3b3426] border-b border-[#4e453b] flex justify-between items-center shrink-0">
+        <div className={`p-4 ${t.modalHeaderBg} flex justify-between items-center shrink-0`}>
           <div className="flex items-center gap-2">
-            {icon && <span className="material-symbols-outlined text-[#ebc238]">{icon}</span>}
-            <h2 className="text-ui-header font-ui-header font-bold text-[#e3c193] text-base">{title}</h2>
+            {icon && <span className={`material-symbols-outlined ${t.textAccent}`}>{icon}</span>}
+            <h2 className={`${t.fontHeader} ${t.textPrimary} text-base`}>{title}</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-[#d1c4b7] hover:text-[#ffb4ab] transition-colors p-1 rounded-full hover:bg-[#2f291c] cursor-pointer"
+            className={`${t.textMuted} hover:${t.textAccent} transition-colors p-1 rounded-full cursor-pointer`}
             aria-label="Close modal"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-4 font-ui-body text-xs text-[#d1c4b7]">
+        <div className={`p-6 overflow-y-auto space-y-4 ${t.fontBody} text-xs ${t.textMuted}`}>
           {children}
         </div>
 
-        <div className="p-4 bg-[#120e04] border-t border-[#3b3426] flex justify-end shrink-0">
+        <div className={`p-4 ${t.modalFooterBg} flex justify-end shrink-0`}>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-[#8b6f47] hover:bg-[#8b6f47]/90 text-[#fffaf8] font-ui-header rounded shadow text-xs font-bold cursor-pointer transition-colors"
+            className={`px-4 py-2 ${t.buttonHighlight} ${t.fontHeader} rounded shadow text-xs font-bold cursor-pointer transition-colors`}
           >
             Close
           </button>
@@ -65,13 +72,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onToggleSound,
   onResetMachine
 }) => {
+  const { theme, setTheme } = useTheme();
+  const t = getTheme(theme);
+
+
+
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title="Emulator Settings" icon="settings">
       <div className="space-y-4">
-        <div className="flex justify-between items-center bg-[#120e04] p-3 rounded border border-[#3b3426]">
+        <div className={`flex justify-between items-center ${t.panelBg} p-3 rounded ${t.borderBase}`}>
           <div>
-            <span className="font-bold text-[#ede1cd] block">Audio Feedback</span>
-            <span className="text-[10px] text-[#d1c4b7]">Simulate physical mechanical key clacks & rotor clicks</span>
+            <span className={`font-bold ${t.textPrimary} block`}>Audio Feedback</span>
+            <span className={`text-[10px] ${t.textMuted}`}>Simulate physical mechanical key clacks & rotor clicks</span>
           </div>
           <input
             type="checkbox"
@@ -81,23 +93,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           />
         </div>
 
-        <div className="flex justify-between items-center bg-[#120e04] p-3 rounded border border-[#3b3426]">
+        <div className={`flex justify-between items-center ${t.panelBg} p-3 rounded ${t.borderBase}`}>
           <div>
-            <span className="font-bold text-[#ede1cd] block">Theme & Appearance</span>
-            <span className="text-[10px] text-[#d1c4b7]">Skeuomorphic WWII Enigma Tactile System Dark Walnut & Brass</span>
+            <span className={`font-bold ${t.textPrimary} block`}>Theme & Appearance</span>
+            <span className={`text-[10px] ${t.textMuted}`}>Select visual styling scheme</span>
           </div>
-          <span className="text-xs font-monospaced-technical text-[#ebc238]">Period Active</span>
+          <select 
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as ThemeName)}
+            className={`${t.inputBg} ${t.fontMono} text-xs px-2 py-1 rounded border outline-none cursor-pointer`}
+          >
+            <option value="vintage">Vintage</option>
+            <option value="modern">Modern</option>
+          </select>
         </div>
 
-        <div className="p-3 bg-[#93000a]/20 border border-red-800/40 rounded space-y-2">
-          <span className="font-bold text-[#ffdad6] block">Factory Reset</span>
-          <p className="text-[10px] text-[#ffdad6]/80">Reset rotors to Rotors I-II-III, positions A-A-A, rings 01-01-01, and clear plugboard.</p>
+        <div className={`p-3 ${t.dangerBg} rounded space-y-2 border`}>
+          <span className="font-bold block">Factory Reset</span>
+          <p className="text-[10px] opacity-80">Reset rotors to Rotors I-II-III, positions A-A-A, rings 01-01-01, and clear plugboard.</p>
           <button
             onClick={() => {
               onResetMachine();
               onClose();
             }}
-            className="px-3 py-1.5 bg-[#93000a] text-[#ffdad6] rounded text-xs font-bold hover:bg-red-900 transition-colors cursor-pointer"
+            className={`px-3 py-1.5 ${t.buttonDangerSolid} rounded text-xs font-bold transition-colors cursor-pointer`}
           >
             Reset Machine Now
           </button>
@@ -113,70 +132,74 @@ interface InfoModalProps {
 }
 
 export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
+  const { theme, setTheme } = useTheme();
+  const t = getTheme(theme);
+
+
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title="Historical Accuracy & Manual" icon="info">
       <div className="space-y-3 leading-relaxed">
-        <h3 className="font-bold text-[#ebc238] text-sm">Wehrmacht Enigma Model M3 (1938-1945)</h3>
+        <h3 className={`font-bold ${t.textAccent} text-sm`}>Wehrmacht Enigma Model M3 (1938-1945)</h3>
         <p>
           The Enigma machine is an electro-mechanical rotor cipher machine used extensively during World War II. The M3 model features a 3-rotor scrambler selected from a pool of 5 rotors (I through V), a reflector (Umkehrwalze B or C), and a plugboard (Steckerbrett).
         </p>
 
-        <h4 className="font-bold text-[#e3c193] mt-2">Key Concepts & Terminology:</h4>
-        <ul className="list-disc list-inside space-y-1 text-[11px] text-[#d1c4b7]">
-          <li><strong className="text-[#ede1cd]">Walzenlage (Rotor Selection):</strong> The sequence of 3 rotors chosen from rotors I-V placed left to right in positions 1, 2, and 3.</li>
-          <li><strong className="text-[#ede1cd]">Ringstellung (Ring Setting):</strong> The offset of the internal rotor wiring relative to the outer letter ring (1 to 26).</li>
-          <li><strong className="text-[#ede1cd]">Grundstellung (Start Position):</strong> The initial visible letters facing up in the rotor windows (A to Z).</li>
-          <li><strong className="text-[#ede1cd]">Steckerbrett (Plugboard):</strong> Up to 10 cables connecting letter pairs to swap signals prior to and after passing through the rotors.</li>
-          <li><strong className="text-[#ede1cd]">Reciprocity:</strong> Encryption is symmetrical—if letter 'A' encrypts to 'G', setting the machine to the same key and typing 'G' will yield 'A'. No letter can ever encrypt to itself.</li>
+        <h4 className={`font-bold ${t.textSecondary} mt-2`}>Key Concepts & Terminology:</h4>
+        <ul className={`list-disc list-inside space-y-1 text-[11px] ${t.textMuted}`}>
+          <li><strong className={`${t.textPrimary}`}>Walzenlage (Rotor Selection):</strong> The sequence of 3 rotors chosen from rotors I-V placed left to right in positions 1, 2, and 3.</li>
+          <li><strong className={`${t.textPrimary}`}>Ringstellung (Ring Setting):</strong> The offset of the internal rotor wiring relative to the outer letter ring (1 to 26).</li>
+          <li><strong className={`${t.textPrimary}`}>Grundstellung (Start Position):</strong> The initial visible letters facing up in the rotor windows (A to Z).</li>
+          <li><strong className={`${t.textPrimary}`}>Steckerbrett (Plugboard):</strong> Up to 10 cables connecting letter pairs to swap signals prior to and after passing through the rotors.</li>
+          <li><strong className={`${t.textPrimary}`}>Reciprocity:</strong> Encryption is symmetrical—if letter 'A' encrypts to 'G', setting the machine to the same key and typing 'G' will yield 'A'. No letter can ever encrypt to itself.</li>
         </ul>
 
-        <h4 className="font-bold text-[#ebc238] mt-3 pt-2 border-t border-[#3b3426]">Historical Rotor Turnover Notches:</h4>
-        <div className="overflow-x-auto bg-[#120e04] rounded border border-[#3b3426] p-2">
-          <table className="w-full text-left text-[11px] font-monospaced-technical">
+        <h4 className={`font-bold ${t.textAccent} mt-3 pt-2 border-t ${t.borderBase}`}>Historical Rotor Turnover Notches:</h4>
+        <div className={`overflow-x-auto ${t.panelInner} rounded border ${t.borderBase} p-2`}>
+          <table className={`w-full text-left text-[11px] ${t.fontMono}`}>
             <thead>
-              <tr className="border-b border-[#3b3426] text-[#ebc238]">
+              <tr className={`border-b ${t.borderBase} ${t.textAccent}`}>
                 <th className="pb-1 px-1">Rotor</th>
                 <th className="pb-1 px-1">Turnover</th>
                 <th className="pb-1 px-1">Letter in Window</th>
                 <th className="pb-1 px-1">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#201b0f] text-[#d1c4b7]">
+            <tbody className={`divide-y ${t.borderBase} ${t.textMuted}`}>
               <tr>
-                <td className="py-1 px-1 font-bold text-[#e3c193]">Rotor I</td>
-                <td className="py-1 px-1 text-[#ebc238]">Q</td>
+                <td className={`py-1 px-1 font-bold ${t.textSecondary}`}>Rotor I</td>
+                <td className={`py-1 px-1 ${t.textAccent}`}>Q</td>
                 <td className="py-1 px-1">Q</td>
-                <td className="py-1 px-1 text-[#a89985]">Moving from Q → R steps the next rotor.</td>
+                <td className={`py-1 px-1 ${t.textMuted}`}>Moving from Q → R steps the next rotor.</td>
               </tr>
               <tr>
-                <td className="py-1 px-1 font-bold text-[#e3c193]">Rotor II</td>
-                <td className="py-1 px-1 text-[#ebc238]">E</td>
+                <td className={`py-1 px-1 font-bold ${t.textSecondary}`}>Rotor II</td>
+                <td className={`py-1 px-1 ${t.textAccent}`}>E</td>
                 <td className="py-1 px-1">E</td>
-                <td className="py-1 px-1 text-[#a89985]">Moving from E → F steps the next rotor.</td>
+                <td className={`py-1 px-1 ${t.textMuted}`}>Moving from E → F steps the next rotor.</td>
               </tr>
               <tr>
-                <td className="py-1 px-1 font-bold text-[#e3c193]">Rotor III</td>
-                <td className="py-1 px-1 text-[#ebc238]">V</td>
+                <td className={`py-1 px-1 font-bold ${t.textSecondary}`}>Rotor III</td>
+                <td className={`py-1 px-1 ${t.textAccent}`}>V</td>
                 <td className="py-1 px-1">V</td>
-                <td className="py-1 px-1 text-[#a89985]">Moving from V → W steps the next rotor.</td>
+                <td className={`py-1 px-1 ${t.textMuted}`}>Moving from V → W steps the next rotor.</td>
               </tr>
               <tr>
-                <td className="py-1 px-1 font-bold text-[#e3c193]">Rotor IV</td>
-                <td className="py-1 px-1 text-[#ebc238]">J</td>
+                <td className={`py-1 px-1 font-bold ${t.textSecondary}`}>Rotor IV</td>
+                <td className={`py-1 px-1 ${t.textAccent}`}>J</td>
                 <td className="py-1 px-1">J</td>
-                <td className="py-1 px-1 text-[#a89985]">Moving from J → K steps the next rotor.</td>
+                <td className={`py-1 px-1 ${t.textMuted}`}>Moving from J → K steps the next rotor.</td>
               </tr>
               <tr>
-                <td className="py-1 px-1 font-bold text-[#e3c193]">Rotor V</td>
-                <td className="py-1 px-1 text-[#ebc238]">Z</td>
+                <td className={`py-1 px-1 font-bold ${t.textSecondary}`}>Rotor V</td>
+                <td className={`py-1 px-1 ${t.textAccent}`}>Z</td>
                 <td className="py-1 px-1">Z</td>
-                <td className="py-1 px-1 text-[#a89985]">Moving from Z → A steps the next rotor.</td>
+                <td className={`py-1 px-1 ${t.textMuted}`}>Moving from Z → A steps the next rotor.</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <p className="text-[10px] text-[#d1c4b7] italic pt-2 border-t border-[#3b3426]">
+        <p className={`text-[10px] ${t.textMuted} italic pt-2 border-t ${t.borderBase}`}>
           Historical Note: Bletchley Park cryptanalysts including Alan Turing and Marian Rejewski exploited structural weaknesses in Enigma operation, pioneering modern computing with the electromechanical Bombe machine.
         </p>
       </div>
@@ -191,6 +214,8 @@ interface ShareModalProps {
 }
 
 export const ShortcutsModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  const { theme, setTheme } = useTheme();
+  const t = getTheme(theme);
   const shortcuts = [
     {
       category: 'Navigation Tabs',
@@ -228,17 +253,17 @@ export const ShortcutsModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
       <div className="space-y-4">
         {shortcuts.map((group, idx) => (
           <div key={idx} className="space-y-2">
-            <h3 className="font-bold text-[#ebc238] text-xs uppercase tracking-wider border-b border-[#3b3426] pb-1">
+            <h3 className={`font-bold ${t.textAccent} text-xs uppercase tracking-wider border-b ${t.borderBase} pb-1`}>
               {group.category}
             </h3>
             <div className="grid grid-cols-1 gap-1.5">
               {group.items.map((item, itemIdx) => (
                 <div
                   key={itemIdx}
-                  className="flex justify-between items-center bg-[#120e04] p-2 rounded border border-[#3b3426] text-[11px]"
+                  className={`flex justify-between items-center ${t.panelInner} p-2 rounded border ${t.borderBase} text-[11px]`}
                 >
-                  <span className="text-[#d1c4b7]">{item.desc}</span>
-                  <span className="font-monospaced-technical text-[#ebc238] bg-[#282113] px-2 py-0.5 rounded border border-[#4e422c] font-bold shrink-0 ml-2">
+                  <span className={`${t.textMuted}`}>{item.desc}</span>
+                  <span className={`${t.fontMono} ${t.textAccent} ${t.panelInner} px-2 py-0.5 rounded border ${t.borderBase} font-bold shrink-0 ml-2`}>
                     {item.key}
                   </span>
                 </div>
@@ -252,6 +277,10 @@ export const ShortcutsModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
 };
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, config }) => {
+  const { theme, setTheme } = useTheme();
+  const t = getTheme(theme);
+
+
   const configStr = generateConfigString(config);
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -266,14 +295,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, config 
       <div className="space-y-4">
         <p>You can share your current Enigma machine rotor setup and starting positions with fellow cryptographers to allow them to decrypt your messages.</p>
 
-        <div className="bg-[#120e04] p-3 rounded border border-[#3b3426] flex items-center justify-between font-monospaced-technical text-sm text-[#ebc238]">
+        <div className={`${t.panelInner} p-3 rounded border ${t.borderBase} flex items-center justify-between ${t.fontMono} text-sm ${t.textAccent}`}>
           <span className="break-all pr-2">{configStr}</span>
           <button
             onClick={handleCopy}
-            className={`px-3 py-1.5 rounded text-xs font-ui-header font-bold cursor-pointer flex items-center gap-1 transition-all ${
+            className={`px-3 py-1.5 rounded text-xs ${t.fontHeader} font-bold cursor-pointer flex items-center gap-1 transition-all ${
               copied
-                ? 'bg-[#2b6121] text-white'
-                : 'bg-[#8b6f47] text-[#fffaf8] hover:bg-[#a68656]'
+                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                : t.buttonHighlight
             }`}
           >
             <span className="material-symbols-outlined text-xs">

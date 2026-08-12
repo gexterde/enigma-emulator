@@ -1,10 +1,6 @@
-import React from 'react';
-
-const ENIGMA_KEYBOARD_ROWS = [
-  ['Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O'],
-  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K'],
-  ['P', 'Y', 'X', 'C', 'V', 'B', 'N', 'M', 'L']
-];
+import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
+import { ENIGMA_KEYBOARD_ROWS } from '../lib/enigmaEngine';
+import { useTheme, getTheme } from '../lib/theme';
 
 interface LampSocketProps {
   char: string;
@@ -12,49 +8,59 @@ interface LampSocketProps {
   isDimIdle: boolean;
   batteryMode: string;
   isCompact: boolean;
-  keySize?: 'normal' | 'large';
+  keySize: 'normal' | 'large';
 }
 
-const LampSocket: React.FC<LampSocketProps> = ({
-  char,
-  isLit,
-  isDimIdle,
-  batteryMode,
-  isCompact,
-  keySize = 'normal'
-}) => {
+const LampSocket: React.FC<LampSocketProps> = ({ char, isLit, isDimIdle, batteryMode, isCompact, keySize }) => {
+  const { theme, setTheme } = useTheme();
+  const t = getTheme(theme);
+
   const isLarge = keySize === 'large';
 
   if (isCompact) {
-    let lampClass = '';
-    if (isLit) {
-      if (batteryMode === 'dkl') lampClass = 'lamp-on-dkl scale-105';
-      else if (batteryMode === 'sammler') lampClass = 'lamp-on-sammler scale-110';
-      else lampClass = 'lamp-on-hell scale-105';
-    }
-
     let idleClass = '';
-    if (isDimIdle) {
-      if (batteryMode === 'dkl') idleClass = 'lamp-dim-glow-dkl';
-      else if (batteryMode === 'sammler') idleClass = 'lamp-dim-glow-sammler';
-      else idleClass = 'lamp-dim-glow';
+    let lampClass = theme === 'vintage' ? 'bg-[#15120c] border-[#2e271d]' : 'bg-slate-200 border-slate-300';
+    let innerGlassClasses = theme === 'vintage' ? 'bg-[#282319]/80 text-[#8c7e6a] shadow-[inset_0_-1px_1px_rgba(0,0,0,0.8)]' : 'bg-slate-100 text-slate-400';
+
+    if (isLit) {
+      if (theme === 'vintage') {
+        if (batteryMode === 'dkl') {
+          lampClass = 'bg-[#cba832] border-[#f1e09d] scale-105 opacity-80 shadow-[0_0_8px_#d48800]';
+          innerGlassClasses = 'bg-[#d48800] text-[#3d2100] font-bold shadow-[inset_0_0_4px_#ffe0a3]';
+        } else if (batteryMode === 'sammler') {
+          lampClass = 'bg-[#ffea70] border-[#ffffff] scale-110 shadow-[0_0_20px_#ffff80]';
+          innerGlassClasses = 'bg-[#e6a100] text-[#1a0f00] font-bold shadow-[inset_0_0_8px_#ffffff]';
+        } else {
+          lampClass = 'bg-[#ebc238] border-[#fff5d6] scale-105 shadow-[0_0_12px_#ffc83b]';
+          innerGlassClasses = 'bg-[#ffc83b] text-[#2b1700] font-bold shadow-[inset_0_0_6px_#ffffff]';
+        }
+      } else {
+        lampClass = 'bg-blue-600 border-blue-400 scale-105 shadow-[0_0_12px_rgba(59,130,246,0.5)]';
+        innerGlassClasses = 'bg-blue-500 text-white font-bold';
+      }
+    } else if (isDimIdle) {
+      if (theme === 'vintage') {
+        idleClass = batteryMode === 'dkl' 
+          ? 'lamp-dim-glow-dkl' 
+          : batteryMode === 'sammler'
+            ? 'lamp-dim-glow-sammler'
+            : 'lamp-dim-glow';
+      } else {
+        lampClass = 'bg-blue-50 border-blue-200 shadow-sm animate-bulb-flicker';
+        innerGlassClasses = 'bg-blue-100 text-blue-600 font-medium';
+      }
     }
 
-    // Dynamic responsive size classes optimized for mobile touch
     const sizeClasses = isLarge
-      ? 'w-9 h-9 min-w-[36px] min-h-[36px] xs:w-10 xs:h-10 xs:min-w-[40px] xs:min-h-[40px] sm:w-12 sm:h-12 sm:min-w-[48px] sm:min-h-[48px] md:w-14 md:h-14'
-      : 'w-8 h-8 min-w-[32px] min-h-[32px] xs:w-9 xs:h-9 xs:min-w-[36px] xs:min-h-[36px] sm:w-11 sm:h-11 sm:min-w-[44px] md:w-12 md:h-12';
-
-    const innerGlassClasses = isLarge
-      ? 'w-8 h-8 xs:w-9 xs:h-9 sm:w-11 sm:h-11 md:w-13 md:h-13 text-xs xs:text-sm sm:text-base md:text-lg'
+      ? 'w-10 h-10 xs:w-11 xs:h-11 sm:w-14 sm:h-14 md:w-15 md:h-15 text-xs xs:text-sm sm:text-base md:text-lg'
       : 'w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[11px] xs:text-xs sm:text-sm';
 
     return (
       <div
-        className={`lamp-socket select-none rounded-full flex items-center justify-center transition-all ${sizeClasses} ${lampClass}`}
+        className={`${t.lampShape} select-none flex items-center justify-center transition-all ${sizeClasses} ${lampClass}`}
       >
         <div
-          className={`lamp-glass rounded-full flex items-center justify-center font-lamp-char font-bold ${innerGlassClasses} ${idleClass}`}
+          className={`${t.lampShape} w-full h-full flex items-center justify-center font-bold ${innerGlassClasses} ${idleClass} ${t.fontMono}`}
         >
           {char}
         </div>
@@ -62,23 +68,31 @@ const LampSocket: React.FC<LampSocketProps> = ({
     );
   }
 
-  let litStyle = 'bg-[#120e04] border-[#3b3426] text-[#83715d] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]';
+  let litStyle = t.lampBase;
 
   if (isLit) {
-    if (batteryMode === 'dkl') {
-      litStyle = 'bg-[#cba832] border-[#f1e09d] text-[#25190b] shadow-[0_0_12px_#d48800] font-bold scale-105 opacity-80';
-    } else if (batteryMode === 'sammler') {
-      litStyle = 'bg-[#ffea70] border-[#ffffff] text-[#1a0f00] shadow-[0_0_25px_#ffff80,0_0_50px_#ffc83b] font-bold scale-110';
+    if (theme === 'vintage') {
+      if (batteryMode === 'dkl') {
+        litStyle = 'bg-[#cba832] border-[#f1e09d] text-[#25190b] shadow-[0_0_12px_#d48800] font-bold scale-105 opacity-80';
+      } else if (batteryMode === 'sammler') {
+        litStyle = 'bg-[#ffea70] border-[#ffffff] text-[#1a0f00] shadow-[0_0_25px_#ffff80,0_0_50px_#ffc83b] font-bold scale-110';
+      } else {
+        litStyle = 'bg-[#ebc238] border-[#fff5d6] text-[#25190b] shadow-lamp-glow font-bold scale-105';
+      }
     } else {
-      litStyle = 'bg-[#ebc238] border-[#fff5d6] text-[#25190b] shadow-lamp-glow font-bold scale-105';
+      litStyle = t.lampLit;
     }
   } else if (isDimIdle) {
-    if (batteryMode === 'dkl') {
-      litStyle = 'lamp-dim-glow-dkl border-[#ebc238]/30';
-    } else if (batteryMode === 'sammler') {
-      litStyle = 'lamp-dim-glow-sammler border-[#ffea70]/70';
+    if (theme === 'vintage') {
+      if (batteryMode === 'dkl') {
+        litStyle = 'lamp-dim-glow-dkl border-[#ebc238]/30';
+      } else if (batteryMode === 'sammler') {
+        litStyle = 'lamp-dim-glow-sammler border-[#ffea70]/70';
+      } else {
+        litStyle = 'lamp-dim-glow border-[#ebc238]/50';
+      }
     } else {
-      litStyle = 'lamp-dim-glow border-[#ebc238]/50';
+      litStyle = t.lampDim;
     }
   }
 
@@ -88,9 +102,9 @@ const LampSocket: React.FC<LampSocketProps> = ({
 
   return (
     <div
-      className={`rounded-full border-2 select-none flex items-center justify-center transition-all duration-100 ${standardSizeClasses} ${litStyle}`}
+      className={`${t.lampShape} border-2 select-none flex items-center justify-center transition-all duration-100 ${standardSizeClasses} ${litStyle}`}
     >
-      <span className="font-lamp-char font-bold">
+      <span className={`${t.fontMono} font-bold`}>
         {char}
       </span>
     </div>
@@ -114,27 +128,32 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
   keySize = 'normal',
   onToggleKeySize,
 }) => {
+  const { theme, setTheme } = useTheme();
+  const t = getTheme(theme);
+
+
+
   const isPowerOn = batteryMode !== 'aus';
   const isLarge = keySize === 'large';
 
+
   if (isCompact) {
     return (
-      <div className="metal-plate p-2 xs:p-3 sm:p-4 rounded-xl shadow-md flex flex-col items-center w-full">
-        <div className="w-full flex justify-between items-center mb-2 sm:mb-3 pb-1 border-b border-[#3d3526]/60 px-1">
-          <span className="text-[10px] sm:text-[11px] font-monospaced-technical text-[#d1c4b7] tracking-wider uppercase flex items-center gap-1.5 font-bold">
-            <span className="material-symbols-outlined text-xs sm:text-sm text-[#ebc238]">lightbulb</span>
+      <div className={`${t.compactPlateBg} p-2 xs:p-3 sm:p-4 rounded-xl flex flex-col items-center w-full`}>
+        <div className={`w-full flex justify-between items-center mb-2 sm:mb-3 pb-1 border-b ${t.borderBase} px-1`}>
+          <span className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textSecondary} tracking-wider uppercase flex items-center gap-1.5 font-bold`}>
+            <span className={`material-symbols-outlined text-xs sm:text-sm ${theme === 'vintage' ? t.textAccent : 'text-blue-500'}`}>lightbulb</span>
             LAMPENFELD (LAMPBOARD)
           </span>
-
           <div className="flex items-center gap-1.5">
             {onToggleKeySize && (
               <button
                 type="button"
                 onClick={onToggleKeySize}
-                className={`text-[9px] sm:text-[10px] font-monospaced-technical px-1.5 py-0.5 rounded border transition-all flex items-center gap-0.5 cursor-pointer ${
+                className={`text-[9px] sm:text-[10px] ${t.fontMono} px-1.5 py-0.5 rounded border transition-all flex items-center gap-0.5 cursor-pointer ${
                   isLarge
-                    ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-sm'
-                    : 'bg-[#120e04] text-[#8c7e6a] border-[#3b3426] hover:text-[#d1c4b7]'
+                    ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-sm' : 'bg-blue-600 text-white border-blue-600 shadow-sm')
+                    : (theme === 'vintage' ? 'bg-[#120e04] text-[#8c7e6a] border-[#3b3426] hover:text-[#d1c4b7]' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50')
                 }`}
                 title="Toggle touch size between normal and large"
               >
@@ -144,14 +163,15 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
                 <span>{isLarge ? 'Large Size' : 'Normal'}</span>
               </button>
             )}
-
             {isPowerOn && litLamp && (
-              <span className={`animate-pulse text-[10px] font-monospaced-technical px-2 py-0.5 rounded border font-bold ${
-                batteryMode === 'dkl'
-                  ? 'text-[#d48800] bg-[#d48800]/20 border-[#d48800]/40'
-                  : batteryMode === 'sammler'
-                  ? 'text-[#ffea70] bg-[#ffea70]/25 border-[#ffea70]/70 shadow-[0_0_10px_rgba(255,234,112,0.5)]'
-                  : 'text-[#ebc238] bg-[#ebc238]/20 border-[#ebc238]/40'
+              <span className={`animate-pulse text-[10px] ${t.fontMono} px-2 py-0.5 rounded border font-bold ${
+                theme === 'vintage' ? (
+                  batteryMode === 'dkl'
+                    ? 'text-[#d48800] bg-[#d48800]/20 border-[#d48800]/40'
+                    : batteryMode === 'sammler'
+                    ? 'text-[#ffea70] bg-[#ffea70]/25 border-[#ffea70]/70 shadow-[0_0_10px_rgba(255,234,112,0.5)]'
+                    : 'text-[#ebc238] bg-[#ebc238]/20 border-[#ebc238]/40'
+                ) : 'text-yellow-700 bg-yellow-100 border-yellow-300'
               }`}>
                 {batteryMode === 'dkl' && '2.5V: '}
                 {batteryMode === 'sammler' && '4V: '}
@@ -161,7 +181,6 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
             )}
           </div>
         </div>
-
         <div className="space-y-1.5 xs:space-y-2 sm:space-y-2.5 w-full max-w-2xl px-0.5">
           {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
             <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2 md:gap-3">
@@ -184,22 +203,21 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
   }
 
   return (
-    <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-3 sm:p-4 md:p-6 shadow-panel texture-metal flex flex-col items-center w-full">
-      <div className="w-full flex justify-between items-center mb-3 sm:mb-4 pb-2 border-b border-[#3b3426]">
-        <span className="text-ui-header font-ui-header text-[#ede1cd] text-xs uppercase tracking-widest flex items-center gap-2">
-          <span className="material-symbols-outlined text-sm text-[#ebc238]">lightbulb</span>
+    <div className={`${t.lampboardPanelBg} rounded-lg p-3 sm:p-4 md:p-6 flex flex-col items-center w-full`}>
+      <div className={`w-full flex justify-between items-center mb-3 sm:mb-4 pb-2 border-b ${t.borderBase}`}>
+        <span className={`${t.fontHeader} ${t.textPrimary} text-xs uppercase tracking-widest flex items-center gap-2`}>
+          <span className={`material-symbols-outlined text-sm ${theme === 'vintage' ? t.textAccent : 'text-blue-500'}`}>lightbulb</span>
           Lampboard (Glühlampenfeld)
         </span>
-
         <div className="flex items-center gap-2">
           {onToggleKeySize && (
             <button
               type="button"
               onClick={onToggleKeySize}
-              className={`text-[10px] font-monospaced-technical px-2 py-0.5 rounded border transition-all flex items-center gap-1 cursor-pointer ${
+              className={`text-[10px] ${t.fontMono} px-2 py-0.5 rounded border transition-all flex items-center gap-1 cursor-pointer ${
                 isLarge
-                  ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-sm'
-                  : 'bg-[#120e04] text-[#8c7e6a] border-[#3b3426] hover:text-[#d1c4b7]'
+                  ? (theme === 'vintage' ? 'bg-[#ebc238] text-[#25190b] border-[#ebc238] font-bold shadow-sm' : 'bg-blue-600 text-white border-blue-600 shadow-sm')
+                  : (theme === 'vintage' ? 'bg-[#120e04] text-[#8c7e6a] border-[#3b3426] hover:text-[#d1c4b7]' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50')
               }`}
               title="Toggle touch size between normal and large"
             >
@@ -209,14 +227,15 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
               <span>{isLarge ? 'Large Keys' : 'Normal Size'}</span>
             </button>
           )}
-
           {isPowerOn && litLamp && (
-            <span className={`animate-pulse text-xs font-monospaced-technical px-2 py-0.5 rounded border font-bold ${
-              batteryMode === 'dkl'
-                ? 'text-[#d48800] bg-[#d48800]/20 border-[#d48800]/40'
-                : batteryMode === 'sammler'
-                ? 'text-[#ffea70] bg-[#ffea70]/25 border-[#ffea70]/70 shadow-[0_0_10px_rgba(255,234,112,0.5)]'
-                : 'text-[#ebc238] bg-[#ebc238]/20 border-[#ebc238]/40'
+            <span className={`animate-pulse text-xs ${t.fontMono} px-2 py-0.5 rounded border font-bold ${
+              theme === 'vintage' ? (
+                batteryMode === 'dkl'
+                  ? 'text-[#d48800] bg-[#d48800]/20 border-[#d48800]/40'
+                  : batteryMode === 'sammler'
+                  ? 'text-[#ffea70] bg-[#ffea70]/25 border-[#ffea70]/70 shadow-[0_0_10px_rgba(255,234,112,0.5)]'
+                  : 'text-[#ebc238] bg-[#ebc238]/20 border-[#ebc238]/40'
+              ) : 'text-yellow-700 bg-yellow-100 border-yellow-300'
             }`}>
               {batteryMode === 'dkl' && 'LAMP LIT (2.5V DIM): '}
               {batteryMode === 'sammler' && 'LAMP LIT (4V SAMMLER): '}
@@ -226,7 +245,6 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
           )}
         </div>
       </div>
-
       <div className="space-y-1.5 xs:space-y-2 sm:space-y-3 md:space-y-4 max-w-2xl w-full px-0.5">
         {ENIGMA_KEYBOARD_ROWS.map((row, rIdx) => (
           <div key={rIdx} className="flex justify-center gap-1 xs:gap-1.5 sm:gap-2 md:gap-3.5">

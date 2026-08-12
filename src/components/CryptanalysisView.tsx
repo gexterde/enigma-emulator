@@ -11,6 +11,7 @@ import {
   getRotorNotchPositions,
 } from '../lib/enigmaEngine';
 import { playRotorClickSound } from '../lib/audio';
+import { useTheme, getTheme } from '../lib/theme';
 
 interface CryptanalysisViewProps {
   config: EnigmaConfig;
@@ -55,6 +56,9 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
   setActiveTab,
   soundEnabled,
 }) => {
+  const { theme } = useTheme();
+  const t = getTheme(theme);
+
   // Input states
   const [ciphertext, setCiphertext] = useState<string>('');
   const [crib, setCrib] = useState<string>('');
@@ -103,6 +107,29 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
   const [filterTopMatches, setFilterTopMatches] = useState<boolean>(true);
   const [codebookMatch, setCodebookMatch] = useState<CryptanalysisMatch | null>(null);
   const [copiedToast, setCopiedToast] = useState<string | null>(null);
+
+  const [scanSpeed, setScanSpeed] = useState<'paused' | 'slow' | 'normal' | 'fast' | 'realtime'>('fast');
+  const scanSpeedRef = useRef<'paused' | 'slow' | 'normal' | 'fast' | 'realtime'>('fast');
+
+  useEffect(() => {
+    scanSpeedRef.current = scanSpeed;
+  }, [scanSpeed]);
+
+  const [currentScanOffset, setCurrentScanOffset] = useState<number | null>(null);
+  const [currentRotorComb, setCurrentRotorComb] = useState<string>('I-II-III');
+  const [recentStop, setRecentStop] = useState<{
+    left: string, middle: string, right: string, 
+    offset: number, rotorComb: string, steckerHypothesis?: string, timestamp: number
+  } | null>(null);
+
+  const [isStopFlashing, setIsStopFlashing] = useState(false);
+  useEffect(() => {
+    if (recentStop) {
+      setIsStopFlashing(true);
+      const timer = setTimeout(() => setIsStopFlashing(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [recentStop]);
 
   // Search scope (single selected, 3-rotor permutations, or 5/8 rotor pools)
   const [rotorScanScope, setRotorScanScope] = useState<'selected' | 'permutations_3' | 'all_5' | 'all_8'>('selected');
@@ -1018,6 +1045,16 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       return rotorCache.get(key);
     };
 
+    const speedMap: Record<string, number> = {
+      paused: 0,
+      slow: 5,
+      normal: 100,
+      fast: 1000,
+      realtime: 17576
+    };
+
+    let lastFoundMatchesCount = 0;
+
     const runBatch = () => {
       if (stopSearchRef.current) {
         // Search aborted by operator! Process any matches found up to cancellation
@@ -1027,6 +1064,12 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
           setHasSearched(true);
         }
         setIsSearching(false);
+        return;
+      }
+
+      const speedSetting = scanSpeedRef.current;
+      if (speedSetting === 'paused') {
+        animFrameIdRef.current = requestAnimationFrame(runBatch);
         return;
       }
 
@@ -1044,10 +1087,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       const middleR = getCachedRotor(activeComb.middle, middleRotorRing);
       const rightR = getCachedRotor(activeComb.right, rightRotorRing);
 
-      // Multi-rotor scans can scan a full rotor set (17.5k start positions) in a single frame to remain fast and interactive.
-      // Single selected configuration scans in smaller chunks to let the user see the beautiful rotating dials simulation.
-      const isMultiRotor = rotorCombs.length > 1;
-      const batchSize = isMultiRotor ? totalCombinationsPerRotor : 1000;
+      const batchSize = speedMap[speedSetting];
       const limit = Math.min(combinationIndex + batchSize, totalCombinationsPerRotor);
 
       for (let c = combinationIndex; c < limit; c++) {
@@ -1130,11 +1170,30 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
       // Visual updates: show scanned position or active rotor combination names
       const currentActiveComb = rotorCombs[Math.min(currentCombIndex, rotorCombs.length - 1)];
-      setCurrentScan([
-        isMultiRotor ? currentActiveComb.left : numToChar(Math.floor(limit / 676) % 26),
-        isMultiRotor ? currentActiveComb.middle : numToChar(Math.floor(limit / 26) % 26),
-        isMultiRotor ? currentActiveComb.right : numToChar(limit % 26),
-      ]);
+      const lastR = limit % 26;
+      const lastM = Math.floor(limit / 26) % 26;
+      const lastL = Math.floor(limit / 676) % 26;
+      
+      setCurrentScan([numToChar(lastL), numToChar(lastM), numToChar(lastR)]);
+      setCurrentRotorComb(`${currentActiveComb.left}-${currentActiveComb.middle}-${currentActiveComb.right}`);
+      
+      if (precalculatedOffsets.length > 0) {
+        setCurrentScanOffset(precalculatedOffsets[0].offset); // Show first offset being scanned
+      }
+
+      if (foundMatches.length > lastFoundMatchesCount) {
+        const lastMatch = foundMatches[foundMatches.length - 1];
+        setRecentStop({
+          left: lastMatch.left,
+          middle: lastMatch.middle,
+          right: lastMatch.right,
+          offset: lastMatch.offset,
+          rotorComb: `${lastMatch.leftRotor}-${lastMatch.middleRotor}-${lastMatch.rightRotor}`,
+          steckerHypothesis: lastMatch.stopHypothesis,
+          timestamp: Date.now()
+        });
+        lastFoundMatchesCount = foundMatches.length;
+      }
 
       playRotorClickSound(soundEnabled);
       animFrameIdRef.current = requestAnimationFrame(runBatch);
@@ -1143,7 +1202,61 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     animFrameIdRef.current = requestAnimationFrame(runBatch);
   };
 
-  // Apply cracked keys back to main Enigma machine with mapped Ringstellung (Ring Settings)
+  // Helper component for Rotor Dial visualization
+  const RotorDial = ({ 
+    rotorType, 
+    ringSetting, 
+    currentPosLetter, 
+    label,
+    isRecentStop
+  }: { 
+    rotorType: string, 
+    ringSetting: number, 
+    currentPosLetter: string, 
+    label: string,
+    isRecentStop: boolean
+  }) => {
+    const rotorDef = ROTOR_SPECS[rotorType as keyof typeof ROTOR_SPECS];
+    const notches = rotorDef ? getRotorNotchPositions(rotorType as any) : [];
+    const ringLetter = numToChar(ringSetting - 1);
+    
+    return (
+      <div className="flex flex-col items-center gap-1 sm:gap-2">
+        <div className={`relative w-20 h-20 sm:w-28 sm:h-28 lg:w-36 lg:h-36 rounded-full border-[3px] sm:border-4 ${isRecentStop ? 'border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]' : `${t.borderAccent}`} ${t.panelInner} shadow-xl flex items-center justify-center transition-colors duration-300`}>
+          <div className={`absolute inset-0 bg-radial-gradient from-transparent ${theme === 'vintage' ? 'to-[#120e04]/90' : 'to-slate-900/10'} pointer-events-none rounded-full`} />
+          
+          {/* Outer Ring Letters */}
+          {Array.from({ length: 26 }).map((_, i) => {
+            const letter = String.fromCharCode(65 + i);
+            const isNotch = notches.includes(i);
+            const isRingSetting = letter === ringLetter;
+            const angle = (i * (360 / 26)) - 90; // Start A at top
+            
+            return (
+              <div 
+                key={i}
+                className="absolute w-full h-full pointer-events-none"
+                style={{ transform: `rotate(${angle}deg)` }}
+              >
+                <div className="absolute top-[2%] sm:top-1 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                  {isNotch && <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 lg:w-2 lg:h-2 ${theme === 'vintage' ? 'bg-amber-500' : 'bg-blue-500'} mb-[1px]`} style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }} />}
+                  <span className={`text-[5px] sm:text-[7px] lg:text-[9px] ${t.fontMono} font-bold leading-none ${isRingSetting ? (theme === 'vintage' ? 'text-[#ebc238] drop-shadow-[0_0_3px_rgba(235,194,56,1)]' : 'text-blue-600 drop-shadow-[0_0_3px_rgba(37,99,235,0.4)]') : `${t.textMuted}/40`}`} style={{ transform: `rotate(${-angle}deg)` }}>
+                    {letter}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+          
+          {/* Inner Ring / Wiring Position */}
+          <span className={`${t.fontRotor} text-2xl sm:text-4xl lg:text-5xl font-bold z-10 select-none transition-colors duration-200 ${isRecentStop ? 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]' : t.textAccent}`}>
+            {currentPosLetter}
+          </span>
+        </div>
+        <span className={`text-[8px] sm:text-[10px] ${t.fontMono} ${t.textMuted} uppercase text-center max-w-[80px] sm:max-w-none leading-tight`}>{label}</span>
+      </div>
+    );
+  };
   const handleApplyMatchWithRings = (
     match: typeof matches[0],
     tLeftRing: number, tMiddleRing: number, tRightRing: number,
@@ -1190,26 +1303,26 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
       {/* Header */}
-      <div className="border-b border-[#3b3426] pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className={`border-b ${t.borderBase} pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4`}>
         <div>
-          <h1 className="text-rotor-label font-rotor-label text-[#ebc238] text-xl md:text-2xl flex items-center gap-2">
+          <h1 className={`text-rotor-label ${t.fontRotor} ${t.textAccent} text-xl md:text-2xl flex items-center gap-2`}>
             <span className="material-symbols-outlined text-2xl">auto_fix</span>
             Turing-Welchman Bombe Simulator
           </h1>
-          <p className="text-[#d1c4b7] text-xs font-ui-body">
+          <p className={`${t.textMuted} text-xs ${t.fontBody}`}>
             Replicate Bletchley Park’s historical cryptanalysis techniques using a known plaintext fragment (Crib) slider and logical search.
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
           <button
             onClick={() => loadTemplate('navy_weather')}
-            className="text-xs font-ui-header bg-[#3b3426] hover:bg-[#4e453b] text-[#e3c193] border border-[#8b6f47] px-3 py-1.5 rounded transition-colors cursor-pointer"
+            className={`text-xs ${t.fontHeader} ${t.panelInner} hover:${theme === 'vintage' ? 'bg-[#4e453b]' : 'bg-slate-100'} ${t.textSecondary} border ${t.borderAccent} px-3 py-1.5 rounded transition-colors cursor-pointer`}
           >
             Kriegsmarine Wetter (Navy)
           </button>
           <button
             onClick={() => loadTemplate('army_intercept')}
-            className="text-xs font-ui-header bg-[#3b3426] hover:bg-[#4e453b] text-[#e3c193] border border-[#8b6f47] px-3 py-1.5 rounded transition-colors cursor-pointer"
+            className={`text-xs ${t.fontHeader} ${t.panelInner} hover:${theme === 'vintage' ? 'bg-[#4e453b]' : 'bg-slate-100'} ${t.textSecondary} border ${t.borderAccent} px-3 py-1.5 rounded transition-colors cursor-pointer`}
           >
             Wehrmacht Intercept (Army)
           </button>
@@ -1223,23 +1336,23 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
         <div className="lg:col-span-4 space-y-6">
           
           {/* Station X Briefing Card */}
-          <div className="bg-[#1b170e]/95 border-2 border-[#8b6f47]/50 rounded-lg p-4 shadow-panel relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-[#ebc238]/5 transform rotate-45 translate-x-8 -translate-y-8 pointer-events-none" />
-            <h3 className="text-ui-header font-ui-header text-[#ebc238] text-xs uppercase tracking-wider pb-1.5 border-b border-[#4e453b]/60 flex items-center gap-2">
+          <div className={`${theme === 'vintage' ? 'bg-[#1b170e]/95 border-2 border-[#8b6f47]/50 shadow-panel' : 'bg-blue-50 border-2 border-blue-200 shadow-sm'} rounded-lg p-4 relative overflow-hidden`}>
+            <div className={`absolute top-0 right-0 w-16 h-16 ${theme === 'vintage' ? 'bg-[#8b6f47]/5' : 'bg-blue-600/5'} transform rotate-45 translate-x-8 -translate-y-8 pointer-events-none`} />
+            <h3 className={`text-ui-header ${t.fontHeader} ${theme === 'vintage' ? 'text-[#ebc238]' : 'text-blue-700'} text-xs uppercase tracking-wider pb-1.5 border-b ${t.borderBase}/60 flex items-center gap-2`}>
               <span className="material-symbols-outlined text-xs">gavel</span>
               Bletchley Park Protocol
             </h3>
-            <p className="text-[11px] text-[#d1c4b7] leading-relaxed pt-2">
+            <p className={`text-[11px] ${theme === 'vintage' ? t.textMuted : 'text-slate-600'} leading-relaxed pt-2`}>
               The Turing-Welchman <strong>Bombe</strong> cracked keys not by trying millions of full decrypts, but by exploiting a critical design flaw: <strong>Enigma can never encrypt a letter to itself</strong>.
             </p>
-            <p className="text-[11px] text-[#d1c4b7] leading-relaxed pt-2">
+            <p className={`text-[11px] ${theme === 'vintage' ? t.textMuted : 'text-slate-600'} leading-relaxed pt-2`}>
               By sliding a guessed phrase (Crib) against ciphertext, codebreakers immediately discarded alignments that had overlapping characters. Viable alignments were then scanned to find starting settings that yielded a perfect circuit path.
             </p>
           </div>
 
           {/* Active Scrambler Settings Card */}
-          <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-4 shadow-panel texture-metal space-y-3.5">
-            <h3 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-wider pb-1.5 border-b border-[#3b3426] flex items-center gap-1.5">
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-3.5`}>
+            <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider pb-1.5 border-b ${t.borderBase} flex items-center gap-1.5`}>
               <span className="material-symbols-outlined text-xs">settings_input_component</span>
               Scrambler Key Target
             </h3>
@@ -1248,28 +1361,28 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
               {/* Rotor selection visualization */}
               <div className="grid grid-cols-3 gap-2">
                 {/* Left Rotor Selector */}
-                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] flex flex-col justify-between">
-                  <label className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-1 text-center font-bold">Left Rotor</label>
+                <div className={`${t.panelInner} p-2 rounded border ${t.borderBase} flex flex-col justify-between`}>
+                  <label className={`text-[9px] ${t.textMuted} block uppercase ${t.fontMono} mb-1 text-center font-bold`}>Left Rotor</label>
                   <select
                     value={leftRotorType}
                     onChange={(e) => setLeftRotorType(e.target.value)}
-                    className="w-full bg-[#1b170e] text-[#ede1cd] font-bold text-xs border border-[#4e453b] rounded py-1 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                    className={`w-full ${t.panelBg} ${t.textPrimary} font-bold text-xs border ${t.borderBase} rounded py-1 px-1 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer`}
                   >
                     {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].map((type) => (
-                      <option key={type} value={type} className="bg-[#1b170e]">
+                      <option key={type} value={type} className={`${t.panelBg}`}>
                         {type}
                       </option>
                     ))}
                   </select>
                   <div className="mt-1.5">
-                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center mb-0.5">Ring</span>
+                    <span className={`text-[8px] ${t.textMuted} block uppercase ${t.fontMono} text-center mb-0.5`}>Ring</span>
                     <select
                       value={leftRotorRing}
                       onChange={(e) => setLeftRotorRing(parseInt(e.target.value))}
-                      className="w-full bg-[#1b170e] text-amber-500/90 text-[11px] border border-[#4e453b] rounded py-0.5 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                      className={`w-full ${t.panelBg} ${t.textAccent} text-[11px] border ${t.borderBase} rounded py-0.5 px-1 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer`}
                     >
                       {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
-                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                        <option key={ring} value={ring} className={`${t.panelBg}`}>
                           {formatRotorRing(ring)}
                         </option>
                       ))}
@@ -1278,12 +1391,12 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 </div>
 
                 {/* Middle Rotor Selector */}
-                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] flex flex-col justify-between">
-                  <label className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-1 text-center font-bold">Middle Rotor</label>
+                <div className={`${t.panelInner} p-2 rounded border ${t.borderBase} flex flex-col justify-between`}>
+                  <label className={`text-[9px] ${t.textMuted} block uppercase ${t.fontMono} mb-1 text-center font-bold`}>Middle Rotor</label>
                   <select
                     value={middleRotorType}
                     onChange={(e) => setMiddleRotorType(e.target.value)}
-                    className="w-full bg-[#1b170e] text-[#ede1cd] font-bold text-xs border border-[#4e453b] rounded py-1 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                    className={`w-full ${t.panelBg} ${t.textPrimary} font-bold text-xs border ${t.borderBase} rounded py-1 px-1 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer`}
                   >
                     {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].map((type) => (
                       <option key={type} value={type} className="bg-[#1b170e]">
@@ -1292,14 +1405,14 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                     ))}
                   </select>
                   <div className="mt-1.5">
-                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center mb-0.5">Ring</span>
+                    <span className={`text-[8px] ${t.textMuted} block uppercase ${t.fontMono} text-center mb-0.5`}>Ring</span>
                     <select
                       value={middleRotorRing}
                       onChange={(e) => setMiddleRotorRing(parseInt(e.target.value))}
-                      className="w-full bg-[#1b170e] text-amber-500/90 text-[11px] border border-[#4e453b] rounded py-0.5 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                      className={`w-full ${t.panelBg} ${t.textAccent} text-[11px] border ${t.borderBase} rounded py-0.5 px-1 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer`}
                     >
                       {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
-                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                        <option key={ring} value={ring} className={`${t.panelBg}`}>
                           {formatRotorRing(ring)}
                         </option>
                       ))}
@@ -1308,28 +1421,28 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 </div>
 
                 {/* Right Rotor Selector */}
-                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] flex flex-col justify-between">
-                  <label className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-1 text-center font-bold">Right Rotor</label>
+                <div className={`${t.panelInner} p-2 rounded border ${t.borderBase} flex flex-col justify-between`}>
+                  <label className={`text-[9px] ${t.textMuted} block uppercase ${t.fontMono} mb-1 text-center font-bold`}>Right Rotor</label>
                   <select
                     value={rightRotorType}
                     onChange={(e) => setRightRotorType(e.target.value)}
-                    className="w-full bg-[#1b170e] text-[#ede1cd] font-bold text-xs border border-[#4e453b] rounded py-1 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                    className={`w-full ${t.panelBg} ${t.textPrimary} font-bold text-xs border ${t.borderBase} rounded py-1 px-1 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer`}
                   >
                     {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'].map((type) => (
-                      <option key={type} value={type} className="bg-[#1b170e]">
+                      <option key={type} value={type} className={`${t.panelBg}`}>
                         {type}
                       </option>
                     ))}
                   </select>
                   <div className="mt-1.5">
-                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center mb-0.5">Ring</span>
+                    <span className={`text-[8px] ${t.textMuted} block uppercase ${t.fontMono} text-center mb-0.5`}>Ring</span>
                     <select
                       value={rightRotorRing}
                       onChange={(e) => setRightRotorRing(parseInt(e.target.value))}
-                      className="w-full bg-[#1b170e] text-amber-500/90 text-[11px] border border-[#4e453b] rounded py-0.5 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                      className={`w-full ${t.panelBg} ${t.textAccent} text-[11px] border ${t.borderBase} rounded py-0.5 px-1 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer`}
                     >
                       {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
-                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                        <option key={ring} value={ring} className={`${t.panelBg}`}>
                           {formatRotorRing(ring)}
                         </option>
                       ))}
@@ -1340,16 +1453,16 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
               {/* Optional 4th Rotor and Reflector config */}
               <div className="grid grid-cols-2 gap-2 mt-2">
-                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] flex flex-col justify-between">
+                <div className={`${t.panelInner} p-2 rounded border ${t.borderBase} flex flex-col justify-between`}>
                   <div>
-                    <label className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-1 font-bold">4th Thin Rotor</label>
+                    <label className={`text-[9px] ${t.textMuted} block uppercase ${t.fontMono} mb-1 font-bold`}>4th Thin Rotor</label>
                     <select
                       value={fourthRotorType}
                       onChange={(e) => setFourthRotorType(e.target.value)}
-                      className="w-full bg-[#1b170e] text-[#ede1cd] text-xs border border-[#4e453b] rounded py-1 px-1 focus:outline-none focus:border-[#ebc238] cursor-pointer"
+                      className={`w-full ${t.panelBg} ${t.textPrimary} text-xs border ${t.borderBase} rounded py-1 px-1 focus:outline-none focus:${t.borderAccent} cursor-pointer`}
                     >
                       {['I', 'Beta', 'Gamma'].map((type) => (
-                        <option key={type} value={type} className="bg-[#1b170e]">
+                        <option key={type} value={type} className={`${t.panelBg}`}>
                           {type === 'I' ? 'None (3-Rotor)' : type}
                         </option>
                       ))}
@@ -1358,28 +1471,28 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   {fourthRotorType !== 'I' && (
                     <div className="mt-1.5 flex gap-1">
                       <div className="w-1/2">
-                        <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-0.5 text-center">Ring</span>
+                        <span className={`text-[8px] ${t.textMuted} block uppercase ${t.fontMono} mb-0.5 text-center`}>Ring</span>
                         <select
                           value={fourthRotorRing}
                           onChange={(e) => setFourthRotorRing(parseInt(e.target.value))}
-                          className="w-full bg-[#1b170e] text-amber-500/90 text-[10px] border border-[#4e453b] rounded py-0.5 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                          className={`w-full ${t.panelBg} ${t.textAccent} text-[10px] border ${t.borderBase} rounded py-0.5 px-1 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer`}
                         >
                           {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
-                            <option key={ring} value={ring} className="bg-[#1b170e]">
+                            <option key={ring} value={ring} className={`${t.panelBg}`}>
                               {formatRotorRing(ring)}
                             </option>
                           ))}
                         </select>
                       </div>
                       <div className="w-1/2">
-                        <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-0.5 text-center">Pos</span>
+                        <span className={`text-[8px] ${t.textMuted} block uppercase ${t.fontMono} mb-0.5 text-center`}>Pos</span>
                         <select
                           value={fourthRotorStart}
                           onChange={(e) => setFourthRotorStart(parseInt(e.target.value))}
-                          className="w-full bg-[#1b170e] text-amber-500/90 text-[10px] border border-[#4e453b] rounded py-0.5 px-1 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer"
+                          className={`w-full ${t.panelBg} ${t.textAccent} text-[10px] border ${t.borderBase} rounded py-0.5 px-1 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer`}
                         >
                           {Array.from({ length: 26 }, (_, idx) => idx).map((pos) => (
-                            <option key={pos} value={pos} className="bg-[#1b170e]">
+                            <option key={pos} value={pos} className={`${t.panelBg}`}>
                               {numToChar(pos)}
                             </option>
                           ))}
@@ -1389,16 +1502,16 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   )}
                 </div>
 
-                <div className="bg-[#120e04] p-2 rounded border border-[#3b3426] flex flex-col justify-between">
+                <div className={`${t.panelInner} p-2 rounded border ${t.borderBase} flex flex-col justify-between`}>
                   <div>
-                    <label className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical mb-1 font-bold">Reflector</label>
+                    <label className={`text-[9px] ${t.textMuted} block uppercase ${t.fontMono} mb-1 font-bold`}>Reflector</label>
                     <select
                       value={reflectorType}
                       onChange={(e) => setReflectorType(e.target.value)}
-                      className="w-full bg-[#1b170e] text-[#ede1cd] text-xs border border-[#4e453b] rounded py-1 px-1 focus:outline-none focus:border-[#ebc238] cursor-pointer"
+                      className={`w-full ${t.panelBg} ${t.textPrimary} text-xs border ${t.borderBase} rounded py-1 px-1 focus:outline-none focus:${t.borderAccent} cursor-pointer`}
                     >
                       {['Reflector A', 'Reflector B', 'Reflector C', 'Reflector B Thin', 'Reflector C Thin', 'UKW-Rocket', 'UKW-K'].map((ref) => (
-                        <option key={ref} value={ref} className="bg-[#1b170e]">
+                        <option key={ref} value={ref} className={`${t.panelBg}`}>
                           {ref}
                         </option>
                       ))}
@@ -1409,22 +1522,22 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
               {/* Rotor Scan Scope Selector */}
               <div className="space-y-1.5">
-                <label className="text-[10px] text-[#d1c4b7] uppercase tracking-wider block font-monospaced-technical">
+                <label className={`text-[10px] ${t.textMuted} uppercase tracking-wider block ${t.fontMono}`}>
                   Rotor Scan Scope (Search All?)
                 </label>
                 <select
                   value={rotorScanScope}
                   onChange={(e) => setRotorScanScope(e.target.value as any)}
-                  className="w-full bg-[#120e04] text-[#ede1cd] text-xs border border-[#3b3426] rounded py-2 px-2.5 focus:outline-none focus:border-[#ebc238] cursor-pointer font-ui-header"
+                  className={`w-full ${t.panelInner} ${t.textPrimary} text-xs border ${t.borderBase} rounded py-2 px-2.5 focus:outline-none focus:${t.borderAccent} cursor-pointer ${t.fontHeader}`}
                 >
-                  <option value="selected" className="bg-[#1b170e]">Selected Rotor Types Only (1 combination)</option>
-                  <option value="permutations_3" className="bg-[#1b170e]">All Permutations of Selected (up to 6 combinations)</option>
-                  <option value="all_5" className="bg-[#1b170e]">Search All Combinations of Rotors I-V (60 combinations)</option>
-                  <option value="all_8" className="bg-[#1b170e]">Search All Combinations of Rotors I-VIII (336 combinations)</option>
+                  <option value="selected" className={`${t.panelBg}`}>Selected Rotor Types Only (1 combination)</option>
+                  <option value="permutations_3" className={`${t.panelBg}`}>All Permutations of Selected (up to 6 combinations)</option>
+                  <option value="all_5" className={`${t.panelBg}`}>Search All Combinations of Rotors I-V (60 combinations)</option>
+                  <option value="all_8" className={`${t.panelBg}`}>Search All Combinations of Rotors I-VIII (336 combinations)</option>
                 </select>
 
                 {(config.fourthRotor.type === 'Beta' || config.fourthRotor.type === 'Gamma') && (
-                  <div className="p-1.5 bg-[#120e04] rounded border border-amber-800/40 text-[9px] text-amber-400 font-monospaced-technical flex items-center gap-1">
+                  <div className={`p-1.5 ${t.panelInner} rounded border ${theme === 'vintage' ? 'border-amber-800/40 text-amber-400' : 'border-blue-200 text-blue-600 bg-blue-50'} text-[9px] ${t.fontMono} flex items-center gap-1`}>
                     <span className="material-symbols-outlined text-xs">info</span>
                     <span>M4 Active: The 4th Greek rotor ({config.fourthRotor.type}) position is held fixed per daily codebook rules while scanning the 3 driving wheels.</span>
                   </div>
@@ -1433,9 +1546,9 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
               {/* Ringstellung Search Scope (Find Rings) Selector */}
               <div className="space-y-1.5">
-                <label className="text-[10px] text-[#d1c4b7] uppercase tracking-wider block font-monospaced-technical flex items-center justify-between">
+                <label className={`text-[10px] ${t.textMuted} uppercase tracking-wider block ${t.fontMono} flex items-center justify-between`}>
                   <span>Ringstellung Search Scope (Find Rings)</span>
-                  <span className="text-[9px] text-amber-500 font-bold font-monospaced-technical">
+                  <span className={`text-[9px] ${t.textAccent} font-bold ${t.fontMono}`}>
                     {ringScanMode === 'fixed' && 'Fixed Rings'}
                     {ringScanMode === 'right_26' && 'AAA - AAZ (26 Rings)'}
                     {ringScanMode === 'mid_right_676' && 'AAA - AZZ (676 Rings)'}
@@ -1445,56 +1558,56 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 <select
                   value={ringScanMode}
                   onChange={(e) => setRingScanMode(e.target.value as any)}
-                  className="w-full bg-[#120e04] text-[#ede1cd] text-xs border border-[#3b3426] rounded py-2 px-2.5 focus:outline-none focus:border-[#ebc238] cursor-pointer font-ui-header"
+                  className={`w-full ${t.panelInner} ${t.textPrimary} text-xs border ${t.borderBase} rounded py-2 px-2.5 focus:outline-none focus:${t.borderAccent} cursor-pointer ${t.fontHeader}`}
                 >
-                  <option value="fixed" className="bg-[#1b170e]">Fixed Selected Ring Settings (1 combination)</option>
-                  <option value="right_26" className="bg-[#1b170e]">Find Right Ring: AAA - AAZ (26 ring combinations)</option>
-                  <option value="mid_right_676" className="bg-[#1b170e]">Find Middle & Right Rings: AAA - AZZ (676 ring combinations)</option>
-                  <option value="all_17576" className="bg-[#1b170e]">Find All 3 Rings: AAA - ZZZ (17,576 ring combinations)</option>
+                  <option value="fixed" className={`${t.panelBg}`}>Fixed Selected Ring Settings (1 combination)</option>
+                  <option value="right_26" className={`${t.panelBg}`}>Find Right Ring: AAA - AAZ (26 ring combinations)</option>
+                  <option value="mid_right_676" className={`${t.panelBg}`}>Find Middle & Right Rings: AAA - AZZ (676 ring combinations)</option>
+                  <option value="all_17576" className={`${t.panelBg}`}>Find All 3 Rings: AAA - ZZZ (17,576 ring combinations)</option>
                 </select>
               </div>
 
               {/* Crib Alignment Scan Mode Select */}
               <div className="space-y-1.5">
-                <label className="text-[10px] text-[#d1c4b7] uppercase tracking-wider block font-monospaced-technical">
+                <label className={`text-[10px] ${t.textMuted} uppercase tracking-wider block ${t.fontMono}`}>
                   Crib Alignment Scan Mode
                 </label>
                 <select
                   value={alignmentScanMode}
                   onChange={(e) => setAlignmentScanMode(e.target.value as any)}
-                  className="w-full bg-[#120e04] text-[#ede1cd] text-xs border border-[#3b3426] rounded py-2 px-2.5 focus:outline-none focus:border-[#ebc238] cursor-pointer font-ui-header"
+                  className={`w-full ${t.panelInner} ${t.textPrimary} text-xs border ${t.borderBase} rounded py-2 px-2.5 focus:outline-none focus:${t.borderAccent} cursor-pointer ${t.fontHeader}`}
                 >
-                  <option value="current" className="bg-[#1b170e]">Current Slider Position Only (Offset: {alignmentOffset})</option>
-                  <option value="all_viable" className="bg-[#1b170e]">Auto-Scan All Viable Positions ({viableOffsets.length} valid)</option>
+                  <option value="current" className={`${t.panelBg}`}>Current Slider Position Only (Offset: {alignmentOffset})</option>
+                  <option value="all_viable" className={`${t.panelBg}`}>Auto-Scan All Viable Positions ({viableOffsets.length} valid)</option>
                 </select>
               </div>
 
               {/* Plugboard Mode Switcher */}
               <div className="space-y-1.5">
-                <label className="text-[10px] text-[#d1c4b7] uppercase tracking-wider block font-monospaced-technical">
+                <label className={`text-[10px] ${t.textMuted} uppercase tracking-wider block ${t.fontMono}`}>
                   Bombe Cryptanalysis Algorithm
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setBombeEngineMode('welchman_diagonal')}
-                    className={`py-1.5 px-2 text-[11px] rounded border transition-colors cursor-pointer font-ui-header flex flex-col items-center gap-0.5 ${
+                    className={`py-1.5 px-2 text-[11px] rounded border transition-colors cursor-pointer ${t.fontHeader} flex flex-col items-center gap-0.5 ${
                       bombeEngineMode === 'welchman_diagonal'
-                        ? 'bg-[#ebc238]/10 border-[#ebc238] text-[#ede1cd]'
-                        : 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]'
+                        ? `${t.buttonHighlight} font-semibold`
+                        : `${t.buttonPrimary}`
                     }`}
                   >
                     <span className="font-bold flex items-center gap-1">
-                      <span className="material-symbols-outlined text-xs text-amber-400">grid_4x4</span>
+                      <span className={`material-symbols-outlined text-xs ${t.textAccent}`}>grid_4x4</span>
                       Welchman Diagonal Board
                     </span>
                     <span className="text-[8px] opacity-75">Full Reciprocity Circuit</span>
                   </button>
                   <button
                     onClick={() => setBombeEngineMode('direct_scan')}
-                    className={`py-1.5 px-2 text-[11px] rounded border transition-colors cursor-pointer font-ui-header flex flex-col items-center gap-0.5 ${
+                    className={`py-1.5 px-2 text-[11px] rounded border transition-colors cursor-pointer ${t.fontHeader} flex flex-col items-center gap-0.5 ${
                       bombeEngineMode === 'direct_scan'
-                        ? 'bg-[#ebc238]/10 border-[#ebc238] text-[#ede1cd]'
-                        : 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]'
+                        ? `${t.buttonHighlight} font-semibold`
+                        : `${t.buttonPrimary}`
                     }`}
                   >
                     <span className="font-bold flex items-center gap-1">
@@ -1510,14 +1623,14 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <button
                       onClick={() => setShowMenuGraphModal(true)}
-                      className="py-1 px-2 bg-[#120e04] hover:bg-[#252015] border border-[#3b3426] hover:border-amber-600/50 rounded text-[10px] text-amber-400/90 font-monospaced-technical flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      className={`py-1 px-2 ${t.panelInner} hover:${theme === 'vintage' ? 'bg-[#252015]' : 'bg-slate-100'} border ${t.borderBase} hover:${t.borderAccent} rounded text-[10px] ${t.textAccent} ${t.fontMono} flex items-center justify-center gap-1 transition-colors cursor-pointer`}
                     >
                       <span className="material-symbols-outlined text-xs">hub</span>
                       Inspect Menu Graph
                     </button>
                     <button
                       onClick={() => setShowDiagonalBoardModal(true)}
-                      className="py-1 px-2 bg-[#120e04] hover:bg-[#252015] border border-[#3b3426] hover:border-amber-600/50 rounded text-[10px] text-amber-400/90 font-monospaced-technical flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      className={`py-1 px-2 ${t.panelInner} hover:${theme === 'vintage' ? 'bg-[#252015]' : 'bg-slate-100'} border ${t.borderBase} hover:${t.borderAccent} rounded text-[10px] ${t.textAccent} ${t.fontMono} flex items-center justify-center gap-1 transition-colors cursor-pointer`}
                     >
                       <span className="material-symbols-outlined text-xs">grid_on</span>
                       26×26 Diagonal Matrix
@@ -1528,26 +1641,26 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
               {/* Plugboard Rule & Known Steckers */}
               <div className="space-y-1.5">
-                <label className="text-[10px] text-[#d1c4b7] uppercase tracking-wider block font-monospaced-technical">
+                <label className={`text-[10px] ${t.textMuted} uppercase tracking-wider block ${t.fontMono}`}>
                   Plugboard (Steckerbrett) Rule
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setPlugboardMode('active')}
-                    className={`py-1.5 text-xs rounded border transition-colors cursor-pointer font-ui-header ${
+                    className={`py-1.5 text-xs rounded border transition-colors cursor-pointer ${t.fontHeader} ${
                       plugboardMode === 'active'
-                        ? 'bg-[#ebc238]/10 border-[#ebc238] text-[#ede1cd]'
-                        : 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]'
+                        ? `${t.buttonHighlight} font-semibold`
+                        : `${t.buttonPrimary}`
                     }`}
                   >
                     Use Active Plugboard
                   </button>
                   <button
                     onClick={() => setPlugboardMode('none')}
-                    className={`py-1.5 text-xs rounded border transition-colors cursor-pointer font-ui-header ${
+                    className={`py-1.5 text-xs rounded border transition-colors cursor-pointer ${t.fontHeader} ${
                       plugboardMode === 'none'
-                        ? 'bg-[#ebc238]/10 border-[#ebc238] text-[#ede1cd]'
-                        : 'bg-[#120e04] border-[#3b3426] text-[#8c7e6a] hover:bg-[#252015]'
+                        ? `${t.buttonHighlight} font-semibold`
+                        : `${t.buttonPrimary}`
                     }`}
                   >
                     No Plugboard (Bare)
@@ -1556,7 +1669,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
                 {/* Known Steckers Seed Input */}
                 <div className="space-y-1 pt-1">
-                  <label className="text-[9px] text-[#8c7e6a] block uppercase font-monospaced-technical font-bold">
+                  <label className={`text-[9px] ${t.textMuted} block uppercase ${t.fontMono} font-bold`}>
                     Known Steckers Seed (e.g. AB CD EF)
                   </label>
                   <input
@@ -1564,13 +1677,13 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                     value={knownSteckers}
                     onChange={(e) => setKnownSteckers(e.target.value)}
                     placeholder="e.g. AT CD ER"
-                    className="w-full bg-[#120e04] text-[#ede1cd] text-xs font-monospaced-technical border border-[#3b3426] rounded py-1 px-2 focus:outline-none focus:border-[#ebc238]"
+                    className={`w-full ${t.panelInner} ${t.textPrimary} text-xs ${t.fontMono} border ${t.borderBase} rounded py-1 px-2 focus:outline-none focus:${t.borderAccent}`}
                   />
                 </div>
 
                 {/* Display active plugboard connections */}
-                <div className="p-2 bg-[#120e04] rounded border border-[#3b3426] text-[10px] font-monospaced-technical">
-                  <div className="text-[#8c7e6a] uppercase font-bold text-[9px] mb-1">
+                <div className={`p-2 ${t.panelInner} rounded border ${t.borderBase} text-[10px] ${t.fontMono}`}>
+                  <div className={`${t.textMuted} uppercase font-bold text-[9px] mb-1`}>
                     Active Stecker Connections ({Object.keys(config.plugboard).length / 2} pairs)
                   </div>
                   {Object.keys(config.plugboard).length > 0 ? (
@@ -1582,8 +1695,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                             key={`${a}-${b}`}
                             className={`px-1.5 py-0.5 rounded text-[10px] border ${
                               plugboardMode === 'active'
-                                ? 'bg-amber-950/40 text-amber-300 border-amber-800/50'
-                                : 'bg-[#1b170e] text-[#8c7e6a] border-[#3b3426] line-through opacity-60'
+                                ? theme === 'vintage' ? 'bg-amber-950/40 text-amber-300 border-amber-800/50' : 'bg-blue-50 text-blue-600 border-blue-200'
+                                : `${t.panelInner} ${t.textSecondary} line-through opacity-60`
                             }`}
                           >
                             {a}↔{b}
@@ -1591,13 +1704,13 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                         ))}
                     </div>
                   ) : (
-                    <span className="text-[#8c7e6a] italic">No plugboard connections configured</span>
+                    <span className={`${t.textMuted} italic`}>No plugboard connections configured</span>
                   )}
                 </div>
               </div>
 
               {/* Warning/Info */}
-              <div className="p-2.5 bg-[#120e04] rounded border border-[#3b3426] text-[10px] text-[#d1c4b7] font-monospaced-technical leading-normal">
+              <div className={`p-2.5 ${t.panelInner} rounded border ${t.borderBase} text-[10px] ${t.textMuted} ${t.fontMono} leading-normal`}>
                 <span>
                   Normally, Bletchley Park ran the Bombe assuming unsteckered loops (assuming most letters used in loops were unplugged) or by guessing plugboard stecker pairings subsequently.
                 </span>
@@ -1611,13 +1724,13 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
         <div className="lg:col-span-8 space-y-6">
           
           {/* Station X Alignment Slide Ruler */}
-          <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-5 shadow-panel texture-metal space-y-4">
-            <div className="pb-1 border-b border-[#3b3426] flex justify-between items-center">
-              <h3 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-wider flex items-center gap-2">
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-4`}>
+            <div className={`pb-1 border-b ${t.borderBase} flex justify-between items-center`}>
+              <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider flex items-center gap-2`}>
                 <span className="material-symbols-outlined text-sm">view_week</span>
                 Interactive Crib Alignment Ruler
               </h3>
-              <span className="text-[10px] font-monospaced-technical text-amber-500 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800/40 font-bold">
+              <span className={`text-[10px] ${t.fontMono} ${t.textAccent} ${theme === 'vintage' ? 'bg-amber-950/40 border-amber-800/40' : 'bg-blue-50 border-blue-200'} px-2 py-0.5 rounded border font-bold`}>
                 Slide & Match Station
               </span>
             </div>
@@ -1625,7 +1738,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
             {/* Manual Entries */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-[10px] font-monospaced-technical text-[#d1c4b7] uppercase tracking-wider block mb-1">
+                <label className={`text-[10px] ${t.fontMono} ${t.textMuted} uppercase tracking-wider block mb-1`}>
                   Intercepted Ciphertext (A-Z)
                 </label>
                 <input
@@ -1633,11 +1746,11 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   value={ciphertext}
                   onChange={(e) => setCiphertext(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
                   placeholder="Type encrypted intercept text here..."
-                  className="w-full p-2 bg-[#120e04] border border-[#3b3426] rounded text-[#ebc238] font-monospaced-technical text-xs tracking-wider uppercase focus:outline-none focus:border-[#ebc238]"
+                  className={`w-full p-2 ${t.panelInner} border ${t.borderBase} rounded ${t.textAccent} ${t.fontMono} text-xs tracking-wider uppercase focus:outline-none focus:${t.borderAccent}`}
                 />
               </div>
               <div>
-                <label className="text-[10px] font-monospaced-technical text-[#d1c4b7] uppercase tracking-wider block mb-1">
+                <label className={`text-[10px] ${t.fontMono} ${t.textMuted} uppercase tracking-wider block mb-1`}>
                   Guessed Plaintext Segment (Crib)
                 </label>
                 <input
@@ -1645,7 +1758,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   value={crib}
                   onChange={(e) => setCrib(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
                   placeholder="e.g. WETTERVORHERSAGE"
-                  className="w-full p-2 bg-[#120e04] border border-[#3b3426] rounded text-[#ede1cd] font-monospaced-technical text-xs tracking-wider uppercase focus:outline-none focus:border-[#ebc238]"
+                  className={`w-full p-2 ${t.panelInner} border ${t.borderBase} rounded ${t.textPrimary} ${t.fontMono} text-xs tracking-wider uppercase focus:outline-none focus:${t.borderAccent}`}
                 />
               </div>
             </div>
@@ -1653,9 +1766,9 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
             {/* Slider control */}
             {maxOffset > 0 && (
               <div className="space-y-1.5 pt-1">
-                <div className="flex justify-between text-[11px] font-monospaced-technical text-[#d1c4b7]">
+                <div className={`flex justify-between text-[11px] ${t.fontMono} ${t.textMuted}`}>
                   <span>Alignment Offset Position</span>
-                  <span className="font-bold text-[#ebc238]">{alignmentOffset} chars</span>
+                  <span className={`font-bold ${t.textAccent}`}>{alignmentOffset} chars</span>
                 </div>
                 <input
                   type="range"
@@ -1663,21 +1776,21 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   max={maxOffset}
                   value={alignmentOffset}
                   onChange={(e) => setAlignmentOffset(Number(e.target.value))}
-                  className="w-full h-1.5 bg-[#120e04] rounded-lg appearance-none cursor-pointer accent-[#ebc238] border border-[#3b3426]"
+                  className={`w-full h-1.5 ${t.panelInner} rounded-lg appearance-none cursor-pointer ${theme === 'vintage' ? 'accent-[#ebc238]' : 'accent-blue-600'} border ${t.borderBase}`}
                 />
                 
                 {/* Viable Zero-Overlap Offsets Badges */}
                 {viableOffsets.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1.5 text-[10px] font-monospaced-technical text-[#8c7e6a]">
-                    <span className="font-bold text-[#d1c4b7]">Viable Zero-Overlap Offsets:</span>
+                  <div className={`flex flex-wrap items-center gap-1.5 pt-1.5 text-[10px] ${t.fontMono} ${t.textMuted}`}>
+                    <span className={`font-bold ${t.textMuted}`}>Viable Zero-Overlap Offsets:</span>
                     {viableOffsets.map((offset) => (
                       <button
                         key={offset}
                         onClick={() => setAlignmentOffset(offset)}
                         className={`px-2 py-0.5 rounded border cursor-pointer transition-all ${
                           alignmentOffset === offset
-                            ? 'bg-green-950/80 border-green-500 text-green-300 font-bold shadow-[0_0_8px_rgba(34,197,94,0.3)]'
-                            : 'bg-[#120e04] border-[#3b3426] text-[#ede1cd]/80 hover:border-[#ebc238]/60 hover:text-[#ede1cd]'
+                            ? theme === 'vintage' ? 'bg-green-950/80 border-green-500 text-green-300 font-bold shadow-[0_0_8px_rgba(34,197,94,0.3)]' : 'bg-green-50 border-green-500 text-green-700 font-bold'
+                            : `${t.buttonPrimary}`
                         }`}
                       >
                         {offset}
@@ -1690,13 +1803,13 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
             {/* Slide Comparison Visual Grid */}
             {ciphertext && crib && (
-              <div ref={scrollContainerRef} className="bg-[#120e04] rounded border border-[#3b3426] p-4 overflow-x-auto select-none">
+              <div ref={scrollContainerRef} className={`${t.panelInner} rounded border ${t.borderBase} p-4 overflow-x-auto select-none`}>
                 <div className="flex flex-col gap-3 min-w-[500px]">
                   
                   {/* Full Ciphertext Row */}
                   <div className="flex items-center gap-2">
-                    <span className="w-16 shrink-0 text-[10px] font-monospaced-technical text-[#8c7e6a] uppercase">Intercept:</span>
-                    <div className="flex-1 flex gap-1 font-monospaced-technical text-sm tracking-wider">
+                    <span className={`w-16 shrink-0 text-[10px] ${t.fontMono} ${t.textMuted} uppercase`}>Intercept:</span>
+                    <div className={`flex-1 flex gap-1 ${t.fontMono} text-sm tracking-wider`}>
                       {ciphertext.split('').map((char, idx) => {
                         const isAligned = idx >= alignmentOffset && idx < alignmentOffset + crib.length;
                         return (
@@ -1704,8 +1817,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                             key={idx}
                             className={`w-7 h-8 flex items-center justify-center rounded border font-bold transition-all duration-300 shrink-0 ${
                               isAligned
-                                ? 'bg-[#ebc238]/10 text-[#ebc238] border-[#ebc238]/50 shadow-[0_0_8px_rgba(235,194,56,0.2)]'
-                                : 'text-[#8c7e6a]/40 border-[#3b3426]/30'
+                                ? `${theme === 'vintage' ? 'bg-[#ebc238]/10 text-[#ebc238] border-[#ebc238]/50 shadow-[0_0_8px_rgba(235,194,56,0.2)]' : 'bg-blue-50 text-blue-600 border-blue-200 shadow-[0_0_8px_rgba(59,130,246,0.2)]'}`
+                                : `${t.textSecondary}/40 ${t.borderBase}/30`
                             }`}
                           >
                             {char}
@@ -1717,8 +1830,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
                   {/* Crib Row (slid to alignmentOffset) */}
                   <div className="flex items-center gap-2">
-                    <span className="w-16 shrink-0 text-[10px] font-monospaced-technical text-[#8c7e6a] uppercase font-bold">Crib:</span>
-                    <div className="flex-1 flex gap-1 font-monospaced-technical text-sm tracking-wider relative">
+                    <span className={`w-16 shrink-0 text-[10px] ${t.fontMono} ${t.textMuted} uppercase font-bold`}>Crib:</span>
+                    <div className={`flex-1 flex gap-1 ${t.fontMono} text-sm tracking-wider relative`}>
                       
                       {/* Leading space spacer */}
                       {Array.from({ length: alignmentOffset }).map((_, idx) => (
@@ -1733,8 +1846,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                             key={idx}
                             className={`w-7 h-8 flex flex-col items-center justify-center rounded border font-bold transition-all duration-300 shrink-0 ${
                               isConflict
-                                ? 'bg-red-950/45 text-red-400 border-red-800 shadow-[0_0_12px_rgba(239,68,68,0.4)] animate-pulse'
-                                : 'bg-[#ede1cd]/10 text-[#ede1cd] border-[#d1c4b7]/30'
+                                ? theme === 'vintage' ? 'bg-red-950/45 text-red-400 border-red-800 shadow-[0_0_12px_rgba(239,68,68,0.4)] animate-pulse' : 'bg-red-50 text-red-600 border-red-200 animate-pulse'
+                                : `${t.panelInner} ${t.textPrimary} border-current/20`
                             }`}
                             title={isConflict ? `Conflict! Both positions are "${char}"` : ''}
                           >
@@ -1756,18 +1869,18 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
             {ciphertext && crib && (
               <div className="pt-1">
                 {alignedSection.isViable ? (
-                  <div className="p-3 bg-green-950/25 border-2 border-green-900/60 text-green-300 rounded flex items-center gap-3">
-                    <span className="material-symbols-outlined text-green-400 text-xl animate-bounce">verified</span>
+                  <div className={`p-3 ${theme === 'vintage' ? 'bg-green-950/25 border-green-900/60 text-green-300' : 'bg-green-50 border-green-200 text-green-800'} border-2 rounded flex items-center gap-3`}>
+                    <span className={`material-symbols-outlined ${theme === 'vintage' ? 'text-green-400' : 'text-green-600'} text-xl animate-bounce`}>verified</span>
                     <div className="text-xs">
-                      <strong className="block uppercase tracking-wider text-green-400 text-[10px]">Alignment Viable (0 Overlaps)</strong>
+                      <strong className={`block uppercase tracking-wider ${theme === 'vintage' ? 'text-green-400' : 'text-green-700'} text-[10px]`}>Alignment Viable (0 Overlaps)</strong>
                       Perfect! No character in this crib maps to the same ciphertext index. This alignment is eligible for electromechanical scanning!
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 bg-red-950/25 border-2 border-red-900/60 text-red-300 rounded flex items-center gap-3 animate-headShake">
-                    <span className="material-symbols-outlined text-red-400 text-xl">cancel</span>
+                  <div className={`p-3 ${t.dangerBg} border-2 rounded flex items-center gap-3 animate-headShake`}>
+                    <span className={`material-symbols-outlined ${theme === 'vintage' ? 'text-red-400' : 'text-red-600'} text-xl`}>cancel</span>
                     <div className="text-xs">
-                      <strong className="block uppercase tracking-wider text-red-400 text-[10px]">Impossible Alignment ({alignedSection.matchesCount} overlap{alignedSection.matchesCount > 1 ? 's' : ''})</strong>
+                      <strong className={`block uppercase tracking-wider ${theme === 'vintage' ? 'text-red-400' : 'text-red-700'} text-[10px]`}>Impossible Alignment ({alignedSection.matchesCount} overlap{alignedSection.matchesCount > 1 ? 's' : ''})</strong>
                       Turing's derangement rule broken. This offset is impossible because letters cannot encrypt to themselves. Slide to another position.
                     </div>
                   </div>
@@ -1777,135 +1890,158 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
           </div>
 
           {/* The Turing-Welchman Bombe Rotors Search Panel */}
-          <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-5 shadow-panel texture-metal space-y-6">
-            <div className="pb-1 border-b border-[#3b3426] flex justify-between items-center">
-              <h3 className="text-ui-header font-ui-header text-[#e3c193] text-xs uppercase tracking-wider flex items-center gap-2">
+          <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-6`}>
+            <div className={`pb-1 border-b ${t.borderBase} flex justify-between items-center`}>
+              <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider flex items-center gap-2`}>
                 <span className="material-symbols-outlined text-sm">settings_backup_restore</span>
                 Turing-Welchman Bombe Engine
               </h3>
-              <span className="text-[9px] text-[#8c7e6a] font-monospaced-technical">
+              <span className={`text-[9px] ${t.textMuted} ${t.fontMono}`}>
                 17,576 combinations
               </span>
             </div>
 
-            {/* The spinning drum dials simulation */}
-            <div className="flex justify-center items-center gap-6 py-4">
+            {/* Top row: Speed slider (full width) + progress % (right-aligned) */}
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className={`flex justify-between items-center mb-1 text-[10px] ${t.textMuted} uppercase ${t.fontMono}`}>
+                  <span>Scan Speed</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0" max="4" 
+                  value={['paused', 'slow', 'normal', 'fast', 'realtime'].indexOf(scanSpeed)}
+                  onChange={(e) => {
+                    const speeds = ['paused', 'slow', 'normal', 'fast', 'realtime'] as const;
+                    setScanSpeed(speeds[parseInt(e.target.value)]);
+                  }}
+                  className={`w-full ${theme === 'vintage' ? 'accent-amber-500' : 'accent-blue-600'} cursor-pointer`}
+                />
+                <div className={`flex justify-between text-[8px] ${t.textMuted} mt-1 ${t.fontMono} uppercase px-1`}>
+                  <span>Paused</span>
+                  <span>Slow</span>
+                  <span>Normal</span>
+                  <span>Fast</span>
+                  <span>Realtime</span>
+                </div>
+              </div>
               
-              {/* Drum Left (Slow) */}
-              <div className="flex flex-col items-center gap-2">
-                <div className={`relative w-20 h-20 rounded-full border-4 border-[#8b6f47] bg-[#120e04] shadow-2xl flex items-center justify-center overflow-hidden ${
-                  isSearching ? 'animate-spin [animation-duration:0.6s]' : ''
-                }`}>
-                  <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#120e04]/90 pointer-events-none" />
-                  <span className="font-rotor-label text-3xl font-bold text-[#ede1cd] z-10 select-none">
-                    {isSearching ? currentScan[0] : 'L'}
-                  </span>
-                  {/* Decorative teeth loops */}
-                  <div className="absolute inset-2 border border-dashed border-[#8b6f47]/30 rounded-full" />
+              <div className="flex flex-col items-end w-32 shrink-0">
+                <span className={`text-xs ${t.fontMono} ${t.textPrimary} mb-1`}>{progress}%</span>
+                <div className={`w-full h-2 ${t.panelInner} rounded-full overflow-hidden border ${t.borderBase}`}>
+                  <div
+                    className={`h-full ${theme === 'vintage' ? 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]' : 'bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.4)]'} rounded-full transition-all duration-100`}
+                    style={{ width: `${progress}%` }}
+                  />
                 </div>
-                <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] uppercase">Left Dial</span>
               </div>
-
-              {/* Drum Middle (Medium) */}
-              <div className="flex flex-col items-center gap-2">
-                <div className={`relative w-20 h-20 rounded-full border-4 border-[#8b6f47] bg-[#120e04] shadow-2xl flex items-center justify-center overflow-hidden ${
-                  isSearching ? 'animate-spin [animation-duration:0.3s]' : ''
-                }`}>
-                  <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#120e04]/90 pointer-events-none" />
-                  <span className="font-rotor-label text-3xl font-bold text-[#ede1cd] z-10 select-none">
-                    {isSearching ? currentScan[1] : 'M'}
-                  </span>
-                  <div className="absolute inset-2 border border-dashed border-[#8b6f47]/30 rounded-full" />
-                </div>
-                <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] uppercase">Middle Dial</span>
-              </div>
-
-              {/* Drum Right (Fast) */}
-              <div className="flex flex-col items-center gap-2">
-                <div className={`relative w-20 h-20 rounded-full border-4 border-[#8b6f47] bg-[#120e04] shadow-2xl flex items-center justify-center overflow-hidden ${
-                  isSearching ? 'animate-spin [animation-duration:0.1s]' : ''
-                }`}>
-                  <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#120e04]/90 pointer-events-none" />
-                  <span className="font-rotor-label text-3xl font-bold text-[#ebc238] z-10 select-none">
-                    {isSearching ? currentScan[2] : 'R'}
-                  </span>
-                  <div className="absolute inset-2 border border-dashed border-[#8b6f47]/30 rounded-full" />
-                </div>
-                <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] uppercase">Right Dial</span>
-              </div>
-
             </div>
 
-            {/* Progress & Actions */}
-            <div className="space-y-4">
-              
-              {isSearching && (
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-monospaced-technical text-[#ede1cd]">
-                    <span>Scanning Dial Positions...</span>
-                    <span>{progress}%</span>
-                  </div>
-                  <div className="h-2 bg-[#120e04] rounded-full overflow-hidden border border-[#3b3426]">
-                    <div
-                      className="h-full bg-amber-500 rounded-full shadow-[0_0_12px_rgba(245,158,11,0.6)] transition-all duration-100"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+            {/* The spinning drum dials simulation */}
+            <div className="flex justify-center items-center gap-3 sm:gap-8 lg:gap-12 py-2 lg:py-6">
+              <RotorDial 
+                rotorType={currentRotorComb.split('-')[0] || leftRotorType}
+                ringSetting={leftRotorRing}
+                currentPosLetter={currentScan[0]}
+                label="Left Dial (Slow)"
+                isRecentStop={isStopFlashing}
+              />
+              <RotorDial 
+                rotorType={currentRotorComb.split('-')[1] || middleRotorType}
+                ringSetting={middleRotorRing}
+                currentPosLetter={currentScan[1]}
+                label="Middle Dial"
+                isRecentStop={isStopFlashing}
+              />
+              <RotorDial 
+                rotorType={currentRotorComb.split('-')[2] || rightRotorType}
+                ringSetting={rightRotorRing}
+                currentPosLetter={currentScan[2]}
+                label="Right Dial (Fast)"
+                isRecentStop={isStopFlashing}
+              />
+            </div>
 
+            {/* Rotor Combination Badge & Offset */}
+            <div className={`flex justify-between items-center ${t.panelInner} border ${t.borderBase} p-2 rounded`}>
+              <div className="flex items-center gap-3">
+                <span className={`text-xs ${t.textAccent} font-bold ${t.fontMono} uppercase px-2 py-1 ${theme === 'vintage' ? 'bg-amber-950/40 border-amber-900/50' : 'bg-blue-50 border-blue-200'} rounded border flex items-center gap-1`}>
+                  {currentRotorComb}
+                  {isStopFlashing && (
+                    <span className="ml-1 px-1 bg-green-500 text-black text-[9px] rounded">STOP</span>
+                  )}
+                </span>
+                <span className={`text-[10px] ${t.textMuted} ${t.fontMono}`}>
+                  Offset: {currentScanOffset ?? alignmentOffset}
+                </span>
+              </div>
+              <div className={`text-[10px] ${t.textPrimary} ${t.fontMono} text-right flex-1 ml-4 truncate`}>
+                {isSearching 
+                  ? (isStopFlashing && recentStop) 
+                      ? <span className="text-green-400 font-bold">⚡ STOP! {recentStop.rotorComb} at {recentStop.left}-{recentStop.middle}-{recentStop.right} — hypothesis: {recentStop.steckerHypothesis || 'Valid'}</span>
+                      : `Testing ${currentScan.join('-')} at offset ${currentScanOffset ?? alignmentOffset}...`
+                  : matches.length > 0
+                    ? `Search complete. ${matches.length} stops found.`
+                    : "Ready — select rotor types and start the search"}
+              </div>
+            </div>
+
+            {/* Educational Context Strip */}
+            <div className={`text-[9px] ${t.textMuted} ${t.fontMono} text-center border-t ${t.borderBase}/50 pt-3`}>
+              {isSearching ? (
+                isStopFlashing ? "A Bombe stop means this rotor setting produced a valid electrical circuit through the diagonal board." : "Outer ring = Ringstellung (notch position). Inner letter = wiring position being tested."
+              ) : (
+                matches.length > 0 ? "All combinations scanned. Review stops below to apply settings to the machine." : "The Bombe tests 17,576 start positions per rotor combination. Each position is a unique setting of the three driving rotors."
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="pt-2">
               {!isSearching ? (
                 <button
                   onClick={startBombeSearch}
                   disabled={alignmentScanMode === 'current' ? !alignedSection.isViable : viableOffsets.length === 0}
-                  className={`w-full py-3.5 rounded border font-ui-header font-bold text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 transition-all ${
+                  className={`w-full py-3.5 rounded border ${t.fontHeader} font-bold text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 transition-all ${
                     (alignmentScanMode === 'current' ? alignedSection.isViable : viableOffsets.length > 0)
-                      ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-500 shadow-amber-950/20 active:scale-[0.99] cursor-pointer'
-                      : 'bg-[#1e1a12] border-[#3b3426] text-[#8c7e6a] cursor-not-allowed'
+                      ? `${t.buttonHighlight} shadow-amber-950/20 active:scale-[0.99] cursor-pointer`
+                      : `${t.buttonPrimary} opacity-50 cursor-not-allowed`
                   }`}
                 >
                   <span className="material-symbols-outlined text-lg">electric_bolt</span>
                   Initiate Bombe Search
                 </button>
               ) : (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 py-3.5 px-4 bg-[#19140b] border border-amber-800/60 text-amber-300 font-ui-header font-bold text-xs sm:text-sm rounded flex items-center justify-center gap-2.5 shadow-inner">
-                    <span className="material-symbols-outlined text-lg animate-spin text-amber-400">sync</span>
-                    <span className="truncate">Cracking... (Pos: {currentScan.join('-')})</span>
-                  </div>
-
-                  <button
-                    onClick={stopBombeSearch}
-                    title="Stop Bombe Cracking Operation"
-                    className="py-3.5 px-5 bg-red-950/90 hover:bg-red-900 text-red-200 border-2 border-red-700 hover:border-red-500 rounded font-ui-header font-bold text-xs sm:text-sm tracking-wider flex items-center justify-center gap-2 shadow-lg hover:shadow-red-950/60 active:scale-95 cursor-pointer transition-all shrink-0"
-                  >
-                    <span className="material-symbols-outlined text-lg text-red-400">stop_circle</span>
-                    <span>STOP</span>
-                  </button>
-                </div>
+                <button
+                  onClick={stopBombeSearch}
+                  title="Stop Bombe Cracking Operation"
+                  className={`w-full py-3.5 bg-red-950/90 hover:bg-red-900 text-red-200 border-2 border-red-700 hover:border-red-500 rounded ${t.fontHeader} font-bold text-sm tracking-wider flex items-center justify-center gap-2 shadow-lg hover:shadow-red-950/60 active:scale-95 cursor-pointer transition-all`}
+                >
+                  <span className="material-symbols-outlined text-lg text-red-400">stop_circle</span>
+                  <span>STOP SEARCH</span>
+                </button>
               )}
             </div>
           </div>
 
           {/* Matches & Decrypted Outputs Desk */}
           {!isSearching && matches.length > 0 && (
-            <div className="bg-[#201b0f] border border-[#4e453b] rounded-lg p-5 shadow-panel texture-metal space-y-4 animate-fadeIn">
-              <div className="pb-1 border-b border-[#3b3426] flex items-center gap-2">
+            <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} space-y-4 animate-fadeIn`}>
+              <div className={`pb-1 border-b ${t.borderBase} flex items-center gap-2`}>
                 <span className="material-symbols-outlined text-sm text-green-400">task_alt</span>
-                <h3 className="text-ui-header font-ui-header text-green-400 text-xs uppercase tracking-wider">
+                <h3 className={`text-ui-header ${t.fontHeader} text-green-400 text-xs uppercase tracking-wider`}>
                   Cracked Key Settings Found ({matches.length})
                 </h3>
               </div>
 
               {/* Ring Settings Alignment Mapper Box */}
-              <div className="p-4 bg-[#120e04] rounded border border-[#3b3426] space-y-3">
+              <div className={`p-4 ${t.panelInner} rounded border ${t.borderBase} space-y-3`}>
                 <div className="flex items-start gap-2.5">
-                  <span className="material-symbols-outlined text-amber-500 text-lg">ring_volume</span>
+                  <span className={`material-symbols-outlined ${t.textAccent} text-lg`}>ring_volume</span>
                   <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider font-monospaced-technical">
+                    <h4 className={`text-xs font-bold ${t.textAccent} uppercase tracking-wider ${t.fontMono}`}>
                       Ringstellung (Ring Settings) Alignment Mapper
                     </h4>
-                    <p className="text-[10px] text-[#8c7e6a] leading-normal font-monospaced-technical">
+                    <p className={`text-[10px] ${t.textMuted} leading-normal ${t.fontMono}`}>
                       Because short cribs (like WETTER) rarely trigger a middle rotor step, you can map the scan results to <strong>any custom Ring Settings</strong>. Adjust the target rings below to instantly calculate the corresponding Starting Positions!
                     </p>
                   </div>
@@ -1914,14 +2050,14 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 <div className="grid grid-cols-3 gap-3 pt-1">
                   {/* Left Ring */}
                   <div className="space-y-1">
-                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center">Target Left Ring</span>
+                    <span className={`text-[8px] ${t.textMuted} block uppercase ${t.fontMono} text-center`}>Target Left Ring</span>
                     <select
                       value={mapperLeftRing}
                       onChange={(e) => setMapperLeftRing(parseInt(e.target.value))}
-                      className="w-full bg-[#1b170e] text-[#ede1cd] text-xs border border-[#4e453b] rounded py-1 px-1.5 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer font-monospaced-technical"
+                      className={`w-full ${t.panelBg} ${t.textPrimary} text-xs border ${t.borderBase} rounded py-1 px-1.5 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer ${t.fontMono}`}
                     >
                       {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
-                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                        <option key={ring} value={ring} className={`${t.panelBg}`}>
                           {formatRotorRing(ring, 'number')} ({formatRotorRing(ring, 'letter')})
                         </option>
                       ))}
@@ -1930,14 +2066,14 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
                   {/* Middle Ring */}
                   <div className="space-y-1">
-                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center">Target Middle Ring</span>
+                    <span className={`text-[8px] ${t.textMuted} block uppercase ${t.fontMono} text-center`}>Target Middle Ring</span>
                     <select
                       value={mapperMiddleRing}
                       onChange={(e) => setMapperMiddleRing(parseInt(e.target.value))}
-                      className="w-full bg-[#1b170e] text-[#ede1cd] text-xs border border-[#4e453b] rounded py-1 px-1.5 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer font-monospaced-technical"
+                      className={`w-full ${t.panelBg} ${t.textPrimary} text-xs border ${t.borderBase} rounded py-1 px-1.5 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer ${t.fontMono}`}
                     >
                       {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
-                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                        <option key={ring} value={ring} className={`${t.panelBg}`}>
                           {formatRotorRing(ring, 'number')} ({formatRotorRing(ring, 'letter')})
                         </option>
                       ))}
@@ -1946,14 +2082,14 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
                   {/* Right Ring */}
                   <div className="space-y-1">
-                    <span className="text-[8px] text-[#8c7e6a] block uppercase font-monospaced-technical text-center">Target Right Ring</span>
+                    <span className={`text-[8px] ${t.textMuted} block uppercase ${t.fontMono} text-center`}>Target Right Ring</span>
                     <select
                       value={mapperRightRing}
                       onChange={(e) => setMapperRightRing(parseInt(e.target.value))}
-                      className="w-full bg-[#1b170e] text-[#ede1cd] text-xs border border-[#4e453b] rounded py-1 px-1.5 focus:outline-none focus:border-[#ebc238] text-center cursor-pointer font-monospaced-technical"
+                      className={`w-full ${t.panelBg} ${t.textPrimary} text-xs border ${t.borderBase} rounded py-1 px-1.5 focus:outline-none focus:${t.borderAccent} text-center cursor-pointer ${t.fontMono}`}
                     >
                       {Array.from({ length: 26 }, (_, idx) => idx + 1).map((ring) => (
-                        <option key={ring} value={ring} className="bg-[#1b170e]">
+                        <option key={ring} value={ring} className={`${t.panelBg}`}>
                           {formatRotorRing(ring, 'number')} ({formatRotorRing(ring, 'letter')})
                         </option>
                       ))}
@@ -1983,45 +2119,45 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                   return (
                     <div
                       key={idx}
-                      className="bg-[#120e04] border border-green-900/40 p-4 rounded-md space-y-4 shadow-inner"
+                      className={`${t.panelInner} border ${theme === 'vintage' ? 'border-green-900/40' : 'border-green-200'} p-4 rounded-md space-y-4 shadow-inner`}
                     >
                       {/* Rotor Types & Mapping Grid */}
-                      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between pb-3 border-b border-[#3b3426]/60">
+                      <div className={`flex flex-col md:flex-row gap-4 items-start md:items-center justify-between pb-3 border-b ${t.borderBase}/60`}>
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] uppercase font-bold">Rotor Set:</span>
-                            <span className="text-xs font-bold text-amber-500 bg-[#1b170e] px-2 py-0.5 rounded border border-[#3b3426]">
+                            <span className={`text-[10px] ${t.fontMono} ${t.textMuted} uppercase font-bold`}>Rotor Set:</span>
+                            <span className={`text-xs font-bold ${t.textAccent} ${t.panelBg} px-2 py-0.5 rounded border ${t.borderBase}`}>
                               {match.leftRotor} - {match.middleRotor} - {match.rightRotor}
                             </span>
                             {match.leftRing !== undefined && (
-                              <span className="text-[9px] text-amber-400 bg-amber-950/50 border border-amber-800/50 px-1.5 py-0.5 rounded font-bold font-monospaced-technical">
+                              <span className={`text-[9px] ${theme === 'vintage' ? 'text-amber-400 bg-amber-950/50 border-amber-800/50' : 'bg-blue-50 text-blue-600 border-blue-200'} px-1.5 py-0.5 rounded font-bold ${t.fontMono}`}>
                                 Discovered Rings: {formatRotorRing(match.leftRing)}-{formatRotorRing(match.middleRing)}-{formatRotorRing(match.rightRing)}
                               </span>
                             )}
                             {match.offset > 0 && (
-                              <span className="text-[9px] text-green-500 bg-green-950/40 border border-green-800/40 px-1.5 py-0.5 rounded font-bold font-monospaced-technical">
+                              <span className={`text-[9px] ${theme === 'vintage' ? 'text-green-500 bg-green-950/40 border-green-800/40' : 'bg-green-50 text-green-700 border-green-200'} px-1.5 py-0.5 rounded font-bold ${t.fontMono}`}>
                                 Matched at Crib Offset: {match.offset}
                               </span>
                             )}
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-monospaced-technical text-[#8c7e6a] uppercase">Raw Dial Scan:</span>
-                            <span className="text-xs font-mono text-[#ede1cd]/80">
+                            <span className={`text-[10px] ${t.fontMono} ${t.textMuted} uppercase`}>Raw Dial Scan:</span>
+                            <span className={`text-xs font-mono ${t.textPrimary}/80`}>
                               {match.left} - {match.middle} - {match.right} (at crib offset {match.offset} under scan rings {formatRotorRing(leftRotorRing)}-{formatRotorRing(middleRotorRing)}-{formatRotorRing(rightRotorRing)})
                             </span>
                           </div>
                         </div>
 
                         {/* Mapped Key Position */}
-                        <div className="bg-[#1b170e] px-4 py-2.5 rounded border-2 border-green-800/40 space-y-0.5 text-center shrink-0 min-w-[150px] w-full md:w-auto">
-                          <span className="text-[9px] font-monospaced-technical text-green-500 block uppercase font-bold tracking-wider">
+                        <div className={`${t.panelBg} px-4 py-2.5 rounded border-2 ${theme === 'vintage' ? 'border-green-800/40' : 'border-green-300'} shadow-sm space-y-0.5 text-center shrink-0 min-w-[150px] w-full md:w-auto`}>
+                          <span className={`text-[9px] ${t.fontMono} ${theme === 'vintage' ? 'text-green-500' : 'text-green-700'} block uppercase font-bold tracking-wider`}>
                             {match.leftRing !== undefined ? 'Discovered Start Position (Offset 0)' : 'Mapped Start Position (Offset 0)'}
                           </span>
-                          <span className="font-rotor-label text-lg font-bold text-green-400 tracking-widest block">
+                          <span className={`${t.fontRotor} text-lg font-bold ${theme === 'vintage' ? 'text-green-400' : 'text-blue-600'} tracking-widest block`}>
                             {displayStartLeft} - {displayStartMiddle} - {displayStartRight}
                           </span>
-                          <span className="text-[8px] font-monospaced-technical text-[#8c7e6a] block">
+                          <span className={`text-[8px] ${t.fontMono} ${t.textMuted} block`}>
                             Rings: {formatRotorRing(matchLeftRing)}-{formatRotorRing(matchMiddleRing)}-{formatRotorRing(matchRightRing)} ({numToChar(matchLeftRing - 1)}{numToChar(matchMiddleRing - 1)}{numToChar(matchRightRing - 1)})
                           </span>
                         </div>
@@ -2029,33 +2165,33 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
                       {/* Decryption Preview */}
                       <div className="space-y-1">
-                        <span className="text-[9px] font-monospaced-technical text-[#8c7e6a] block uppercase">
+                        <span className={`text-[9px] ${t.fontMono} ${t.textMuted} block uppercase`}>
                           Decrypted Output Message Segment:
                         </span>
-                        <div className="bg-[#0b0802] border border-[#3b3426] p-3 rounded font-monospaced-technical text-xs tracking-wider text-[#ede1cd] max-h-24 overflow-y-auto uppercase select-text">
+                        <div className={`${theme === 'vintage' ? 'bg-[#0b0802]' : t.panelInner} border ${t.borderBase} p-3 rounded ${t.fontMono} text-xs tracking-wider ${t.textPrimary} max-h-24 overflow-y-auto uppercase select-text`}>
                           {match.decrypted}
                         </div>
                       </div>
 
                       {/* Welchman Diagonal Board Deduced Steckers */}
                       {match.deducedSteckers && Object.keys(match.deducedSteckers).length > 0 && (
-                        <div className="p-3 bg-amber-950/30 border border-amber-800/40 rounded space-y-2">
+                        <div className={`p-3 ${theme === 'vintage' ? 'bg-amber-950/30 border-amber-800/40' : 'bg-blue-50 border-blue-100'} rounded space-y-2 shadow-sm`}>
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-monospaced-technical font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span className={`text-[10px] ${t.fontMono} font-bold ${theme === 'vintage' ? t.textAccent : 'text-blue-700'} uppercase tracking-wider flex items-center gap-1.5`}>
                               <span className="material-symbols-outlined text-xs">grid_4x4</span>
                               Welchman Diagonal Board Deduced Steckers ({Object.keys(match.deducedSteckers).length} self-reciprocal mappings)
                             </span>
                             {match.stopHypothesis && (
-                              <span className="text-[9px] font-monospaced-technical text-amber-300 bg-amber-900/50 px-1.5 py-0.5 rounded border border-amber-700/50">
+                              <span className={`text-[9px] ${t.fontMono} ${theme === 'vintage' ? 'text-amber-300 bg-amber-900/50 border-amber-700/50' : 'text-blue-800 bg-blue-200/50 border-blue-300'} px-1.5 py-0.5 rounded border`}>
                                 Stop Hypothesis: {match.stopHypothesis}
                               </span>
                             )}
                           </div>
-                          <div className="flex flex-wrap gap-1.5 font-monospaced-technical text-xs">
+                          <div className={`flex flex-wrap gap-1.5 ${t.fontMono} text-xs`}>
                             {Object.entries(match.deducedSteckers).map(([node, stecker]) => (
                               <span
                                 key={`${node}-${stecker}`}
-                                className="px-2 py-0.5 rounded bg-[#1b170e] text-amber-300 border border-amber-800/50 font-bold"
+                                className={`px-2 py-0.5 rounded border ${theme === 'vintage' ? 'bg-[#1b170e] text-amber-300 border-amber-800/50' : 'bg-white text-blue-700 border-blue-200 shadow-xs'} font-bold`}
                               >
                                 {node}↔{stecker}
                               </span>
@@ -2067,7 +2203,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                       {/* Apply Settings Button */}
                       <button
                         onClick={() => handleApplyMatchWithRings(match, matchLeftRing, matchMiddleRing, matchRightRing, displayStartLeft, displayStartMiddle, displayStartRight)}
-                        className="w-full text-center text-xs bg-green-950/80 hover:bg-green-900 text-green-300 border border-green-800/80 px-3 py-2.5 rounded transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-1.5 font-ui-header"
+                        className={`w-full text-center text-xs ${theme === 'vintage' ? 'bg-green-950/80 hover:bg-green-900 text-green-300 border-green-800/80' : 'bg-green-600 hover:bg-green-700 text-white border-green-500 shadow-sm'} px-3 py-2.5 rounded transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-1.5 ${t.fontHeader}`}
                       >
                         <span className="material-symbols-outlined text-xs">logout</span>
                         Apply Settings ({match.leftRotor}-{match.middleRotor}-{match.rightRotor} with Rings {formatRotorRing(matchLeftRing)}-{formatRotorRing(matchMiddleRing)}-{formatRotorRing(matchRightRing)} & Start {displayStartLeft}-{displayStartMiddle}-{displayStartRight}) to Machine
@@ -2081,15 +2217,15 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
           {/* No Matches Found Banner */}
           {!isSearching && hasSearched && matches.length === 0 && ciphertext && crib && alignedSection.isViable && (
-            <div className="bg-[#201b0f] border border-red-900/50 p-5 rounded-lg shadow-panel texture-metal text-center space-y-2 animate-fadeIn">
-              <span className="material-symbols-outlined text-red-500 text-3xl">error_outline</span>
-              <h4 className="text-xs font-ui-header font-bold text-red-400 uppercase tracking-wider">
+            <div className={`${t.panelBg} border ${t.borderBase} p-5 rounded-lg shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} text-center space-y-2 animate-fadeIn`}>
+              <span className={`material-symbols-outlined ${theme === 'vintage' ? 'text-red-500' : 'text-red-600'} text-3xl`}>error_outline</span>
+              <h4 className={`text-xs ${t.fontHeader} font-bold ${theme === 'vintage' ? 'text-red-400' : 'text-red-700'} uppercase tracking-wider`}>
                 No Matches Found
               </h4>
-              <p className="text-[11px] text-[#d1c4b7] max-w-md mx-auto leading-normal">
+              <p className={`text-[11px] ${t.textMuted} max-w-md mx-auto leading-normal`}>
                 Completed electromechanical scan of all <strong>17,576</strong> dial positions, but found no valid key configurations matching the crib alignment.
               </p>
-              <p className="text-[10px] text-[#8c7e6a] max-w-sm mx-auto leading-normal">
+              <p className={`text-[10px] ${t.textMuted} max-w-sm mx-auto leading-normal`}>
                 This indicates that the rotor types, ring settings, reflector choice, or plugboard rules do not match the intercept's. Try loading a historical sample or verifying your current settings.
               </p>
             </div>
@@ -2097,12 +2233,12 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
           {/* Waiting for Search Banner */}
           {!isSearching && !hasSearched && matches.length === 0 && ciphertext && crib && alignedSection.isViable && (
-            <div className="bg-[#201b0f] border border-[#4e453b] p-5 rounded-lg shadow-panel texture-metal text-center space-y-2">
-              <span className="material-symbols-outlined text-amber-500 text-3xl">question_mark</span>
-              <h4 className="text-xs font-ui-header font-bold text-[#ede1cd] uppercase tracking-wider">
+            <div className={`${t.panelBg} border ${t.borderBase} p-5 rounded-lg shadow-panel ${theme === 'vintage' ? 'texture-metal' : ''} text-center space-y-2`}>
+              <span className={`material-symbols-outlined ${t.textAccent} text-3xl`}>question_mark</span>
+              <h4 className={`text-xs ${t.fontHeader} font-bold ${t.textPrimary} uppercase tracking-wider`}>
                 Waiting for Search
               </h4>
-              <p className="text-[11px] text-[#d1c4b7] max-w-md mx-auto leading-normal">
+              <p className={`text-[11px] ${t.textMuted} max-w-md mx-auto leading-normal`}>
                 Click the "Initiate Bombe Search" button to spin the electromechanical drums and search all 17,576 combinations for matches.
               </p>
             </div>
@@ -2114,29 +2250,29 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
       {/* 1. Modal: Menu Graph Visualizer */}
       {showMenuGraphModal && crib && ciphertext && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#1b170e] border border-[#4e453b] rounded-lg max-w-2xl w-full p-6 space-y-4 shadow-2xl relative texture-metal">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`${t.modalBg} border ${t.borderBase} rounded-lg max-w-2xl w-full p-6 space-y-4 shadow-2xl relative ${theme === 'vintage' ? 'texture-metal' : ''}`}>
             <button
               onClick={() => setShowMenuGraphModal(false)}
-              className="absolute top-4 right-4 text-[#8c7e6a] hover:text-[#ede1cd] transition-colors cursor-pointer"
+              className={`absolute top-4 right-4 ${t.textMuted} hover:${t.textPrimary} transition-colors cursor-pointer`}
             >
               <span className="material-symbols-outlined">close</span>
             </button>
 
-            <div className="flex items-center gap-2 border-b border-[#3b3426] pb-3">
-              <span className="material-symbols-outlined text-amber-500">hub</span>
-              <h3 className="text-sm font-bold text-[#e3c193] font-ui-header uppercase tracking-wider">
+            <div className={`flex items-center gap-2 border-b ${t.borderBase} pb-3`}>
+              <span className={`material-symbols-outlined ${t.textAccent}`}>hub</span>
+              <h3 className={`text-sm font-bold ${t.textSecondary} ${t.fontHeader} uppercase tracking-wider`}>
                 Crib Menu Graph (Electrical Scrambler Circuit)
               </h3>
             </div>
 
-            <p className="text-xs text-[#d1c4b7] leading-relaxed font-monospaced-technical">
+            <p className={`text-xs ${t.textMuted} leading-relaxed ${t.fontMono}`}>
               In Alan Turing's Bombe design, each letter pairing in the aligned crib forms a menu edge connecting two character nodes. Closed loops (cycles) in this graph enable the electrical voltage to propagate across multiple scramblers simultaneously, eliminating false hypotheses.
             </p>
 
             {/* Menu Graph Edges Table */}
-            <div className="bg-[#120e04] border border-[#3b3426] rounded p-3 max-h-60 overflow-y-auto font-monospaced-technical text-xs space-y-2">
-              <div className="grid grid-cols-4 text-[#8c7e6a] uppercase text-[10px] font-bold border-b border-[#3b3426] pb-1">
+            <div className={`${t.panelInner} border ${t.borderBase} rounded p-3 max-h-60 overflow-y-auto ${t.fontMono} text-xs space-y-2`}>
+              <div className={`grid grid-cols-4 ${t.textMuted} uppercase text-[10px] font-bold border-b ${t.borderBase} pb-1`}>
                 <span>Pos (Step)</span>
                 <span>Crib Letter</span>
                 <span>Cipher Letter</span>
@@ -2145,11 +2281,11 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
               {crib.split('').map((cribChar, i) => {
                 const cipherChar = ciphertext[alignmentOffset + i] || '?';
                 return (
-                  <div key={i} className="grid grid-cols-4 text-[#ede1cd] py-1 border-b border-[#3b3426]/40 items-center">
-                    <span className="text-amber-500 font-bold">Step {i + 1}</span>
+                  <div key={i} className={`grid grid-cols-4 ${t.textPrimary} py-1 border-b ${t.borderBase}/40 items-center`}>
+                    <span className={`${t.textAccent} font-bold`}>Step {i + 1}</span>
                     <span>{cribChar}</span>
                     <span>{cipherChar}</span>
-                    <span className="text-green-400 font-bold bg-[#1b170e] px-2 py-0.5 rounded border border-[#3b3426] w-max">
+                    <span className={`text-green-600 font-bold ${t.panelBg} px-2 py-0.5 rounded border ${t.borderBase} w-max`}>
                       {cribChar} ↔ {cipherChar}
                     </span>
                   </div>
@@ -2160,7 +2296,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setShowMenuGraphModal(false)}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold font-ui-header cursor-pointer"
+                className={`px-4 py-2 ${t.buttonHighlight} rounded text-xs font-bold ${t.fontHeader} cursor-pointer`}
               >
                 Close Inspector
               </button>
@@ -2171,31 +2307,31 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
       {/* 2. Modal: 26x26 Welchman Diagonal Board Matrix */}
       {showDiagonalBoardModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#1b170e] border border-[#4e453b] rounded-lg max-w-3xl w-full p-6 space-y-4 shadow-2xl relative texture-metal max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`${t.modalBg} border ${t.borderBase} rounded-lg max-w-3xl w-full p-6 space-y-4 shadow-2xl relative ${theme === 'vintage' ? 'texture-metal' : ''} max-h-[90vh] overflow-y-auto`}>
             <button
               onClick={() => setShowDiagonalBoardModal(false)}
-              className="absolute top-4 right-4 text-[#8c7e6a] hover:text-[#ede1cd] transition-colors cursor-pointer"
+              className={`absolute top-4 right-4 ${t.textMuted} hover:${t.textPrimary} transition-colors cursor-pointer`}
             >
               <span className="material-symbols-outlined">close</span>
             </button>
 
-            <div className="flex items-center gap-2 border-b border-[#3b3426] pb-3">
-              <span className="material-symbols-outlined text-amber-500">grid_on</span>
-              <h3 className="text-sm font-bold text-[#e3c193] font-ui-header uppercase tracking-wider">
+            <div className={`flex items-center gap-2 border-b ${t.borderBase} pb-3`}>
+              <span className={`material-symbols-outlined ${t.textAccent}`}>grid_on</span>
+              <h3 className={`text-sm font-bold ${t.textSecondary} ${t.fontHeader} uppercase tracking-wider`}>
                 Gordon Welchman's 26×26 Diagonal Board Matrix
               </h3>
             </div>
 
-            <p className="text-xs text-[#d1c4b7] leading-relaxed font-monospaced-technical">
+            <p className={`text-xs ${t.textMuted} leading-relaxed ${t.fontMono}`}>
               Welchman's genius innovation (introduced in late 1939) connected plugboard wire (node X, stecker Y) directly to wire (node Y, stecker X). This symmetric reciprocity matrix enforces $X \leftrightarrow Y \iff Y \leftrightarrow X$, vastly accelerating voltage flow and reducing false stops by over 95%!
             </p>
 
             {/* 26x26 Visual Matrix grid preview */}
-            <div className="bg-[#120e04] border border-[#3b3426] rounded p-3 overflow-x-auto">
-              <div className="min-w-[600px] font-monospaced-technical text-[9px]">
+            <div className={`${t.panelInner} border ${t.borderBase} rounded p-3 overflow-x-auto`}>
+              <div className={`min-w-[600px] ${t.fontMono} text-[9px]`}>
                 {/* Header Row */}
-                <div className="flex gap-0.5 mb-1 font-bold text-amber-500">
+                <div className={`flex gap-0.5 mb-1 font-bold ${t.textAccent}`}>
                   <div className="w-5 h-5 flex items-center justify-center text-center">/</div>
                   {Array.from({ length: 26 }, (_, i) => (
                     <div key={i} className="w-5 h-5 flex items-center justify-center text-center">
@@ -2207,7 +2343,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 {/* Rows */}
                 {Array.from({ length: 26 }, (_, rIdx) => (
                   <div key={rIdx} className="flex gap-0.5 mb-0.5">
-                    <div className="w-5 h-5 flex items-center justify-center font-bold text-amber-500 shrink-0">
+                    <div className={`w-5 h-5 flex items-center justify-center font-bold ${t.textAccent} shrink-0`}>
                       {numToChar(rIdx)}
                     </div>
                     {Array.from({ length: 26 }, (_, cIdx) => {
@@ -2218,7 +2354,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                           className={`w-5 h-5 rounded flex items-center justify-center font-mono border text-[8px] ${
                             isSelf
                               ? 'bg-red-950/40 border-red-800 text-red-500 font-bold'
-                              : 'bg-[#1b170e] border-[#3b3426] text-[#8c7e6a]'
+                              : `${t.panelInner} ${t.textSecondary}`
                           }`}
                           title={`Wire connection (${numToChar(rIdx)}, ${numToChar(cIdx)})`}
                         >
@@ -2234,7 +2370,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setShowDiagonalBoardModal(false)}
-                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold font-ui-header cursor-pointer"
+                className={`px-4 py-2 ${t.buttonHighlight} rounded text-xs font-bold ${t.fontHeader} cursor-pointer`}
               >
                 Close Inspector
               </button>
