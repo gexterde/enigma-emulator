@@ -146,7 +146,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
           <span className={`text-[10px] ${t.fontMono} ${t.textAccent} uppercase tracking-wider font-bold`}>
             Funktelegramm Header
           </span>
-          <span className={`px-2 py-0.5 rounded font-mono text-[11px] font-bold ${t.activeBadge} ${t.textAccentStrong} border ${t.borderBase}`}>
+          <span className={`px-2.5 py-0.5 rounded font-mono text-[11px] font-extrabold tracking-wide border shadow-sm transition-all ${t.headerPreviewBadge}`}>
             {senderCallSign || '???'} {transmissionTime || '????'} {lettersCount} {kenngruppe || '???'} {localGrundstellung || '???'}
           </span>
         </div>
