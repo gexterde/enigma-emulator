@@ -289,7 +289,7 @@ export const ShortcutsModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
         { key: 'F4 or Ctrl + B', desc: 'Codebook / Key Sheets' },
         { key: 'F5 or Ctrl + L', desc: 'Log & History View' },
         { key: 'F6 or Ctrl + T', desc: 'Morse Code Trainer' },
-        { key: 'F7 or Ctrl + X', desc: 'Radio Transceiver (Live Multi-User CW)' },
+        { key: 'F8 or Ctrl + X', desc: 'Radio Transceiver (Live Multi-User CW)' },
       ]
     },
     {
@@ -302,12 +302,18 @@ export const ShortcutsModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
       ]
     },
     {
+      category: 'Morse Code Trainer Controls',
+      items: [
+        { key: 'Ctrl + F1', desc: 'Begin / Stop Transmission' },
+      ]
+    },
+    {
       category: 'Modals & Dialogs',
       items: [
-        { key: 'F6 or Ctrl + S', desc: 'Emulator Settings Modal' },
+        { key: 'Ctrl + S', desc: 'Emulator Settings Modal' },
         { key: 'F7 or Ctrl + H', desc: 'Historical Info & Manual' },
-        { key: 'F8 or Ctrl + Shift + S', desc: 'Share Key Configuration' },
-        { key: 'F9 or ?', desc: 'Keyboard Shortcuts (this dialog)' },
+        { key: 'Ctrl + Shift + S', desc: 'Share Key Configuration' },
+        { key: 'F10 or ?', desc: 'Keyboard Shortcuts (this dialog)' },
         { key: 'Escape', desc: 'Close open dialog or menu' },
       ]
     }

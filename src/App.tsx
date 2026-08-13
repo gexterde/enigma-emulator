@@ -242,7 +242,7 @@ export default function App() {
 
       const shortcuts = [
         {
-          match: () => e.key === 'F1' || (isCtrlOrCmd && e.key.toLowerCase() === 'm'),
+          match: () => (!isCtrlOrCmd && e.key === 'F1') || (isCtrlOrCmd && e.key.toLowerCase() === 'm'),
           action: () => setActiveTab('machine'),
         },
         {
@@ -266,7 +266,7 @@ export default function App() {
           action: () => setActiveTab('morseTrainer'),
         },
         {
-          match: () => (isCtrlOrCmd && e.key.toLowerCase() === 'x'),
+          match: () => e.key === 'F8' || (isCtrlOrCmd && e.key.toLowerCase() === 'x'),
           action: () => setActiveTab('radio'),
         },
         {
@@ -278,11 +278,11 @@ export default function App() {
           action: () => setActiveTab('cryptanalysis'),
         },
         {
-          match: () => e.key === 'F7' || (isCtrlOrCmd && e.key.toLowerCase() === 's' && !e.shiftKey),
+          match: () => (isCtrlOrCmd && e.key.toLowerCase() === 's' && !e.shiftKey),
           action: () => setIsSettingsOpen((prev) => !prev),
         },
         {
-          match: () => e.key === 'F8' || (isCtrlOrCmd && e.key.toLowerCase() === 'h'),
+          match: () => e.key === 'F7' || (isCtrlOrCmd && e.key.toLowerCase() === 'h'),
           action: () => setIsInfoOpen((prev) => !prev),
         },
         {

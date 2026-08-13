@@ -738,7 +738,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
 
   // Send a specific character or letter directly by Morse sequence with audio
   const sendCharacterMorse = useCallback((char: string) => {
-    if (!isPowerOn) return;
+    if (!isPowerOnRef.current) return;
     const now = Date.now();
     if (now - lastCharMorseTimeRef.current < 180 && charQueueRef.current.length === 0) {
       // Basic debounce for single rapid clicks, but allow queuing if they type words
@@ -750,7 +750,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
 
     charQueueRef.current.push(upperChar);
     processCharQueue();
-  }, [isPowerOn, processCharQueue]);
+  }, [processCharQueue]);
 
   // Keyboard Shortcuts Binding
   useEffect(() => {

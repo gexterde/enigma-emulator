@@ -44,15 +44,29 @@ class MorsePlayer {
   private charWpm: number = 20;
   private frequency: number = 600;
   private noiseLevel: number = 0; // 0 to 1
+  private volume: number = 1.0; // 0 to 1
+  private wordSpaceMultiplier: number = 2.0; // multiplier e.g. 1 to 5
+  private edgeMs: number = 10; // envelope edge in ms
   
   private isPlaying: boolean = false;
   private stopTimeout: number | null = null;
 
-  constructor(effWpm: number = 20, charWpm: number = 20, frequency: number = 600, noiseLevel: number = 0) {
+  constructor(
+    effWpm: number = 20, 
+    charWpm: number = 20, 
+    frequency: number = 600, 
+    noiseLevel: number = 0,
+    volume: number = 1.0,
+    wordSpaceMultiplier: number = 2.0,
+    edgeMs: number = 10
+  ) {
     this.effWpm = effWpm;
     this.charWpm = charWpm;
     this.frequency = frequency;
     this.noiseLevel = noiseLevel;
+    this.volume = volume;
+    this.wordSpaceMultiplier = wordSpaceMultiplier;
+    this.edgeMs = edgeMs;
   }
 
   private initAudio() {
@@ -68,6 +82,9 @@ class MorsePlayer {
   public setCharWPM(wpm: number) { this.charWpm = wpm; }
   public setFrequency(freq: number) { this.frequency = freq; }
   public setNoiseLevel(level: number) { this.noiseLevel = level; }
+  public setVolume(vol: number) { this.volume = vol; }
+  public setWordSpaceMultiplier(mul: number) { this.wordSpaceMultiplier = mul; }
+  public setEdgeMs(edge: number) { this.edgeMs = edge; }
 
   public stop() {
     this.isPlaying = false;
@@ -108,6 +125,9 @@ class MorsePlayer {
       interCharTime = (spaceTime * 3) / 19;
       interWordTime = (spaceTime * 7) / 19;
     }
+
+    // Multiply the final interWordTime by our word space multiplier
+    const wordSpaceMultiplierValue = this.wordSpaceMultiplier;
 
     this.oscillator = this.audioCtx.createOscillator();
     this.gainNode = this.audioCtx.createGain();
@@ -150,12 +170,16 @@ class MorsePlayer {
 
     let startTime = this.audioCtx.currentTime + 0.5; // delay to start
 
+    // Setup envelope speed based on edge milliseconds
+    const edgeSeconds = this.edgeMs / 1000;
+    const tc = Math.max(0.001, edgeSeconds / 3);
+
     for (let i = 0; i < text.length; i++) {
       if (!this.isPlaying) break;
       
       const char = text[i].toUpperCase();
       if (char === ' ') {
-        startTime += (interWordTime - interCharTime);
+        startTime += (interWordTime * wordSpaceMultiplierValue - interCharTime);
         continue;
       }
       
@@ -166,11 +190,11 @@ class MorsePlayer {
           const duration = symbol === '-' ? u * 3 : u;
           
           this.gainNode.gain.setValueAtTime(0, startTime);
-          this.gainNode.gain.setTargetAtTime(1, startTime, 0.005);
+          this.gainNode.gain.setTargetAtTime(this.volume, startTime, tc);
           
           startTime += duration;
           
-          this.gainNode.gain.setTargetAtTime(0, startTime, 0.005);
+          this.gainNode.gain.setTargetAtTime(0, startTime, tc);
           if (j < code.length - 1) {
             startTime += u; // intra-character gap
           }
@@ -193,10 +217,14 @@ export const MorseTrainer: React.FC = () => {
   const t = getTheme(theme);
   const [method, setMethod] = useState<TrainingMethod>('koch');
   const [level, setLevel] = useState<number>(2);
-  const [wpm, setWpm] = useState<number>(20);
-  const [charWpm, setCharWpm] = useState<number>(20);
+  const [wpm, setWpm] = useState<number>(15); // eff. Speed (overall speed) - default 15 WpM
+  const [charWpm, setCharWpm] = useState<number>(20); // Speed (character speed) - default 20 WpM
   const [frequency, setFrequency] = useState<number>(600);
   const [noiseLevel, setNoiseLevel] = useState<number>(0);
+  const [wordSpaceAuto, setWordSpaceAuto] = useState<boolean>(true); // Word space Auto - default true (Standard / Auto)
+  const [wordSpaceMultiplier, setWordSpaceMultiplier] = useState<number>(2.0); // Word space (multiplier) - default 2x
+  const [edgeMs, setEdgeMs] = useState<number>(10); // Edge (milliseconds envelope rise/fall) - default 10
+  const [volume, setVolume] = useState<number>(1.0); // Volume (0 to 1.0) - default 100%
   
   // Practice configuration
   const [practiceMode, setPracticeMode] = useState<PracticeMode>('batch');
@@ -215,6 +243,24 @@ export const MorseTrainer: React.FC = () => {
   const [copyTypingTyped, setCopyTypingTyped] = useState<string[]>([]);
   const [copyTypingStatus, setCopyTypingStatus] = useState<'idle' | 'playing' | 'completed'>('idle');
   const [copyTypingStartTime, setCopyTypingStartTime] = useState<number>(0);
+
+  // Mobile virtual keyboard support
+  const [isMobileKeyboardOpen, setIsMobileKeyboardOpen] = useState<boolean>(false);
+  const mobileInputRef = useRef<HTMLInputElement>(null);
+  const batchInputRef = useRef<HTMLTextAreaElement>(null);
+  const [hideFutureChars, setHideFutureChars] = useState<boolean>(true);
+  const activeCharRef = useRef<HTMLDivElement>(null);
+
+  // Smooth horizontal centering of active character on ticker tape ribbon
+  useEffect(() => {
+    if (copyTypingStatus === 'playing' && activeCharRef.current) {
+      activeCharRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }
+  }, [copyTypingIndex, copyTypingStatus]);
 
   // Level Up overlay & celebratory audio
   const [showLevelUpBanner, setShowLevelUpBanner] = useState<boolean>(false);
@@ -236,7 +282,7 @@ export const MorseTrainer: React.FC = () => {
       }
     } catch (e) {}
     
-    playerRef.current = new MorsePlayer(wpm, charWpm, frequency, noiseLevel);
+    playerRef.current = new MorsePlayer(wpm, charWpm, frequency, noiseLevel, volume, wordSpaceAuto ? 1.0 : wordSpaceMultiplier, edgeMs);
     return () => {
       if (playerRef.current) {
         playerRef.current.stop();
@@ -251,8 +297,11 @@ export const MorseTrainer: React.FC = () => {
       playerRef.current.setCharWPM(charWpm);
       playerRef.current.setFrequency(frequency);
       playerRef.current.setNoiseLevel(noiseLevel);
+      playerRef.current.setVolume(volume);
+      playerRef.current.setWordSpaceMultiplier(wordSpaceAuto ? 1.0 : wordSpaceMultiplier);
+      playerRef.current.setEdgeMs(edgeMs);
     }
-  }, [wpm, charWpm, frequency, noiseLevel]);
+  }, [wpm, charWpm, frequency, noiseLevel, volume, wordSpaceMultiplier, wordSpaceAuto, edgeMs]);
 
   const sequenceString = METHODS[method];
 
@@ -294,6 +343,33 @@ export const MorseTrainer: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [practiceMode, copyTypingStatus, copyTypingIndex, targetSequence, copyTypingTyped, copyTypingStartTime]);
+
+  // Capture Ctrl+F1 keyboard shortcut for starting/stopping transmission sessions
+  useEffect(() => {
+    const handleTrainerKeys = (e: KeyboardEvent) => {
+      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+      const isF1 = e.key === 'F1' || e.code === 'F1';
+
+      if (isCtrlOrCmd && isF1) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (practiceMode === 'batch') {
+          handleStartBatch();
+        } else if (practiceMode === 'copy') {
+          if (copyTypingStatus === 'playing') {
+            setCopyTypingStatus('idle');
+          } else {
+            startCopyTypingSession();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleTrainerKeys);
+    return () => {
+      window.removeEventListener('keydown', handleTrainerKeys);
+    };
+  }, [practiceMode, copyTypingStatus, isPlaying, userInput, targetSequence, level, groupCount, groupLength, charWpm, wpm, wordSpaceAuto, wordSpaceMultiplier, frequency, noiseLevel, volume, edgeMs]);
 
   const generateSequence = () => {
     const availableChars = sequenceString.slice(0, level).split('');
@@ -372,6 +448,11 @@ export const MorseTrainer: React.FC = () => {
     setUserInput('');
     setResult({ score: 0, accuracy: 0, show: false });
     setIsPlaying(true);
+
+    // Auto-focus the log entry textarea so the user can immediately log characters
+    setTimeout(() => {
+      batchInputRef.current?.focus();
+    }, 50);
     
     if (playerRef.current) {
       playerRef.current.playSequence(seq, () => {
@@ -440,6 +521,9 @@ export const MorseTrainer: React.FC = () => {
       if (playerRef.current) {
         playerRef.current.playSequence(seq[0]);
       }
+      if (isMobileKeyboardOpen) {
+        mobileInputRef.current?.focus();
+      }
     }, 450);
   };
 
@@ -486,6 +570,70 @@ export const MorseTrainer: React.FC = () => {
         }, 350); // Balanced character-spacing pause (300-400ms)
       }
     }
+  };
+
+  // Helper function to format input log entry text into word-sized blocks (e.g. 5 chars)
+  const formatToChunks = (text: string, size: number) => {
+    const isTrailingSpace = text.endsWith(' ');
+    const clean = text.replace(/\s/g, '');
+    const chunks = [];
+    for (let i = 0; i < clean.length; i += size) {
+      chunks.push(clean.slice(i, i + size));
+    }
+    let formatted = chunks.join(' ');
+    if (isTrailingSpace && clean.length > 0 && clean.length % size === 0) {
+      formatted += ' ';
+    }
+    return formatted;
+  };
+
+  // Helper function to evaluate comparative metrics
+  const getComparisonData = () => {
+    const target = targetSequence.toUpperCase().replace(/\s/g, '').split('');
+    let user: string[] = [];
+    if (practiceMode === 'batch') {
+      user = userInput.toUpperCase().replace(/\s/g, '').split('');
+    } else {
+      const targetChars = targetSequence.split('');
+      for (let i = 0; i < targetChars.length; i++) {
+        if (targetChars[i] !== ' ') {
+          user.push((copyTypingTyped[i] || '').toUpperCase());
+        }
+      }
+    }
+
+    return target.map((targetChar, idx) => {
+      const userChar = user[idx] || '';
+      const isCorrect = targetChar === userChar;
+      return {
+        index: idx,
+        targetChar,
+        userChar,
+        isCorrect,
+      };
+    });
+  };
+
+  const handleOpenMobileKeyboard = () => {
+    setIsMobileKeyboardOpen(true);
+    setTimeout(() => {
+      mobileInputRef.current?.focus();
+    }, 150);
+  };
+
+  const handleCloseMobileKeyboard = () => {
+    setIsMobileKeyboardOpen(false);
+    mobileInputRef.current?.blur();
+  };
+
+  const handleMobileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!val) return;
+    const lastChar = val[val.length - 1].toUpperCase();
+    if (lastChar === ' ' || lastChar === '.' || lastChar === ',' || lastChar === '?' || lastChar === '/' || lastChar === '=' || /^[A-Z0-9]$/.test(lastChar)) {
+      handleCopyTypeChar(lastChar);
+    }
+    e.target.value = ''; // Clear buffer
   };
 
   // REAL-TIME COPY TYPING: Evaluate session speed & accuracy
@@ -783,66 +931,154 @@ export const MorseTrainer: React.FC = () => {
                 </label>
               </div>
 
-              {/* Speed slider dual-pack */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
-                    <span>Letter Speed</span>
-                    <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono`}>{charWpm} WPM</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="10" 
-                    max="50" 
-                    value={charWpm} 
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value);
-                      setCharWpm(val);
-                      if (wpm > val) setWpm(val);
-                    }}
-                    className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
-                  />
+              {/* Telegraph Signal Parameters Desk */}
+              <div className="space-y-4 pt-2 border-t border-zinc-800/60">
+                <div className="text-[10px] uppercase font-mono text-zinc-400 font-bold flex items-center gap-1.5 pb-1">
+                  <span className="material-symbols-outlined text-xs text-amber-500 animate-spin-slow">tune</span>
+                  <span>Telegraph Signal Parameters Desk:</span>
                 </div>
-                <div className="space-y-1">
-                  <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
-                    <span>Farnsworth Gap</span>
-                    <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono`}>{wpm} WPM</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="5" 
-                    max="50" 
-                    value={wpm} 
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value);
-                      setWpm(val);
-                      if (val > charWpm) setCharWpm(val);
-                    }}
-                    className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
-                  />
-                </div>
-              </div>
 
-              {/* Freq and static noise dials */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
-                    <span>Tone Pitch</span>
-                    <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono`}>{frequency} Hz</span>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Speed */}
+                  <div className="space-y-1">
+                    <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
+                      <span className="font-bold text-zinc-300">Speed:</span>
+                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{charWpm} WpM</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="10" 
+                      max="60" 
+                      value={charWpm} 
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setCharWpm(val);
+                        if (wpm > val) setWpm(val);
+                      }}
+                      className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
+                    />
                   </div>
-                  <input 
-                    type="range" 
-                    min="400" 
-                    max="1000" 
-                    step="20"
-                    value={frequency} 
-                    onChange={(e) => setFrequency(parseInt(e.target.value))}
-                    className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
-                  />
+
+                  {/* eff. Speed */}
+                  <div className="space-y-1">
+                    <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
+                      <span className="font-bold text-zinc-300">eff. Speed:</span>
+                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{wpm} WpM</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="5" 
+                      max="60" 
+                      value={wpm} 
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setWpm(val);
+                        if (val > charWpm) setCharWpm(val);
+                      }}
+                      className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
+                    />
+                  </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Word space */}
+                  <div className="space-y-1.5">
+                    <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
+                      <span className="font-bold text-zinc-300">Word space:</span>
+                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>
+                        {wordSpaceAuto ? 'Auto / Standard' : `${wordSpaceMultiplier.toFixed(1)} x`}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-zinc-300 select-none bg-zinc-900/40 px-2 py-0.5 rounded border border-zinc-800/50 hover:border-zinc-700/50">
+                        <input
+                          type="checkbox"
+                          checked={wordSpaceAuto}
+                          onChange={(e) => setWordSpaceAuto(e.target.checked)}
+                          className="accent-amber-500 rounded text-amber-500 bg-zinc-900 w-3.5 h-3.5 cursor-pointer"
+                        />
+                        <span className="font-bold text-amber-500">Standard / Auto</span>
+                      </label>
+                    </div>
+
+                    {!wordSpaceAuto ? (
+                      <input 
+                        type="range" 
+                        min="1" 
+                        max="5" 
+                        step="0.5"
+                        value={wordSpaceMultiplier} 
+                        onChange={(e) => setWordSpaceMultiplier(parseFloat(e.target.value))}
+                        className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
+                      />
+                    ) : (
+                      <div className="h-1 bg-zinc-800/20 rounded-lg w-full" />
+                    )}
+
+                    <div className="text-[8.5px] text-zinc-400 leading-tight font-sans">
+                      Standard / Auto setting means the program uses precise ratios according to the official international Morse standard, where pauses automatically scale with the set transmission speed.
+                    </div>
+                  </div>
+
+                  {/* Frequency */}
+                  <div className="space-y-1">
+                    <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
+                      <span className="font-bold text-zinc-300">Frequency:</span>
+                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{frequency} Hz</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="400" 
+                      max="1000" 
+                      step="20"
+                      value={frequency} 
+                      onChange={(e) => setFrequency(parseInt(e.target.value))}
+                      className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Edge */}
+                  <div className="space-y-1">
+                    <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
+                      <span className="font-bold text-zinc-300">Edge:</span>
+                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{edgeMs}</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max="30" 
+                      step="1"
+                      value={edgeMs} 
+                      onChange={(e) => setEdgeMs(parseInt(e.target.value))}
+                      className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
+                    />
+                  </div>
+
+                  {/* Volume */}
+                  <div className="space-y-1">
+                    <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
+                      <span className="font-bold text-zinc-300">Volume:</span>
+                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{Math.round(volume * 100)} %</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="1" 
+                      step="0.05"
+                      value={volume} 
+                      onChange={(e) => setVolume(parseFloat(e.target.value))}
+                      className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
+                    />
+                  </div>
+                </div>
+
+                {/* Radio static */}
                 <div className="space-y-1">
                   <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
-                    <span>Radio Static</span>
+                    <span>Atmospheric Static Noise</span>
                     <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono`}>{Math.round(noiseLevel * 100)}%</span>
                   </div>
                   <input 
@@ -960,12 +1196,23 @@ export const MorseTrainer: React.FC = () => {
 
                 {/* Textarea transcription entry */}
                 <div>
-                  <label className={`block text-[10px] ${t.fontMono} ${t.textMuted} uppercase tracking-wider mb-1.5`}>
-                    Operator's Official Log Entry
-                  </label>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className={`block text-[10px] ${t.fontMono} ${t.textMuted} uppercase tracking-wider`}>
+                      Operator's Official Log Entry
+                    </label>
+                    <span className={`text-[9px] ${t.fontMono} text-amber-500 font-semibold`}>
+                      Auto-chunked into {groupLength}-char words
+                    </span>
+                  </div>
                   <textarea
+                    id="morse-user-input"
+                    ref={batchInputRef}
                     value={userInput}
-                    onChange={(e) => setUserInput(e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      const formatted = formatToChunks(val, groupLength);
+                      setUserInput(formatted);
+                    }}
                     placeholder="Place hands on keyboard, listen carefully, and log characters here..."
                     className={`w-full h-28 ${t.panelInner} border ${t.borderBase} rounded-lg p-3 ${t.textSecondary} font-mono text-base focus:${t.borderAccent} focus:outline-none resize-none leading-relaxed select-text`}
                     spellCheck="false"
@@ -983,7 +1230,7 @@ export const MorseTrainer: React.FC = () => {
                         : `${t.panelInner} ${t.textAccentStrong} ${t.borderAccent} hover:opacity-90`
                     }`}
                   >
-                    {isPlaying ? 'Abrupt Stop' : 'Begin Transmission'}
+                    {isPlaying ? 'Abrupt Stop (Ctrl+F1)' : 'Begin Transmission (Ctrl+F1)'}
                   </button>
                   
                   <button 
@@ -1011,6 +1258,60 @@ export const MorseTrainer: React.FC = () => {
                 </span>
               </div>
 
+              {/* SHARED DECODING CONTROLS TOOLBAR (Always visible and accessible) */}
+              <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-black/30 rounded border border-zinc-800/50">
+                <div className="text-[10px] uppercase font-mono text-zinc-400 font-bold flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-xs text-amber-500 animate-spin-slow">tune</span>
+                  <span>Tape Configuration Desk:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowHints(!showHints)}
+                    className={`px-2.5 py-1 text-[10px] ${t.fontHeader} rounded border transition-all cursor-pointer flex items-center gap-1.5 ${
+                      showHints 
+                        ? `${t.bgAccentFaint} border-amber-500/80 ${t.textAccentStrong} font-bold`
+                        : t.tabInactive
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[13px]">{showHints ? 'visibility' : 'visibility_off'}</span>
+                    <span>Hints: {showHints ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setHideFutureChars(!hideFutureChars)}
+                    className={`px-2.5 py-1 text-[10px] ${t.fontHeader} rounded border transition-all cursor-pointer flex items-center gap-1.5 ${
+                      hideFutureChars 
+                        ? `${t.bgAccentFaint} border-amber-500/80 ${t.textAccentStrong} font-bold`
+                        : t.tabInactive
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[13px]">{hideFutureChars ? 'disabled_by_default' : 'view_week'}</span>
+                    <span>Hide Upcoming: {hideFutureChars ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isMobileKeyboardOpen) {
+                        handleCloseMobileKeyboard();
+                      } else {
+                        handleOpenMobileKeyboard();
+                      }
+                    }}
+                    className={`px-2.5 py-1 text-[10px] ${t.fontHeader} rounded border transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isMobileKeyboardOpen
+                        ? `${t.bgAccentFaint} border-amber-500/80 ${t.textAccentStrong} font-bold`
+                        : t.tabInactive
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[13px]">smartphone</span>
+                    <span>Mobile Keyboard: {isMobileKeyboardOpen ? 'ON' : 'OFF'}</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Start and helper options */}
               {copyTypingStatus === 'idle' && (
                 <div className={`${t.panelInner} rounded border ${t.borderBase} p-6 text-center space-y-4`}>
@@ -1029,24 +1330,11 @@ export const MorseTrainer: React.FC = () => {
                     Listen to characters one-by-one. Type the key instantly. The system will auto-feed the next character as you type. No textareas required!
                   </p>
 
-                  <div className="flex justify-center items-center gap-4 py-1.5">
-                    <button
-                      onClick={() => setShowHints(!showHints)}
-                      className={`px-3 py-1 text-[10px] ${t.fontHeader} rounded border transition-colors cursor-pointer ${
-                        showHints 
-                          ? `${t.bgAccentFaint} border-amber-500 ${t.textAccentStrong} font-bold`
-                          : t.tabInactive
-                      }`}
-                    >
-                      {showHints ? 'Show Visual Letter Hints: ON' : 'Show Visual Letter Hints: OFF'}
-                    </button>
-                  </div>
-
                   <button
                     onClick={startCopyTypingSession}
                     className={`px-6 py-3 ${t.bgAccentSolid} hover:${t.bgAccentHover} text-white ${t.fontHeader} font-bold rounded border ${t.borderAccent} text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer shadow-lg`}
                   >
-                    Start Real-Time Session
+                    Start Real-Time Session (Ctrl+F1)
                   </button>
                 </div>
               )}
@@ -1055,18 +1343,30 @@ export const MorseTrainer: React.FC = () => {
               {copyTypingStatus === 'playing' && (
                 <div className="space-y-4">
                   
-                  {/* Glowing letter box tape */}
-                  <div className={`bg-black border ${t.borderBase} rounded-md p-4 overflow-x-auto`}>
-                    <div className="flex gap-2 justify-center py-2">
+                  {/* Glowing letter box tape with auto-centering horizontal scroller */}
+                  <div className={`bg-black border ${t.borderBase} rounded-md p-4 overflow-x-auto scroll-smooth`}>
+                    <div className="flex gap-2 justify-start py-2 px-[45%] min-w-max">
                       {targetSequence.split('').map((char, idx) => {
                         const isCurrent = idx === copyTypingIndex;
                         const isPassed = idx < copyTypingIndex;
                         const typedVal = copyTypingTyped[idx];
                         const wasCorrect = typedVal && typedVal.toUpperCase() === char.toUpperCase();
 
+                        if (hideFutureChars && idx >= copyTypingIndex) {
+                          return null;
+                        }
+
+                        const isScrollTarget = hideFutureChars
+                          ? idx === copyTypingIndex - 1
+                          : isCurrent;
+
                         if (char === ' ') {
                           return (
-                            <div key={idx} className="w-5 h-10 border border-transparent flex items-center justify-center shrink-0">
+                            <div 
+                              key={idx} 
+                              ref={isScrollTarget ? activeCharRef : undefined}
+                              className="w-5 h-12 border border-transparent flex items-center justify-center shrink-0"
+                            >
                               <span className={`text-[10px] ${t.textMuted}/40`}>•</span>
                             </div>
                           );
@@ -1075,9 +1375,10 @@ export const MorseTrainer: React.FC = () => {
                         return (
                           <div
                             key={idx}
+                            ref={isScrollTarget ? activeCharRef : undefined}
                             className={`w-10 h-12 flex flex-col items-center justify-center rounded border font-bold transition-all relative shrink-0 ${
                               isCurrent
-                                ? `${t.bgAccentFaint} ${t.textAccentStrong} border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.35)]`
+                                ? `${t.bgAccentFaint} ${t.textAccentStrong} border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.35)] scale-[1.05]`
                                 : isPassed
                                 ? wasCorrect
                                   ? 'bg-green-950/35 text-green-400 border-green-800'
@@ -1104,6 +1405,31 @@ export const MorseTrainer: React.FC = () => {
                     </div>
                   </div>
 
+                  {isMobileKeyboardOpen && (
+                    <div 
+                      onClick={() => mobileInputRef.current?.focus()}
+                      className={`${t.statusHighlight} border border-amber-500/40 rounded-lg p-2.5 flex items-center justify-between gap-2.5 cursor-pointer my-1.5`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${t.bgAccentSolid} shrink-0`} />
+                        <div className="text-[11px] font-mono leading-tight">
+                          <span className="font-bold text-amber-500 block">Mobile Keyboard Engaged</span>
+                          <span className={`${t.textMuted}`}>Tap here to refocus input if keyboard closes.</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCloseMobileKeyboard();
+                        }}
+                        className="text-red-400 hover:text-red-300 font-mono text-[9px] uppercase border border-red-900/40 rounded px-1.5 py-0.5 bg-red-950/20 cursor-pointer"
+                      >
+                        Close Keypad
+                      </button>
+                    </div>
+                  )}
+
                   {/* Real-time Instructions and escape */}
                   <div className={`flex justify-between items-center text-xs ${t.fontMono} p-1`}>
                     <span className={`${t.textAccentStrong} animate-pulse flex items-center gap-1`}>
@@ -1114,7 +1440,7 @@ export const MorseTrainer: React.FC = () => {
                       onClick={() => setCopyTypingStatus('idle')}
                       className={`${t.textMuted} hover:text-red-400 border border-transparent hover:border-red-900 bg-black/30 hover:bg-red-950/20 px-2 py-0.5 rounded text-[10px] uppercase transition-colors cursor-pointer`}
                     >
-                      Abort Session
+                      Abort Session (Ctrl+F1)
                     </button>
                   </div>
                 </div>
@@ -1134,7 +1460,7 @@ export const MorseTrainer: React.FC = () => {
                     onClick={startCopyTypingSession}
                     className={`px-5 py-2.5 bg-green-900 hover:bg-green-800 text-green-300 ${t.fontHeader} font-bold rounded border border-green-800 text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer`}
                   >
-                    Start Next Tape Session
+                    Start Next Tape Session (Ctrl+F1)
                   </button>
                 </div>
               )}
@@ -1144,15 +1470,15 @@ export const MorseTrainer: React.FC = () => {
 
           {/* SHARED PERFORMANCE RESULTS FEEDBACK SCREEN */}
           {result.show && (
-            <div className={`p-4 rounded border-2 animate-fadeIn ${
+            <div className={`p-4 sm:p-5 rounded border-2 animate-fadeIn ${
               result.accuracy >= 90 ? 'bg-green-950/25 border-green-900/60 text-green-300' : 'bg-red-950/25 border-red-900/60 text-red-300'
             }`}>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-lg">
                     {result.accuracy >= 90 ? 'check_circle' : 'warning'}
                   </span>
-                  <span className={`${t.fontHeader} font-bold text-xs uppercase tracking-wider`}>Audit Results</span>
+                  <span className={`${t.fontHeader} font-bold text-xs uppercase tracking-wider`}>Audit Verification Log</span>
                 </div>
                 <span className={`text-2xl font-bold font-mono ${
                   result.accuracy >= 90 ? 'text-green-400' : 'text-red-400'
@@ -1166,15 +1492,57 @@ export const MorseTrainer: React.FC = () => {
                   Excellent transcribing, Operator! You reached standard operational capability. Level Up initiated.
                 </p>
               ) : (
+                <p className={`text-xs text-red-400 font-bold ${t.fontBody}`}>
+                  Accuracy dropped below the 90% required. Revise character codes and retry.
+                </p>
+              )}
+
+              {/* Comparative character-by-character alignment grid */}
+              <div className="space-y-3 mt-3 pt-3 border-t border-dashed border-zinc-700/50">
+                {/* Original transmitted sequence */}
+                <div className={`text-[11px] font-mono p-2.5 ${t.panelBg} border ${t.borderBase} rounded leading-normal`}>
+                  <span className="text-amber-500 font-bold block mb-1 uppercase tracking-tight text-[10px]">Original Transmitted Message:</span>
+                  <span className={`${t.textPrimary} tracking-widest text-sm break-all font-semibold uppercase`}>{targetSequence}</span>
+                </div>
+
+                {/* Grid Comparison */}
                 <div className="space-y-1.5">
-                  <p className={`text-xs text-red-400 font-bold ${t.fontBody}`}>
-                    Accuracy dropped below the 90% required. Revise character codes and retry.
-                  </p>
-                  <div className={`text-[10px] font-mono p-2 ${t.panelBg} border ${t.borderBase} rounded ${t.textPrimary} break-all leading-relaxed uppercase`}>
-                    Target: {targetSequence}
+                  <span className="text-amber-500 font-bold block uppercase tracking-tight text-[10px]">Comparative Breakdown (Transmitted vs Operator Entry):</span>
+                  <div className={`flex flex-wrap gap-1.5 p-3 ${t.panelBg} border ${t.borderBase} rounded max-h-40 overflow-y-auto`}>
+                    {getComparisonData().map((item, idx) => {
+                      const needsGroupGap = (idx + 1) % groupLength === 0 && idx < targetSequence.replace(/\s/g, '').length - 1;
+                      
+                      return (
+                        <React.Fragment key={item.index}>
+                          <div 
+                            className={`flex flex-col items-center justify-center w-8 h-12 rounded border text-xs font-mono font-bold transition-all ${
+                              item.isCorrect
+                                ? 'bg-green-950/40 text-green-400 border-green-800/60'
+                                : 'bg-red-950/40 text-red-400 border-red-800/60'
+                            }`}
+                            title={`Char #${idx + 1}: Transmitted '${item.targetChar}', Entered '${item.userChar || 'None'}'`}
+                          >
+                            <span className="text-[8px] opacity-65 leading-none">TX</span>
+                            <span className="text-sm font-semibold">{item.targetChar}</span>
+                            <div className="h-[1px] w-4 bg-zinc-700/50 my-0.5" />
+                            <span className="text-xs leading-none text-amber-500 font-black">{item.userChar || '_'}</span>
+                          </div>
+                          {needsGroupGap && (
+                            <div className="w-2.5 flex items-center justify-center shrink-0 self-center">
+                              <span className="text-[14px] text-zinc-600 font-bold">/</span>
+                            </div>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[9px] font-mono text-zinc-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Correct Entry
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 ml-2" /> Discrepancy (TX is transmitted, bottom is your entry)
                   </div>
                 </div>
-              )}
+              </div>
+
             </div>
           )}
 
@@ -1415,6 +1783,21 @@ export const MorseTrainer: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Hidden Mobile Keyboard Input Trigger */}
+      <input
+        ref={mobileInputRef}
+        type="text"
+        value=""
+        onChange={handleMobileInputChange}
+        className="fixed top-1/2 left-1/2 w-1 h-1 -translate-x-1/2 -translate-y-1/2 opacity-0 pointer-events-none -z-50"
+        autoCapitalize="characters"
+        autoComplete="off"
+        autoCorrect="off"
+        spellCheck={false}
+        inputMode="text"
+        aria-label="Mobile Keyboard Input Buffer"
+      />
 
     </div>
   );

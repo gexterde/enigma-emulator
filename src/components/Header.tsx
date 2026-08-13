@@ -47,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onOpenSettings}
           className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
-          title="Settings (F6 / ^S)"
+          title="Settings (^S)"
           aria-label="Settings"
         >
           <span className="material-symbols-outlined material-fill-0">settings</span>
