@@ -178,13 +178,23 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
   }, [getAudioContext]);
 
   // CW Tone Generator
+  const stopTimeoutRef = useRef<any>(null);
+
   const startTone = useCallback((frequencyPitch: number) => {
     if (!isPowerOn) return;
     try {
+      if (stopTimeoutRef.current) {
+        clearTimeout(stopTimeoutRef.current);
+        stopTimeoutRef.current = null;
+      }
+
       const ctx = getAudioContext();
       if (oscRef.current) {
-        oscRef.current.stop();
-        oscRef.current.disconnect();
+        try {
+          oscRef.current.stop();
+          oscRef.current.disconnect();
+        } catch (e) {}
+        oscRef.current = null;
       }
 
       const osc = ctx.createOscillator();
@@ -210,15 +220,34 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
 
   const stopTone = useCallback(() => {
     try {
-      if (gainRef.current && audioCtxRef.current) {
+      if (stopTimeoutRef.current) {
+        clearTimeout(stopTimeoutRef.current);
+        stopTimeoutRef.current = null;
+      }
+
+      const oscToStop = oscRef.current;
+      const gainToStop = gainRef.current;
+
+      oscRef.current = null;
+      gainRef.current = null;
+
+      if (gainToStop && audioCtxRef.current) {
         const ctx = audioCtxRef.current;
-        gainRef.current.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.008);
-        setTimeout(() => {
-          if (oscRef.current) {
-            oscRef.current.stop();
-            oscRef.current.disconnect();
-            oscRef.current = null;
-          }
+        gainToStop.gain.cancelScheduledValues(ctx.currentTime);
+        gainToStop.gain.setValueAtTime(gainToStop.gain.value, ctx.currentTime);
+        gainToStop.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.008);
+
+        stopTimeoutRef.current = setTimeout(() => {
+          try {
+            if (oscToStop) {
+              oscToStop.stop();
+              oscToStop.disconnect();
+            }
+            if (gainToStop) {
+              gainToStop.disconnect();
+            }
+          } catch (e) {}
+          stopTimeoutRef.current = null;
         }, 12);
       }
     } catch (e) {
