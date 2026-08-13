@@ -470,6 +470,9 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
   // View Modes: 'view' | 'create_builder'
   const [activeViewMode, setActiveViewMode] = useState<'view' | 'create_builder'>('view');
 
+  // Hide Grundstellung checkbox option to visually mask or omit start settings
+  const [hideGrundstellung, setHideGrundstellung] = useState<boolean>(false);
+
   // Currently active sheet
   const rawCurrentSheet = allSheets.find((c) => c.id === selectedBookId) || HISTORICAL_CODEBOOKS[0];
   const currentSheet: CodebookSheet = {
@@ -479,7 +482,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
   const isCurrentHistorical = !!currentSheet.isHistorical;
   const hasFourthRotor = currentSheet.entries.some((e: CodebookEntry) => e.fourthRotor);
   const hasDualReflector = currentSheet.entries.some((e: CodebookEntry) => e.reflectorType !== undefined);
-  const hasGrundstellung = !isCurrentHistorical && currentSheet.entries.some((e: CodebookEntry) => e.grundstellung && e.grundstellung.length > 0);
+  const hasGrundstellung = currentSheet.entries.some((e: CodebookEntry) => e.grundstellung && e.grundstellung.length > 0) || isCurrentHistorical;
 
   // Save custom sheets to localStorage
   useEffect(() => {
@@ -1645,6 +1648,25 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 </button>
               </div>
 
+              {/* Hide Grundstellung Checkbox */}
+              <label
+                className={`flex items-center gap-1.5 cursor-pointer text-xs font-bold ${t.textSecondary} px-2.5 py-2 ${t.panelInner} border ${t.borderBase} rounded-lg shadow-inner hover:border-[#ebc238] transition-all select-none`}
+                title="Visually mask Grundstellung start settings to simulate encrypted or hidden keys"
+              >
+                <input
+                  type="checkbox"
+                  checked={hideGrundstellung}
+                  onChange={(e) => setHideGrundstellung(e.target.checked)}
+                  className="accent-[#ebc238] w-4 h-4 cursor-pointer"
+                />
+                <span className="flex items-center gap-1">
+                  <span className={`material-symbols-outlined text-xs ${hideGrundstellung ? t.textAccent : t.textMuted}`}>
+                    {hideGrundstellung ? 'visibility_off' : 'visibility'}
+                  </span>
+                  Hide Grundstellung
+                </span>
+              </label>
+
               <div className="relative">
                 <input
                   type="text"
@@ -1752,7 +1774,9 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                     {hasGrundstellung && (
                       <th className={`border ${t.borderStrong} p-2 sm:p-2.5`}>
                         <div>Grundstellung</div>
-                        <div className={`text-[10px] ${t.tableHeaderMuted}`}>(Start Settings)</div>
+                        <div className={`text-[10px] ${hideGrundstellung ? 'text-[#ebc238] font-bold' : t.tableHeaderMuted}`}>
+                          {hideGrundstellung ? '(🔒 Encrypted Key)' : '(Start Settings)'}
+                        </div>
                       </th>
                     )}
                     {hasFourthRotor && (
@@ -1816,7 +1840,24 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                           {/* Grundstellung (Start Settings) */}
                           {hasGrundstellung && (
                             <td className={`border ${t.borderStrong} p-1.5 sm:p-2 tracking-widest font-mono font-extrabold text-center`}>
-                              {(entry.grundstellung || [1, 1, 1]).slice(0, entry.fourthRotor ? 4 : 3).map((g) => formatRotorRing(g, ringFormat)).join(' ')}
+                              {hideGrundstellung ? (
+                                <span
+                                  className="tracking-widest font-mono text-[#83715d] opacity-80 bg-[#110e08] px-2 py-0.5 rounded border border-[#3b3123] inline-flex items-center justify-center gap-1 shadow-inner select-none"
+                                  title="Grundstellung start setting is secret / encrypted (simulated)"
+                                >
+                                  <span className="material-symbols-outlined text-[12px] text-[#ebc238]">lock</span>
+                                  *** *** ***
+                                </span>
+                              ) : (
+                                (() => {
+                                  const gs = entry.grundstellung || [
+                                    ((entry.day * 5 + 3) % 26) + 1,
+                                    ((entry.day * 9 + 11) % 26) + 1,
+                                    ((entry.day * 13 + 17) % 26) + 1
+                                  ];
+                                  return gs.slice(0, entry.fourthRotor ? 4 : 3).map((g) => formatRotorRing(g, ringFormat)).join(' ');
+                                })()
+                              )}
                             </td>
                           )}
 

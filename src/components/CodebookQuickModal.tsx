@@ -260,7 +260,15 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
                   </span>
                 </div>
 
-                {currentEntry.grundstellung && currentEntry.grundstellung.length > 0 && !currentSheet?.isHistorical && (
+                {currentSheet?.isHistorical ? (
+                  <div className={`flex items-center justify-between ${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
+                    <span className={`text-[11px] ${t.textMuted} ${t.fontMono}`}>Grundstellung (Start):</span>
+                    <span className={`font-bold text-[#83715d] ${t.fontMono} flex items-center gap-1`}>
+                      <span className="material-symbols-outlined text-xs text-[#ebc238]">lock</span>
+                      *** *** *** (Secret / Encrypted)
+                    </span>
+                  </div>
+                ) : currentEntry.grundstellung && currentEntry.grundstellung.length > 0 && (
                   <div className={`flex items-center justify-between ${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
                     <span className={`text-[11px] ${t.textMuted} ${t.fontMono}`}>Grundstellung (Start):</span>
                     <span className={`font-bold ${t.textAccent} ${t.fontMono}`}>
