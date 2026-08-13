@@ -1567,6 +1567,30 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
               <span className={`text-[10px] font-mono ${t.textAccent}`}>TYPE ANY LETTER DIRECTLY OR USE DIT/DAH/SPACE</span>
             </div>
 
+            
+
+            {/* Physical Straight Key (Press & Hold) */}
+            <button
+              type="button"
+              disabled={!isPowerOn}
+              onMouseDown={handleMouseDownKey}
+              onMouseUp={handleMouseUpKey}
+              onMouseLeave={handleMouseUpKey}
+              onTouchStart={handleTouchStartKey}
+              onTouchEnd={handleTouchEndKey}
+              onTouchCancel={handleTouchEndKey}
+              className={`w-full h-24 rounded-xl border-2 font-mono font-extrabold text-sm transition-all duration-75 select-none touch-none flex flex-col items-center justify-center gap-1 cursor-pointer shadow-lg disabled:opacity-40 disabled:cursor-not-allowed ${
+                isKeyPressed
+                  ? `${t.buttonHighlight} scale-[0.98]`
+                  : `${t.radioPresetBtnInactive}`
+              }`}
+            >
+              <span className="material-symbols-outlined text-2xl">
+                {isKeyPressed ? 'graphic_eq' : 'key'}
+              </span>
+              <span>{!isPowerOn ? 'RADIO POWER IS OFF' : isKeyPressed ? 'TRANSMITTING CW...' : 'STRAIGHT TELEGRAPH KEY (HOLD SPACE)'}</span>
+            </button>
+            
             {/* Quick DIT / DAH Dedicated Tapping Buttons & Commit Helper */}
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-3">
@@ -1607,29 +1631,6 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
                 </div>
               )}
             </div>
-
-            {/* Physical Straight Key (Press & Hold) */}
-            <button
-              type="button"
-              disabled={!isPowerOn}
-              onMouseDown={handleMouseDownKey}
-              onMouseUp={handleMouseUpKey}
-              onMouseLeave={handleMouseUpKey}
-              onTouchStart={handleTouchStartKey}
-              onTouchEnd={handleTouchEndKey}
-              onTouchCancel={handleTouchEndKey}
-              className={`w-full h-24 rounded-xl border-2 font-mono font-extrabold text-sm transition-all duration-75 select-none touch-none flex flex-col items-center justify-center gap-1 cursor-pointer shadow-lg disabled:opacity-40 disabled:cursor-not-allowed ${
-                isKeyPressed
-                  ? `${t.buttonHighlight} scale-[0.98]`
-                  : `${t.radioPresetBtnInactive}`
-              }`}
-            >
-              <span className="material-symbols-outlined text-2xl">
-                {isKeyPressed ? 'graphic_eq' : 'key'}
-              </span>
-              <span>{!isPowerOn ? 'RADIO POWER IS OFF' : isKeyPressed ? 'TRANSMITTING CW...' : 'STRAIGHT TELEGRAPH KEY (HOLD SPACE)'}</span>
-            </button>
-
             {/* Quick Text / Q-Code Quick Keyer (Instant Typing Mode) */}
             <div className={`pt-2 border-t ${t.borderBase} space-y-2`}>
               <span className={`text-xs font-bold ${t.textPrimary} block`}>
