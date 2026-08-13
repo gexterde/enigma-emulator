@@ -65,6 +65,8 @@ interface SettingsModalProps {
   onResetMachine: () => void;
   senderCallSign: string;
   onUpdateSenderCallSign: (newSender: string) => void;
+  batteryDrainEnabled: boolean;
+  onToggleBatteryDrain: (enabled: boolean) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -75,6 +77,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onResetMachine,
   senderCallSign,
   onUpdateSenderCallSign,
+  batteryDrainEnabled,
+  onToggleBatteryDrain,
 }) => {
   const { theme, setTheme } = useTheme();
   const t = getTheme(theme);
@@ -92,6 +96,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             type="checkbox"
             checked={soundEnabled}
             onChange={(e) => onToggleSound(e.target.checked)}
+            className="mech-switch cursor-pointer"
+          />
+        </div>
+
+        {/* Battery Level Drain / Change */}
+        <div className={`flex justify-between items-center ${t.panelBg} p-3 rounded ${t.borderBase}`}>
+          <div>
+            <span className={`font-bold ${t.textPrimary} flex items-center gap-1.5`}>
+              <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>battery_charging_full</span>
+              <span>Battery Level Change (Depletion)</span>
+            </span>
+            <span className={`text-[10px] ${t.textMuted} block mt-0.5`}>
+              Simulate continuous battery discharge over time and key presses
+            </span>
+          </div>
+          <input
+            type="checkbox"
+            checked={batteryDrainEnabled}
+            onChange={(e) => onToggleBatteryDrain(e.target.checked)}
             className="mech-switch cursor-pointer"
           />
         </div>

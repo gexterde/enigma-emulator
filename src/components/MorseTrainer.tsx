@@ -16,6 +16,27 @@ const MORSE_CODE: Record<string, string> = {
   '.': '.-.-.-', ',': '--..--', '?': '..--..', '/': '-..-.', '=': '-...-'
 };
 
+const MORSE_GROUPS = [
+  {
+    title: 'Letters (A–Z)',
+    icon: 'sort_by_alpha',
+    items: Object.entries(MORSE_CODE).filter(([char]) => /^[A-Z]$/.test(char)),
+    gridCols: 'grid-cols-3 sm:grid-cols-6 md:grid-cols-9 lg:grid-cols-13',
+  },
+  {
+    title: 'Numbers (0–9)',
+    icon: 'pin',
+    items: Object.entries(MORSE_CODE).filter(([char]) => /^[0-9]$/.test(char)),
+    gridCols: 'grid-cols-3 sm:grid-cols-5 md:grid-cols-10',
+  },
+  {
+    title: 'Special Characters & Punctuation',
+    icon: 'notes',
+    items: Object.entries(MORSE_CODE).filter(([char]) => !/^[A-Z0-9]$/.test(char)),
+    gridCols: 'grid-cols-3 sm:grid-cols-5 md:grid-cols-5',
+  },
+];
+
 const METHODS = {
   koch: "KMRSUAPTLOWI.NJEF0Y,VG5/Q9ZH38B?427C1D6X",
   lcwo: "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D6X0"
@@ -1764,20 +1785,30 @@ export const MorseTrainer: React.FC = () => {
         </button>
         
         {showChart && (
-          <div className={`grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2 ${t.panelBg} p-4 rounded border ${t.borderBase} animate-fadeIn select-none`}>
-            {Object.entries(MORSE_CODE).map(([char, code]) => (
-              <div 
-                key={char} 
-                onClick={() => {
-                  if (playerRef.current) {
-                    playerRef.current.playSequence(char);
-                  }
-                }}
-                className={`flex flex-col items-center justify-center p-2 border ${t.borderBase}/50 rounded ${t.panelInner} hover:${t.borderAccent} hover:${t.panelBg} transition-all cursor-pointer hover:scale-105`}
-                title="Click to play code pitch sound"
-              >
-                <span className={`${t.textSecondary} font-bold text-lg leading-none mb-1`}>{char}</span>
-                <span className={`${t.textAccent} font-mono text-xs tracking-widest`}>{code}</span>
+          <div className="space-y-4 pt-1 animate-fadeIn select-none">
+            {MORSE_GROUPS.map((group) => (
+              <div key={group.title} className={`${t.panelBg} p-3.5 rounded-lg border ${t.borderBase}`}>
+                <div className={`text-[11px] font-bold ${t.textAccent} ${t.fontHeader} uppercase tracking-wider mb-2.5 flex items-center gap-1.5 border-b ${t.borderBase} pb-1.5`}>
+                  <span className="material-symbols-outlined text-sm">{group.icon}</span>
+                  <span>{group.title}</span>
+                </div>
+                <div className={`grid ${group.gridCols} gap-2`}>
+                  {group.items.map(([char, code]) => (
+                    <div 
+                      key={char} 
+                      onClick={() => {
+                        if (playerRef.current) {
+                          playerRef.current.playSequence(char);
+                        }
+                      }}
+                      className={`flex flex-col items-center justify-center p-2 border ${t.borderBase}/50 rounded ${t.panelInner} hover:${t.borderAccent} hover:${t.panelBg} transition-all cursor-pointer hover:scale-105`}
+                      title="Click to play code pitch sound"
+                    >
+                      <span className={`${t.textSecondary} font-bold text-lg leading-none mb-1`}>{char}</span>
+                      <span className={`${t.textAccent} font-mono text-[11px] tracking-widest`}>{code}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>

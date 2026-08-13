@@ -10,6 +10,8 @@ interface BatterySwitchProps {
   compact?: boolean;
   isPanel?: boolean;
   onClose?: () => void;
+  batteryDrainEnabled?: boolean;
+  onToggleBatteryDrain?: () => void;
 }
 
 export const BatterySwitch: React.FC<BatterySwitchProps> = ({
@@ -17,7 +19,9 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
   onChangeMode,
   compact = false,
   isPanel = false,
-  onClose
+  onClose,
+  batteryDrainEnabled = true,
+  onToggleBatteryDrain,
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
@@ -213,20 +217,36 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
             <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>bolt</span>
             BATTERIESCHALTER
           </h2>
-          {onClose && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
-              className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textMuted} hover:${t.textAccent} flex items-center gap-1 cursor-pointer border ${t.borderBase} px-2.5 py-1 rounded-md ${t.panelInner}/60 transition-all font-bold tracking-wider`}
-              title="Close Battery Switch"
-            >
-              <span className="material-symbols-outlined text-xs">close</span>
-              <span>CLOSE</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {onToggleBatteryDrain && (
+              <button
+                type="button"
+                onClick={onToggleBatteryDrain}
+                className={`text-[10px] ${t.fontMono} font-bold px-2 py-0.5 rounded border transition-all cursor-pointer ${
+                  batteryDrainEnabled
+                    ? `${t.activeBadge}`
+                    : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200'
+                }`}
+                title="Switch battery level drain ON or OFF"
+              >
+                DRAIN: {batteryDrainEnabled ? 'ON' : 'OFF'}
+              </button>
+            )}
+            {onClose && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+                className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textMuted} hover:${t.textAccent} flex items-center gap-1 cursor-pointer border ${t.borderBase} px-2.5 py-1 rounded-md ${t.panelInner}/60 transition-all font-bold tracking-wider`}
+                title="Close Battery Switch"
+              >
+                <span className="material-symbols-outlined text-xs">close</span>
+                <span>CLOSE</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Switch Graphical Dial */}

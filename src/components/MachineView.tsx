@@ -75,6 +75,8 @@ interface MachineViewProps {
   batteryMode: BatterySwitchMode;
   onSetBatteryMode: (mode: BatterySwitchMode) => void;
   onConsumePower: () => void;
+  batteryDrainEnabled?: boolean;
+  onToggleBatteryDrain?: () => void;
   senderCallSign?: string;
   onUpdateSenderCallSign?: (newSender: string) => void;
   onBroadcastOverRadio?: (header: string, ciphertext: string) => void;
@@ -99,6 +101,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
   batteryMode,
   onSetBatteryMode,
   onConsumePower,
+  batteryDrainEnabled,
+  onToggleBatteryDrain,
   senderCallSign: propSenderCallSign,
   onUpdateSenderCallSign,
   onBroadcastOverRadio
@@ -1238,6 +1242,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 onChangeMode={handleSetBatteryMode}
                 isPanel={true}
                 onClose={() => setShowBatterySwitch(false)}
+                batteryDrainEnabled={batteryDrainEnabled}
+                onToggleBatteryDrain={onToggleBatteryDrain}
               />
             </div>
           )}
@@ -1483,6 +1489,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 onChangeMode={handleSetBatteryMode}
                 isPanel={true}
                 onClose={() => setShowBatterySwitch(false)}
+                batteryDrainEnabled={batteryDrainEnabled}
+                onToggleBatteryDrain={onToggleBatteryDrain}
               />
             </div>
           )}

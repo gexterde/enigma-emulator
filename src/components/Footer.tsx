@@ -7,6 +7,8 @@ interface FooterProps {
   batteryLevel: number;
   batteryMode: string;
   onRecharge: () => void;
+  batteryDrainEnabled?: boolean;
+  onToggleBatteryDrain?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -14,6 +16,8 @@ export const Footer: React.FC<FooterProps> = ({
   batteryLevel,
   batteryMode,
   onRecharge,
+  batteryDrainEnabled = true,
+  onToggleBatteryDrain,
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
@@ -61,10 +65,27 @@ export const Footer: React.FC<FooterProps> = ({
         <span className={`${t.fontMono} text-[9px] ${t.textSecondary} hidden sm:inline`}>
           {batteryLevel === 0
             ? 'BATTERY DEAD'
+            : !batteryDrainEnabled
+            ? 'CONSTANT (DRAIN OFF)'
             : batteryMode === 'aus'
             ? 'STANDBY (NO DRAIN)'
             : `POWER SUPPLY (${batteryMode.toUpperCase()})`}
         </span>
+
+        {/* Battery Level Drain Toggle Button */}
+        {onToggleBatteryDrain && (
+          <button
+            onClick={onToggleBatteryDrain}
+            className={`px-2 py-0.5 rounded text-[9px] ${t.fontMono} font-bold cursor-pointer transition-all ${
+              batteryDrainEnabled
+                ? `${t.activeBadge}`
+                : 'bg-zinc-800 text-zinc-400 border border-zinc-700 hover:text-zinc-200'
+            }`}
+            title="Switch battery level drain / change ON or OFF"
+          >
+            DRAIN: {batteryDrainEnabled ? 'ON' : 'OFF'}
+          </button>
+        )}
 
         {/* Recharge / Replace Button */}
         <button

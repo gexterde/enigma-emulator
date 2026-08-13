@@ -125,6 +125,16 @@ export default function App() {
     }
   });
 
+  // Battery Level Change / Drain State
+  const [batteryDrainEnabled, setBatteryDrainEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('enigma_battery_drain');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
   // Persist Battery State
   useEffect(() => {
     try {
@@ -138,9 +148,15 @@ export default function App() {
     } catch {}
   }, [batteryMode]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('enigma_battery_drain', String(batteryDrainEnabled));
+    } catch {}
+  }, [batteryDrainEnabled]);
+
   // Background depletion
   useEffect(() => {
-    if (batteryMode === 'aus') return;
+    if (batteryMode === 'aus' || !batteryDrainEnabled) return;
 
     const interval = setInterval(() => {
       setBatteryLevel((prev) => {
@@ -155,9 +171,11 @@ export default function App() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [batteryMode]);
+  }, [batteryMode, batteryDrainEnabled]);
 
   const handleConsumePower = () => {
+    if (!batteryDrainEnabled) return;
+
     setBatteryLevel((prev) => {
       if (prev <= 0) return 0;
       let cost = 0.25; // standard key press cost
@@ -166,6 +184,10 @@ export default function App() {
       const next = prev - cost;
       return next < 0 ? 0 : next;
     });
+  };
+
+  const handleToggleBatteryDrain = (enabled?: boolean) => {
+    setBatteryDrainEnabled((prev) => (typeof enabled === 'boolean' ? enabled : !prev));
   };
 
   const handleRecharge = () => {
@@ -376,6 +398,8 @@ export default function App() {
               batteryMode={batteryMode}
               onSetBatteryMode={handleSetBatteryMode}
               onConsumePower={handleConsumePower}
+              batteryDrainEnabled={batteryDrainEnabled}
+              onToggleBatteryDrain={handleToggleBatteryDrain}
               senderCallSign={senderCallSign}
               onUpdateSenderCallSign={handleUpdateSenderCallSign}
               onBroadcastOverRadio={(header, ciphertext) => {
@@ -455,6 +479,8 @@ export default function App() {
         batteryLevel={batteryLevel}
         batteryMode={batteryMode}
         onRecharge={handleRecharge}
+        batteryDrainEnabled={batteryDrainEnabled}
+        onToggleBatteryDrain={handleToggleBatteryDrain}
       />
 
       {/* Modals */}
@@ -466,6 +492,8 @@ export default function App() {
         onResetMachine={handleResetMachine}
         senderCallSign={senderCallSign}
         onUpdateSenderCallSign={handleUpdateSenderCallSign}
+        batteryDrainEnabled={batteryDrainEnabled}
+        onToggleBatteryDrain={setBatteryDrainEnabled}
       />
 
       <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
