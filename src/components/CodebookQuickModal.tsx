@@ -91,31 +91,48 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
     });
 
     const isM4 = !!entry.fourthRotor;
+    let gs0: number;
+    let gs1: number;
+    let gs2: number;
+    let gs3: number;
+
+    if (entry.grundstellung && entry.grundstellung.length >= 3) {
+      gs0 = (entry.grundstellung[0] || 1) - 1;
+      gs1 = (entry.grundstellung[1] || 1) - 1;
+      gs2 = (entry.grundstellung[2] || 1) - 1;
+      gs3 = (entry.grundstellung[3] || 1) - 1;
+    } else {
+      // Randomize starting Grundstellung when not explicitly specified in key sheet
+      gs0 = Math.floor(Math.random() * 26);
+      gs1 = Math.floor(Math.random() * 26);
+      gs2 = Math.floor(Math.random() * 26);
+      gs3 = Math.floor(Math.random() * 26);
+    }
 
     const newEnigmaConfig: EnigmaConfig = {
       leftRotor: {
         type: entry.rotors[0],
         ring: entry.rings[0],
-        start: 0,
-        current: 0
+        start: gs0,
+        current: gs0
       },
       middleRotor: {
         type: entry.rotors[1],
         ring: entry.rings[1],
-        start: 0,
-        current: 0
+        start: gs1,
+        current: gs1
       },
       rightRotor: {
         type: entry.rotors[2],
         ring: entry.rings[2],
-        start: 0,
-        current: 0
+        start: gs2,
+        current: gs2
       },
       fourthRotor: {
         type: entry.fourthRotor || 'I',
         ring: entry.fourthRing || 1,
-        start: 0,
-        current: 0
+        start: entry.fourthRotor ? gs3 : 0,
+        current: entry.fourthRotor ? gs3 : 0
       },
      reflector: {
         type: (entry as any).reflectorType || (isM4 ? 'Reflector B Thin' : 'Reflector B'),
@@ -242,6 +259,15 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
                     {currentEntry.rings.map(r => formatRotorRing(r, ringFormat)).join(' - ')}
                   </span>
                 </div>
+
+                {currentEntry.grundstellung && currentEntry.grundstellung.length > 0 && !currentSheet?.isHistorical && (
+                  <div className={`flex items-center justify-between ${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
+                    <span className={`text-[11px] ${t.textMuted} ${t.fontMono}`}>Grundstellung (Start):</span>
+                    <span className={`font-bold ${t.textAccent} ${t.fontMono}`}>
+                      {currentEntry.grundstellung.slice(0, currentEntry.fourthRotor ? 4 : 3).map(g => formatRotorRing(g, ringFormat)).join(' - ')}
+                    </span>
+                  </div>
+                )}
 
                 <div className={`${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
                   <span className={`text-[11px] ${t.textMuted} ${t.fontMono} block mb-1`}>

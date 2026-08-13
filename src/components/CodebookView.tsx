@@ -18,6 +18,7 @@ export interface CodebookEntry {
   day: number;
   rotors: [RotorType, RotorType, RotorType];
   rings: [number, number, number]; // 1-26
+  grundstellung?: number[]; // 1-26 start ring settings for rotors
   plugboardPairs: string[]; // e.g. ['TW', 'BI', 'UY', ...]
   kenngruppen: string[]; // Trigrams or identifiers
   fourthRotor?: RotorType; // M4 Naval fixed stator (Beta/Gamma) — optional, defaults to 'I' (pass-through)
@@ -246,6 +247,13 @@ function generateRandom31DayEntries(): CodebookEntry[] {
       Math.floor(Math.random() * 26) + 1
     ];
 
+    // Pick 3 start position settings (Grundstellung) 1-26
+    const grundstellung: [number, number, number] = [
+      Math.floor(Math.random() * 26) + 1,
+      Math.floor(Math.random() * 26) + 1,
+      Math.floor(Math.random() * 26) + 1
+    ];
+
     // Generate 10 non-overlapping plugboard pairs
     const availChars = [...alphabet].sort(() => Math.random() - 0.5);
     const pairs: string[] = [];
@@ -269,6 +277,7 @@ function generateRandom31DayEntries(): CodebookEntry[] {
       day,
       rotors: selectedRotors,
       rings,
+      grundstellung,
       plugboardPairs: pairs,
       kenngruppen: kgList
     });
@@ -470,6 +479,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
   const isCurrentHistorical = !!currentSheet.isHistorical;
   const hasFourthRotor = currentSheet.entries.some((e: CodebookEntry) => e.fourthRotor);
   const hasDualReflector = currentSheet.entries.some((e: CodebookEntry) => e.reflectorType !== undefined);
+  const hasGrundstellung = !isCurrentHistorical && currentSheet.entries.some((e: CodebookEntry) => e.grundstellung && e.grundstellung.length > 0);
 
   // Save custom sheets to localStorage
   useEffect(() => {
@@ -499,6 +509,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
   const [builderFourthRotorsPool, setBuilderFourthRotorsPool] = useState<string[]>(['Beta', 'Gamma']);
   const [builderUseFixedFourthRing, setBuilderUseFixedFourthRing] = useState<boolean>(true);
   const [builderFixedFourthRing, setBuilderFixedFourthRing] = useState<number>(1);
+  const [builderIncludeGrundstellung, setBuilderIncludeGrundstellung] = useState<boolean>(false);
 
   // UKW Dual Dynamic Reflector Parameters
   const [builderUseDualReflector, setBuilderUseDualReflector] = useState<boolean>(false);
@@ -530,6 +541,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
   };
 
   const applyGeneratorPreset = (preset: 'luftwaffe' | 'heer' | 'm3' | 'm4' | 'ukw_dual') => {
+    setBuilderIncludeGrundstellung(false);
     if (preset === 'luftwaffe') {
       setBuilderTitle('Luftwaffen-Maschinen-Schlüssel Nr. 2744');
       setBuilderSubtitle('Oberkommando der Luftwaffe (Air Force Secret Key Sheet)');
@@ -607,6 +619,10 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
   const [addRingLeft, setAddRingLeft] = useState<number>(1);
   const [addRingMid, setAddRingMid] = useState<number>(1);
   const [addRingRight, setAddRingRight] = useState<number>(1);
+  const [addStartLeft, setAddStartLeft] = useState<number>(1);
+  const [addStartMid, setAddStartMid] = useState<number>(1);
+  const [addStartRight, setAddStartRight] = useState<number>(1);
+  const [addIncludeStart, setAddIncludeStart] = useState<boolean>(false);
   const [addPlugString, setAddPlugString] = useState<string>('AF BL CX DI EJ GQ HY KN OR PZ');
   const [addKenngruppen, setAddKenngruppen] = useState<string>('kxl zqm ewj');
   const [addReflectorType, setAddReflectorType] = useState<ReflectorType>('Reflector B');
@@ -631,31 +647,48 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
     });
 
     const isM4 = !!entry.fourthRotor;
+    let gs0: number;
+    let gs1: number;
+    let gs2: number;
+    let gs3: number;
+
+    if (entry.grundstellung && entry.grundstellung.length >= 3) {
+      gs0 = (entry.grundstellung[0] || 1) - 1;
+      gs1 = (entry.grundstellung[1] || 1) - 1;
+      gs2 = (entry.grundstellung[2] || 1) - 1;
+      gs3 = (entry.grundstellung[3] || 1) - 1;
+    } else {
+      // Randomize Grundstellung (0-25) if not specified in the key sheet
+      gs0 = Math.floor(Math.random() * 26);
+      gs1 = Math.floor(Math.random() * 26);
+      gs2 = Math.floor(Math.random() * 26);
+      gs3 = Math.floor(Math.random() * 26);
+    }
 
     const newEnigmaConfig: EnigmaConfig = {
       leftRotor: {
         type: entry.rotors[0],
         ring: entry.rings[0],
-        start: 0,
-        current: 0
+        start: gs0,
+        current: gs0
       },
       middleRotor: {
         type: entry.rotors[1],
         ring: entry.rings[1],
-        start: 0,
-        current: 0
+        start: gs1,
+        current: gs1
       },
       rightRotor: {
         type: entry.rotors[2],
         ring: entry.rings[2],
-        start: 0,
-        current: 0
+        start: gs2,
+        current: gs2
       },
       fourthRotor: {
         type: entry.fourthRotor || 'I',
         ring: entry.fourthRing || 1,
-        start: 0,
-        current: 0
+        start: entry.fourthRotor ? gs3 : 0,
+        current: entry.fourthRotor ? gs3 : 0
       },
       reflector: {
         type: entry.reflectorType || (isM4 ? 'Reflector B Thin' : 'Reflector B'),
@@ -809,6 +842,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
         kenngruppenLength: Math.max(2, Math.min(5, builderKenngruppenLength ?? 3)),
         fourthRotorsPool: builderIsM4 ? (builderFourthRotorsPool.length > 0 ? builderFourthRotorsPool : ['Beta']) : undefined,
         fixedFourthRing: (builderIsM4 && builderUseFixedFourthRing) ? builderFixedFourthRing : undefined,
+        includeGrundstellung: builderIncludeGrundstellung,
         useDualDynamicReflector: builderUseDualReflector,
         fixedReflectorRing: (builderUseDualReflector && builderUseFixedReflectorRing) ? builderFixedReflectorRing : undefined,
         fixedReflectorStart: (builderUseDualReflector && builderUseFixedReflectorStart) ? builderFixedReflectorStart : undefined
@@ -819,6 +853,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
         day: e.day,
         rotors: [e.rotors[0] as RotorType, e.rotors[1] as RotorType, e.rotors[2] as RotorType],
         rings: [e.rings[0], e.rings[1], e.rings[2]],
+        grundstellung: e.grundstellung,
         plugboardPairs: e.plugboardPairs,
         kenngruppen: e.kenngruppen,
         fourthRotor: e.fourthRotor as RotorType | undefined,
@@ -870,6 +905,9 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
       reflectorRing: addReflectorRing,
       reflectorStart: addReflectorStart
     };
+    if (addIncludeStart) {
+      created.grundstellung = [addStartLeft, addStartMid, addStartRight];
+    }
 
     setCustomSheets((prev) =>
       prev.map((sheet) => {
@@ -1301,6 +1339,23 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                     </label>
                     <span className="text-[10px] text-[#83715d] mt-0.5 block">Kriegsmarine Shark key structure</span>
                   </div>
+
+                  {/* Grundstellung Option */}
+                  <div>
+                    <label className={`block text-xs font-bold ${t.textMuted} mb-1`}>
+                      Grundstellung (Start Settings):
+                    </label>
+                    <label className={`flex items-center gap-2 bg-[#0d0a03] border ${t.borderBase} rounded p-2 cursor-pointer text-xs ${t.textPrimary} h-[38px]`}>
+                      <input
+                        type="checkbox"
+                        checked={builderIncludeGrundstellung}
+                        onChange={(e) => setBuilderIncludeGrundstellung(e.target.checked)}
+                        className="accent-[#ebc238] w-4 h-4 cursor-pointer"
+                      />
+                      <span>Include Fixed Daily Grundstellung</span>
+                    </label>
+                    <span className="text-[10px] text-[#83715d] mt-0.5 block">Unchecked: Random Grundstellung per msg</span>
+                  </div>
                 </div>
 
                 {/* Main Rotors Pool selection */}
@@ -1694,6 +1749,12 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                         ({ringFormat === 'number' ? 'Ring Settings: 01–26' : 'Ring Settings: A–Z'})
                       </div>
                     </th>
+                    {hasGrundstellung && (
+                      <th className={`border ${t.borderStrong} p-2 sm:p-2.5`}>
+                        <div>Grundstellung</div>
+                        <div className={`text-[10px] ${t.tableHeaderMuted}`}>(Start Settings)</div>
+                      </th>
+                    )}
                     {hasFourthRotor && (
                       <th className={`border ${t.borderStrong} p-2 sm:p-2.5`}>
                         <div>4. Walze (M4)</div>
@@ -1722,7 +1783,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 <tbody>
                   {displayedEntries.length === 0 ? (
                     <tr>
-                      <td colSpan={5 + (hasFourthRotor ? 1 : 0) + (hasDualReflector ? 1 : 0) + 1} className={`p-8 text-center ${t.textMutedStrong} italic`}>
+                      <td colSpan={5 + (hasGrundstellung ? 1 : 0) + (hasFourthRotor ? 1 : 0) + (hasDualReflector ? 1 : 0) + 1} className={`p-8 text-center ${t.textMutedStrong} italic`}>
                         No entries found for this codebook. {!isCurrentHistorical && 'Click "Add Date" above to add entries.'}
                       </td>
                     </tr>
@@ -1751,6 +1812,13 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                           <td className={`border ${t.borderStrong} p-1.5 sm:p-2 tracking-widest font-mono font-extrabold text-center`}>
                             {entry.rings.map((r) => formatRotorRing(r, ringFormat)).join(' ')}
                           </td>
+
+                          {/* Grundstellung (Start Settings) */}
+                          {hasGrundstellung && (
+                            <td className={`border ${t.borderStrong} p-1.5 sm:p-2 tracking-widest font-mono font-extrabold text-center`}>
+                              {(entry.grundstellung || [1, 1, 1]).slice(0, entry.fourthRotor ? 4 : 3).map((g) => formatRotorRing(g, ringFormat)).join(' ')}
+                            </td>
+                          )}
 
                           {/* 4. Walze (4th Rotor — M4 only) */}
                           {hasFourthRotor && (
@@ -1947,6 +2015,56 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                     </select>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className={`flex items-center gap-1.5 ${t.textMuted} font-bold cursor-pointer text-xs`}>
+                    <input
+                      type="checkbox"
+                      checked={addIncludeStart}
+                      onChange={(e) => setAddIncludeStart(e.target.checked)}
+                      className="accent-[#ebc238] w-3.5 h-3.5 cursor-pointer"
+                    />
+                    <span>Include Daily Grundstellung (Start Setting)</span>
+                  </label>
+                  {addIncludeStart && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAddStartLeft(Math.floor(Math.random() * 26) + 1);
+                        setAddStartMid(Math.floor(Math.random() * 26) + 1);
+                        setAddStartRight(Math.floor(Math.random() * 26) + 1);
+                      }}
+                      className={`text-[10px] ${t.textAccent} hover:underline flex items-center gap-0.5 cursor-pointer`}
+                    >
+                      <span className="material-symbols-outlined text-[12px]">casino</span>
+                      Randomize
+                    </button>
+                  )}
+                </div>
+                {addIncludeStart && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { val: addStartLeft, setVal: setAddStartLeft, label: 'Left' },
+                      { val: addStartMid, setVal: setAddStartMid, label: 'Middle' },
+                      { val: addStartRight, setVal: setAddStartRight, label: 'Right' }
+                    ].map((r, idx) => (
+                      <select
+                        key={idx}
+                        value={r.val}
+                        onChange={(e) => r.setVal(parseInt(e.target.value) || 1)}
+                        className={`${t.panelInner} border ${t.borderBase} rounded p-1.5 ${t.textPrimary} font-mono text-xs focus:outline-none focus:${t.borderAccent}`}
+                      >
+                        {Array.from({ length: 26 }, (_, i) => i + 1).map((n) => (
+                          <option key={n} value={n}>
+                            {formatRotorRing(n, ringFormat)}
+                          </option>
+                        ))}
+                      </select>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>

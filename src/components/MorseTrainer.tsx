@@ -1,41 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
 import { useTheme, getTheme } from '../lib/theme';
-//import React, { useState, useEffect, useRef, useMemo } from 'react';
-
-const MORSE_CODE: Record<string, string> = {
-  'A': '.-',    'B': '-...',  'C': '-.-.',  'D': '-..',
-  'E': '.',     'F': '..-.',  'G': '--.',   'H': '....',
-  'I': '..',    'J': '.---',  'K': '-.-',   'L': '.-..',
-  'M': '--',    'N': '-.',    'O': '---',   'P': '.--.',
-  'Q': '--.-',  'R': '.-.',   'S': '...',   'T': '-',
-  'U': '..-',   'V': '...-',  'W': '.--',   'X': '-..-',
-  'Y': '-.--',  'Z': '--..',
-  '0': '-----', '1': '.----', '2': '..---', '3': '...--',
-  '4': '....-', '5': '.....', '6': '-....', '7': '--...',
-  '8': '---..', '9': '----.',
-  '.': '.-.-.-', ',': '--..--', '?': '..--..', '/': '-..-.', '=': '-...-'
-};
-
-const MORSE_GROUPS = [
-  {
-    title: 'Letters (A–Z)',
-    icon: 'sort_by_alpha',
-    items: Object.entries(MORSE_CODE).filter(([char]) => /^[A-Z]$/.test(char)),
-    gridCols: 'grid-cols-3 sm:grid-cols-6 md:grid-cols-9 lg:grid-cols-13',
-  },
-  {
-    title: 'Numbers (0–9)',
-    icon: 'pin',
-    items: Object.entries(MORSE_CODE).filter(([char]) => /^[0-9]$/.test(char)),
-    gridCols: 'grid-cols-3 sm:grid-cols-5 md:grid-cols-10',
-  },
-  {
-    title: 'Special Characters & Punctuation',
-    icon: 'notes',
-    items: Object.entries(MORSE_CODE).filter(([char]) => !/^[A-Z0-9]$/.test(char)),
-    gridCols: 'grid-cols-3 sm:grid-cols-5 md:grid-cols-5',
-  },
-];
+import { MORSE_MAP as MORSE_CODE } from '../lib/morse';
+import { MorseReferenceSheet } from './MorseReferenceSheet';
 
 const METHODS = {
   koch: "KMRSUAPTLOWI.NJEF0Y,VG5/Q9ZH38B?427C1D6X",
@@ -1774,45 +1740,19 @@ export const MorseTrainer: React.FC = () => {
 
       {/* Morse Alphabet Reference card */}
       <div className={`border-t ${t.borderBase} pt-6`}>
-        <button
-          onClick={() => setShowChart(!showChart)}
-          className={`flex items-center gap-2 ${t.textMuted} ${t.fontHeader} font-bold text-xs uppercase mb-2 hover:${t.textAccent} transition-colors cursor-pointer`}
-        >
-          <span className="material-symbols-outlined text-lg">
-            {showChart ? 'expand_less' : 'expand_more'}
-          </span>
-          Auditory Code Reference Sheet
-        </button>
-        
-        {showChart && (
-          <div className="space-y-4 pt-1 animate-fadeIn select-none">
-            {MORSE_GROUPS.map((group) => (
-              <div key={group.title} className={`${t.panelBg} p-3.5 rounded-lg border ${t.borderBase}`}>
-                <div className={`text-[11px] font-bold ${t.textAccent} ${t.fontHeader} uppercase tracking-wider mb-2.5 flex items-center gap-1.5 border-b ${t.borderBase} pb-1.5`}>
-                  <span className="material-symbols-outlined text-sm">{group.icon}</span>
-                  <span>{group.title}</span>
-                </div>
-                <div className={`grid ${group.gridCols} gap-2`}>
-                  {group.items.map(([char, code]) => (
-                    <div 
-                      key={char} 
-                      onClick={() => {
-                        if (playerRef.current) {
-                          playerRef.current.playSequence(char);
-                        }
-                      }}
-                      className={`flex flex-col items-center justify-center p-2 border ${t.borderBase}/50 rounded ${t.panelInner} hover:${t.borderAccent} hover:${t.panelBg} transition-all cursor-pointer hover:scale-105`}
-                      title="Click to play code pitch sound"
-                    >
-                      <span className={`${t.textSecondary} font-bold text-lg leading-none mb-1`}>{char}</span>
-                      <span className={`${t.textAccent} font-mono text-[11px] tracking-widest`}>{code}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <MorseReferenceSheet
+          title="Auditory Code Reference Sheet"
+          subtitle="Click any letter, number, or special character to play its auditory Morse pitch code"
+          icon="graphic_eq"
+          expanded={showChart}
+          onToggleExpand={() => setShowChart(!showChart)}
+          onItemClick={(char) => {
+            if (playerRef.current) {
+              playerRef.current.playSequence(char);
+            }
+          }}
+          itemTitlePrefix="Click to play sound for"
+        />
       </div>
 
       {/* Hidden Mobile Keyboard Input Trigger */}

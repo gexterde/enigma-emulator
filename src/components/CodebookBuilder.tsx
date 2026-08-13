@@ -156,6 +156,7 @@ export const CodebookBuilder: React.FC<CodebookBuilderProps> = ({ onCancel, onCo
         day: e.day,
         rotors: [e.rotors[0] as RotorType, e.rotors[1] as RotorType, e.rotors[2] as RotorType],
         rings: [e.rings[0], e.rings[1], e.rings[2]],
+        grundstellung: e.grundstellung,
         plugboardPairs: e.plugboardPairs,
         kenngruppen: e.kenngruppen,
         fourthRotor: e.fourthRotor as RotorType | undefined,

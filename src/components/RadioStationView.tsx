@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme, getTheme } from '../lib/theme';
 import { EnigmaConfig } from '../types';
+import { MORSE_MAP as MORSE_CODE_MAP, REVERSE_MORSE_MAP } from '../lib/morse';
+import { MorseReferenceSheet } from './MorseReferenceSheet';
 
 interface RadioStationViewProps {
   senderCallSign: string;
@@ -30,21 +32,6 @@ interface QSOEntry {
   header?: string;
   ciphertext?: string;
 }
-
-// Dictionary for Morse Code
-const MORSE_CODE_MAP: Record<string, string> = {
-  'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
-  'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
-  'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
-  'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
-  'Y': '-.--', 'Z': '--..', '0': '-----', '1': '.----', '2': '..---',
-  '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...',
-  '8': '---..', '9': '----.', ' ': '/'
-};
-
-const REVERSE_MORSE_MAP: Record<string, string> = Object.fromEntries(
-  Object.entries(MORSE_CODE_MAP).map(([k, v]) => [v, k])
-);
 
 export const RadioStationView: React.FC<RadioStationViewProps> = ({
   senderCallSign,
@@ -1687,39 +1674,15 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
           </div>
 
           {/* On-Screen Interactive Morse Reference Chart */}
-          <div className={`${t.panelBg} p-4 rounded-xl border ${t.borderBase} shadow-xl space-y-3`}>
-            <div className={`flex items-center justify-between border-b ${t.borderBase} pb-2`}>
-              <span className={`text-xs font-bold ${t.textPrimary} flex items-center gap-1.5`}>
-                <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>help</span>
-                <span>Morse Code Reference (Click Letter to Send)</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowMorseChart(!showMorseChart)}
-                className={`text-[10px] font-mono ${t.textAccent} hover:underline cursor-pointer`}
-              >
-                {showMorseChart ? 'Hide Chart' : 'Show Chart'}
-              </button>
-            </div>
-
-            {showMorseChart && (
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                {Object.entries(MORSE_CODE_MAP)
-                  .filter(([k]) => k !== ' ')
-                  .map(([char, code]) => (
-                    <button
-                      key={char}
-                      type="button"
-                      onClick={() => sendCharacterMorse(char)}
-                      className={`p-1.5 rounded ${t.radioPresetBtnInactive} text-center flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 select-none touch-manipulation`}
-                    >
-                      <span className={`text-xs font-extrabold ${t.textAccent}`}>{char}</span>
-                      <span className={`text-[10px] font-mono ${t.textMuted} font-bold`}>{code}</span>
-                    </button>
-                  ))}
-              </div>
-            )}
-          </div>
+          <MorseReferenceSheet
+            title="Morse Code Reference"
+            subtitle="Click any letter, number, or symbol to transmit its Morse sequence over the air"
+            icon="help"
+            expanded={showMorseChart}
+            onToggleExpand={() => setShowMorseChart(!showMorseChart)}
+            onItemClick={(char) => sendCharacterMorse(char)}
+            itemTitlePrefix="Click to send Morse code for"
+          />
 
           {/* Automated Funktelegramm Broadcaster */}
           <div className={`${t.panelBg} p-5 rounded-xl border ${t.borderBase} shadow-xl space-y-4`}>

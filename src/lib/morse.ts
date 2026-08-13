@@ -41,11 +41,44 @@ export const MORSE_MAP: Record<string, string> = {
   ',': '--..--',
   '?': '..--..',
   '/': '-..-.',
+  '=': '-...-',
   '-': '-....-',
   '(': '-.--.',
   ')': '-.--.-',
   ' ': '/'
 };
+
+export const REVERSE_MORSE_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(MORSE_MAP).map(([k, v]) => [v, k])
+);
+
+export interface MorseGroup {
+  title: string;
+  icon: string;
+  items: [string, string][];
+  gridCols: string;
+}
+
+export const MORSE_GROUPS: MorseGroup[] = [
+  {
+    title: 'Letters (A–Z)',
+    icon: 'sort_by_alpha',
+    items: Object.entries(MORSE_MAP).filter(([char]) => /^[A-Z]$/.test(char)),
+    gridCols: 'grid-cols-3 sm:grid-cols-6 md:grid-cols-9 lg:grid-cols-13',
+  },
+  {
+    title: 'Numbers (0–9)',
+    icon: 'pin',
+    items: Object.entries(MORSE_MAP).filter(([char]) => /^[0-9]$/.test(char)),
+    gridCols: 'grid-cols-3 sm:grid-cols-5 md:grid-cols-10',
+  },
+  {
+    title: 'Special Characters & Punctuation',
+    icon: 'notes',
+    items: Object.entries(MORSE_MAP).filter(([char]) => !/^[A-Z0-9 ]$/.test(char)),
+    gridCols: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-7',
+  },
+];
 
 export interface MorseToken {
   char: string;

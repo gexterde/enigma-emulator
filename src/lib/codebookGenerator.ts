@@ -8,6 +8,7 @@ export interface EnigmaGeneratorConfig {
   // Optional settings for the 4-rotor (M4) variant:
   fourthRotorsPool?: string[];   // Pool of selectable thin fourth rotors (e.g., ['Beta', 'Gamma'])
   fixedFourthRing?: number;      // Fixes the ring setting of the 4th rotor (always 1/'A' for historical Kriegsmarine M4)
+  includeGrundstellung?: boolean;   // If true, generates optional daily Grundstellung starting positions
   // UKW-Dual-Dynamic reflector settings (Experimental/Speculative what-if feature)
   useDualDynamicReflector?: boolean; // If true, UKW-Dual-Dynamic reflector is generated for the days
   fixedReflectorRing?: number;      // Fixes the reflector ring setting (1-26)
@@ -18,6 +19,7 @@ export interface UniversalCodebookEntry {
   day: number;
   rotors: string[];
   rings: number[];
+  grundstellung?: number[];       // Start ring settings (1-26) for each rotor
   plugboardPairs: string[];
   kenngruppen: string[];
   fourthRotor?: string;          // Only if fourthRotorsPool is provided
@@ -146,6 +148,19 @@ export function generateUniversalEnigmaCodebook(config: EnigmaGeneratorConfig): 
       }
     }
 
+    // Generate optional Grundstellung (Start ring settings 1-26 for each rotor)
+    let grundstellung: number[] | undefined = undefined;
+    if (config.includeGrundstellung) {
+      grundstellung = [
+        Math.floor(Math.random() * 26) + 1,
+        Math.floor(Math.random() * 26) + 1,
+        Math.floor(Math.random() * 26) + 1
+      ];
+      if (fourthRotor !== undefined) {
+        grundstellung.push(Math.floor(Math.random() * 26) + 1);
+      }
+    }
+
     // Assemble and store current day entry
     const entry: UniversalCodebookEntry = {
       day,
@@ -154,6 +169,8 @@ export function generateUniversalEnigmaCodebook(config: EnigmaGeneratorConfig): 
       plugboardPairs: pairs,
       kenngruppen: kgList
     };
+
+    if (grundstellung !== undefined) entry.grundstellung = grundstellung;
 
     if (fourthRotor !== undefined) entry.fourthRotor = fourthRotor;
     if (fourthRing !== undefined) entry.fourthRing = fourthRing;
