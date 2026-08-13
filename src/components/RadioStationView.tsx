@@ -68,13 +68,20 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
   const [tuningSpeed, setTuningSpeed] = useState<'slow' | 'fast' | 'fastest'>('slow');
   const [volume, setVolume] = useState<number>(70);
   const [pitch, setPitch] = useState<number>(700);
-  const [wpm, setWpm] = useState<number>(12);
+  const [wpm, setWpm] = useState<number>(8);
   const [staticEnabled, setStaticEnabled] = useState<boolean>(true);
 
   // Keyer Timing Calibration
-  const [letterPauseMs, setLetterPauseMs] = useState<number>(1200); // 1200ms pause to finish a letter
-  const [dashThresholdMs, setDashThresholdMs] = useState<number>(220); // Hold >220ms for Dash
+  const [letterPauseMs, setLetterPauseMs] = useState<number>(450); // 450ms pause to finish a letter (3 units at 8 WPM)
+  const [dashThresholdMs, setDashThresholdMs] = useState<number>(330); // Hold >330ms for Dash (2.2 units)
   const [showMorseChart, setShowMorseChart] = useState<boolean>(true);
+
+  // Automatically adjust default letter pause and dash threshold when WPM changes
+  useEffect(() => {
+    const unitTime = Math.round(1200 / wpm);
+    setLetterPauseMs(unitTime * 3);
+    setDashThresholdMs(Math.round(unitTime * 2.2));
+  }, [wpm]);
 
   // Quick Text Keyer state
   const [quickTextMessage, setQuickTextMessage] = useState<string>('');
@@ -281,6 +288,12 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
 
   const wpmRef = useRef(wpm);
   wpmRef.current = wpm;
+
+  const letterPauseMsRef = useRef(letterPauseMs);
+  letterPauseMsRef.current = letterPauseMs;
+
+  const isPowerOnRef = useRef(isPowerOn);
+  isPowerOnRef.current = isPowerOn;
 
   const clientIdRef = useRef(clientId);
   clientIdRef.current = clientId;
@@ -540,13 +553,13 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
   // Audio & Network play helper for a Morse code string (e.g. '.-')
   const playMorseSequence = useCallback((morseCode: string): Promise<void> => {
     return new Promise<void>((resolve) => {
-      if (!isPowerOn) {
+      if (!isPowerOnRef.current) {
         resolve();
         return;
       }
       getAudioContext();
 
-      const unitTime = Math.round(1200 / wpm);
+      const currentUnitTime = Math.round(1200 / wpmRef.current);
       const symbols = morseCode.split('');
       if (symbols.length === 0) {
         resolve();
@@ -556,18 +569,18 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
       let currentSymbolIndex = 0;
 
       const playNextSymbol = () => {
-        if (!isPowerOn || currentSymbolIndex >= symbols.length) {
+        if (!isPowerOnRef.current || currentSymbolIndex >= symbols.length) {
           resolve();
           return;
         }
 
         const sym = symbols[currentSymbolIndex];
         const isDash = sym === '-';
-        const duration = isDash ? unitTime * 3 : unitTime;
+        const duration = isDash ? currentUnitTime * 3 : currentUnitTime;
 
-        startTone(pitch);
+        startTone(pitchRef.current);
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({ type: 'morse_keydown', pitch }));
+          wsRef.current.send(JSON.stringify({ type: 'morse_keydown', pitch: pitchRef.current }));
         }
 
         setTimeout(() => {
@@ -578,8 +591,8 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
 
           currentSymbolIndex++;
           if (currentSymbolIndex < symbols.length) {
-            // Wait for 1 unitTime (element gap) before playing next symbol
-            setTimeout(playNextSymbol, unitTime);
+            // Wait for 1 currentUnitTime (element gap) before playing next symbol
+            setTimeout(playNextSymbol, currentUnitTime);
           } else {
             resolve();
           }
@@ -588,48 +601,48 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
 
       playNextSymbol();
     });
-  }, [isPowerOn, getAudioContext, startTone, stopTone, pitch, wpm]);
+  }, [getAudioContext, startTone, stopTone]);
 
   // Direct "DIT (.)" and "DAH (-)" button handlers for exact keying
   const sendDit = useCallback(() => {
-    if (!isPowerOn) return;
-    const unitTime = Math.round(1200 / wpm);
+    if (!isPowerOnRef.current) return;
+    const currentUnitTime = Math.round(1200 / wpmRef.current);
     const now = Date.now();
-    if (now - lastDitTimeRef.current < unitTime * 1.5) return;
+    if (now - lastDitTimeRef.current < currentUnitTime * 1.5) return;
     lastDitTimeRef.current = now;
 
     getAudioContext();
-    startTone(pitch);
+    startTone(pitchRef.current);
     setCurrentMorseSymbols((prev) => prev + '.');
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'morse_keydown', pitch }));
+      wsRef.current.send(JSON.stringify({ type: 'morse_keydown', pitch: pitchRef.current }));
       setTimeout(() => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({ type: 'morse_keyup', duration: unitTime }));
+          wsRef.current.send(JSON.stringify({ type: 'morse_keyup', duration: currentUnitTime }));
         }
-      }, unitTime);
+      }, currentUnitTime);
     }
 
     setTimeout(() => {
       stopTone();
-    }, unitTime + 10);
-  }, [isPowerOn, getAudioContext, pitch, startTone, stopTone, wpm]);
+    }, currentUnitTime + 10);
+  }, [getAudioContext, startTone, stopTone]);
 
   const sendDah = useCallback(() => {
-    if (!isPowerOn) return;
-    const unitTime = Math.round(1200 / wpm);
+    if (!isPowerOnRef.current) return;
+    const currentUnitTime = Math.round(1200 / wpmRef.current);
     const now = Date.now();
-    const dahDuration = unitTime * 3;
+    const dahDuration = currentUnitTime * 3;
     if (now - lastDahTimeRef.current < dahDuration * 1.2) return;
     lastDahTimeRef.current = now;
 
     getAudioContext();
-    startTone(pitch);
+    startTone(pitchRef.current);
     setCurrentMorseSymbols((prev) => prev + '-');
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'morse_keydown', pitch }));
+      wsRef.current.send(JSON.stringify({ type: 'morse_keydown', pitch: pitchRef.current }));
       setTimeout(() => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ type: 'morse_keyup', duration: dahDuration }));
@@ -640,12 +653,12 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
     setTimeout(() => {
       stopTone();
     }, dahDuration + 10);
-  }, [isPowerOn, getAudioContext, pitch, startTone, stopTone, wpm]);
+  }, [getAudioContext, startTone, stopTone]);
 
   const sendSpace = useCallback(() => {
-    if (!isPowerOn) return;
+    if (!isPowerOnRef.current) return;
     setDecodedTape((prev) => prev + ' ');
-  }, [isPowerOn]);
+  }, []);
 
   // Instantly commit current Morse symbols into a decoded character
   const commitCurrentMorseSymbols = useCallback(() => {
@@ -663,7 +676,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
     isPlayingQueueRef.current = true;
 
     while (charQueueRef.current.length > 0) {
-      if (!isPowerOn) {
+      if (!isPowerOnRef.current) {
         charQueueRef.current = [];
         break;
       }
@@ -686,14 +699,13 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
         }));
       }
 
-      const unitTime = Math.round(1200 / wpm);
-      const letterSpace = unitTime * 3;
+      const letterSpace = letterPauseMsRef.current;
 
       await new Promise(r => setTimeout(r, letterSpace));
     }
 
     isPlayingQueueRef.current = false;
-  }, [isPowerOn, playMorseSequence, wpm]);
+  }, [playMorseSequence]);
 
   // Send a specific character or letter directly by Morse sequence with audio
   const sendCharacterMorse = useCallback((char: string) => {
@@ -856,7 +868,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
         header,
         ciphertext: body,
         morseCode,
-        wpm
+        wpm: wpmRef.current
       }));
     } else {
       // Offline fallback
@@ -873,8 +885,9 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
       setQsoLogs((prev) => [newEntry, ...prev]);
     }
 
-    const unitTime = Math.round(1200 / wpm);
-    const letterSpace = unitTime * 3;
+    const currentWpm = wpmRef.current;
+    const unitTime = Math.round(1200 / currentWpm);
+    const letterSpace = letterPauseMsRef.current;
     const wordSpace = unitTime * 7;
 
     for (let i = 0; i < fullText.length; i++) {
@@ -883,8 +896,8 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
       const char = fullText[i];
       if (char === ' ') {
         setDecodedTape((prev) => prev + ' ');
-        // Since we already waited letterSpace (3 units) after the last character,
-        // we wait wordSpace - letterSpace (4 units) to make the total gap 7 units.
+        // Since we already waited letterSpace after the last character,
+        // we wait wordSpace - letterSpace to make the total gap 7 units.
         await new Promise((r) => setTimeout(r, Math.max(0, wordSpace - letterSpace)));
         continue;
       }
@@ -901,7 +914,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
 
     setIsTransmittingTelegram(false);
     isTransmittingTelegramRef.current = false;
-  }, [senderCallSign, telegramHeaderToTransmit, telegramTextToTransmit, wpm, frequency, playMorseSequence]);
+  }, [senderCallSign, telegramHeaderToTransmit, telegramTextToTransmit, frequency, playMorseSequence]);
 
   // Handle auto-transmit from MachineView
   useEffect(() => {

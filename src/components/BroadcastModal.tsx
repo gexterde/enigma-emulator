@@ -26,7 +26,7 @@ export const BroadcastModal: React.FC<BroadcastModalProps> = ({
   const { theme } = useTheme();
   const t = getTheme(theme);
   const [source, setSource] = useState<BroadcastSource>('ciphertext');
-  const [wpm, setWpm] = useState<number>(12); // Words per minute
+  const [wpm, setWpm] = useState<number>(8); // Words per minute
   const [frequency, setFrequency] = useState<number>(700); // Hz
   const [localSound, setLocalSound] = useState<boolean>(initialSoundEnabled);
   
