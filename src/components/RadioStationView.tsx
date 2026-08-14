@@ -21,6 +21,30 @@ interface StationPresence {
   callSign: string;
 }
 
+interface RadioSettingsState {
+  isPowerOn?: boolean;
+  frequency?: string;
+  tuningSpeed?: 'slow' | 'fast' | 'fastest';
+  volume?: number;
+  pitch?: number;
+  wpm?: number;
+  staticEnabled?: boolean;
+  letterPauseMs?: number;
+  dashThresholdMs?: number;
+  showMorseChart?: boolean;
+  qsoLogs?: QSOEntry[];
+}
+
+const getSavedRadioState = (): RadioSettingsState | null => {
+  try {
+    const saved = localStorage.getItem('radio_state');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {}
+  return null;
+};
+
 interface QSOEntry {
   id: string;
   timestamp: string;
@@ -47,27 +71,33 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
   const { theme } = useTheme();
   const t = getTheme(theme);
 
+  const initialSettings = getSavedRadioState();
+
   // Radio Power state
-  const [isPowerOn, setIsPowerOn] = useState<boolean>(true);
+  const [isPowerOn, setIsPowerOn] = useState<boolean>(() => initialSettings?.isPowerOn ?? true);
 
   // Radio Frequency & Audio state
-  const [frequency, setFrequency] = useState<string>('7.025');
-  const [tuningSpeed, setTuningSpeed] = useState<'slow' | 'fast' | 'fastest'>('slow');
-  const [volume, setVolume] = useState<number>(70);
-  const [pitch, setPitch] = useState<number>(700);
-  const [wpm, setWpm] = useState<number>(8);
-  const [staticEnabled, setStaticEnabled] = useState<boolean>(true);
+  const [frequency, setFrequency] = useState<string>(() => initialSettings?.frequency ?? '7.025');
+  const [tuningSpeed, setTuningSpeed] = useState<'slow' | 'fast' | 'fastest'>(() => initialSettings?.tuningSpeed ?? 'slow');
+  const [volume, setVolume] = useState<number>(() => initialSettings?.volume ?? 70);
+  const [pitch, setPitch] = useState<number>(() => initialSettings?.pitch ?? 700);
+  const [wpm, setWpm] = useState<number>(() => initialSettings?.wpm ?? 8);
+  const [staticEnabled, setStaticEnabled] = useState<boolean>(() => initialSettings?.staticEnabled ?? true);
 
   // Keyer Timing Calibration
-  const [letterPauseMs, setLetterPauseMs] = useState<number>(450); // 450ms pause to finish a letter (3 units at 8 WPM)
-  const [dashThresholdMs, setDashThresholdMs] = useState<number>(330); // Hold >330ms for Dash (2.2 units)
-  const [showMorseChart, setShowMorseChart] = useState<boolean>(true);
+  const [letterPauseMs, setLetterPauseMs] = useState<number>(() => initialSettings?.letterPauseMs ?? 450); // 450ms pause to finish a letter (3 units at 8 WPM)
+  const [dashThresholdMs, setDashThresholdMs] = useState<number>(() => initialSettings?.dashThresholdMs ?? 330); // Hold >330ms for Dash (2.2 units)
+  const [showMorseChart, setShowMorseChart] = useState<boolean>(() => initialSettings?.showMorseChart ?? true);
 
   // Automatically adjust default letter pause and dash threshold when WPM changes
+  const prevWpmRef = useRef(wpm);
   useEffect(() => {
-    const unitTime = Math.round(1200 / wpm);
-    setLetterPauseMs(unitTime * 3);
-    setDashThresholdMs(Math.round(unitTime * 2.2));
+    if (prevWpmRef.current !== wpm) {
+      prevWpmRef.current = wpm;
+      const unitTime = Math.round(1200 / wpm);
+      setLetterPauseMs(unitTime * 3);
+      setDashThresholdMs(Math.round(unitTime * 2.2));
+    }
   }, [wpm]);
 
   // Quick Text Keyer state
@@ -108,7 +138,159 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
   // Decoded Morse Tape & Logs
   const [decodedTape, setDecodedTape] = useState<string>('');
   const [currentMorseSymbols, setCurrentMorseSymbols] = useState<string>('');
-  const [qsoLogs, setQsoLogs] = useState<QSOEntry[]>([]);
+  const [qsoLogs, setQsoLogs] = useState<QSOEntry[]>(() => {
+    if (Array.isArray(initialSettings?.qsoLogs)) {
+      return initialSettings.qsoLogs;
+    }
+    return [];
+  });
+
+  // Fetch settings from server on initial mount
+  useEffect(() => {
+    let isMounted = true;
+    const loadServerSettings = async () => {
+      try {
+        const res = await fetch('/api/radio/settings', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.settings && isMounted) {
+            const s = data.settings;
+            if (s.isPowerOn !== undefined) setIsPowerOn(s.isPowerOn);
+            if (s.frequency !== undefined) {
+              setFrequency(s.frequency);
+              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({
+                  type: 'join_frequency',
+                  frequency: s.frequency,
+                  callSign: senderCallSignRef.current || 'DFS'
+                }));
+              }
+            }
+            if (s.tuningSpeed !== undefined) setTuningSpeed(s.tuningSpeed);
+            if (s.volume !== undefined) setVolume(s.volume);
+            if (s.pitch !== undefined) setPitch(s.pitch);
+            if (s.wpm !== undefined) {
+              setWpm(s.wpm);
+              prevWpmRef.current = s.wpm;
+            }
+            if (s.staticEnabled !== undefined) setStaticEnabled(s.staticEnabled);
+            if (s.letterPauseMs !== undefined) setLetterPauseMs(s.letterPauseMs);
+            if (s.dashThresholdMs !== undefined) setDashThresholdMs(s.dashThresholdMs);
+            if (s.showMorseChart !== undefined) setShowMorseChart(s.showMorseChart);
+            if (Array.isArray(s.qsoLogs)) setQsoLogs(s.qsoLogs);
+
+            try {
+              localStorage.setItem('radio_state', JSON.stringify(s));
+            } catch (e) {}
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load server radio settings:', e);
+      }
+    };
+    loadServerSettings();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Save settings to localStorage and server whenever changed
+  const isInitialMountRef = useRef(true);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const stateObj: RadioSettingsState = {
+      isPowerOn,
+      frequency,
+      tuningSpeed,
+      volume,
+      pitch,
+      wpm,
+      staticEnabled,
+      letterPauseMs,
+      dashThresholdMs,
+      showMorseChart,
+      qsoLogs: qsoLogs.slice(0, 50)
+    };
+
+    try {
+      localStorage.setItem('radio_state', JSON.stringify(stateObj));
+    } catch (e) {}
+
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await fetch('/api/radio/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ settings: stateObj })
+        });
+
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({
+            type: 'radio_settings_update',
+            settings: stateObj
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to sync radio settings to server:', err);
+      }
+    }, 600);
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [isPowerOn, frequency, tuningSpeed, volume, pitch, wpm, staticEnabled, letterPauseMs, dashThresholdMs, showMorseChart, qsoLogs]);
+
+  // Sync across tabs and with useSyncState server restorations
+  useEffect(() => {
+    const handleStorage = (e: Event) => {
+      if (e instanceof StorageEvent && e.key && e.key !== 'radio_state') {
+        return;
+      }
+      try {
+        const saved = localStorage.getItem('radio_state');
+        if (saved) {
+          const s = JSON.parse(saved);
+          if (s.isPowerOn !== undefined) setIsPowerOn(s.isPowerOn);
+          if (s.frequency !== undefined) {
+            setFrequency(s.frequency);
+            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+              wsRef.current.send(JSON.stringify({
+                type: 'join_frequency',
+                frequency: s.frequency,
+                callSign: senderCallSignRef.current || 'DFS'
+              }));
+            }
+          }
+          if (s.tuningSpeed !== undefined) setTuningSpeed(s.tuningSpeed);
+          if (s.volume !== undefined) setVolume(s.volume);
+          if (s.pitch !== undefined) setPitch(s.pitch);
+          if (s.wpm !== undefined) {
+            setWpm(s.wpm);
+            prevWpmRef.current = s.wpm;
+          }
+          if (s.staticEnabled !== undefined) setStaticEnabled(s.staticEnabled);
+          if (s.letterPauseMs !== undefined) setLetterPauseMs(s.letterPauseMs);
+          if (s.dashThresholdMs !== undefined) setDashThresholdMs(s.dashThresholdMs);
+          if (s.showMorseChart !== undefined) setShowMorseChart(s.showMorseChart);
+          if (Array.isArray(s.qsoLogs)) setQsoLogs(s.qsoLogs);
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   // Refs
   const wsRef = useRef<WebSocket | null>(null);
@@ -398,6 +580,33 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
                 type: msg.senderId === clientIdRef.current ? 'transmitted' : 'received'
               };
               setQsoLogs((prev) => [newEntry, ...prev]);
+            }
+            break;
+
+          case 'radio_settings_update':
+            if (msg.settings) {
+              const s = msg.settings;
+              if (s.isPowerOn !== undefined) setIsPowerOn(s.isPowerOn);
+              if (s.frequency !== undefined) {
+                setFrequency(s.frequency);
+                frequencyRef.current = s.frequency;
+              }
+              if (s.tuningSpeed !== undefined) setTuningSpeed(s.tuningSpeed);
+              if (s.volume !== undefined) setVolume(s.volume);
+              if (s.pitch !== undefined) setPitch(s.pitch);
+              if (s.wpm !== undefined) {
+                setWpm(s.wpm);
+                prevWpmRef.current = s.wpm;
+              }
+              if (s.staticEnabled !== undefined) setStaticEnabled(s.staticEnabled);
+              if (s.letterPauseMs !== undefined) setLetterPauseMs(s.letterPauseMs);
+              if (s.dashThresholdMs !== undefined) setDashThresholdMs(s.dashThresholdMs);
+              if (s.showMorseChart !== undefined) setShowMorseChart(s.showMorseChart);
+              if (Array.isArray(s.qsoLogs)) setQsoLogs(s.qsoLogs);
+
+              try {
+                localStorage.setItem('radio_state', JSON.stringify(s));
+              } catch (e) {}
             }
             break;
         }

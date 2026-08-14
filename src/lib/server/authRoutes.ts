@@ -380,4 +380,105 @@ router.put('/callsign', requireAuth, async (req: any, res: any) => {
   }
 });
 
+const RADIO_SETTINGS_FILE = path.join(process.cwd(), 'data', 'radio_settings.json');
+
+// GET /api/radio/settings or /api/auth/radio/settings
+router.get('/radio/settings', async (req: any, res: any) => {
+  try {
+    const token = req.cookies?.token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        if (decoded?.userId) {
+          const userState = await getUserState(decoded.userId);
+          if (userState && userState.radio_state) {
+            const parsed = typeof userState.radio_state === 'string' 
+              ? JSON.parse(userState.radio_state) 
+              : userState.radio_state;
+            return res.json({ settings: parsed });
+          }
+        }
+      } catch (e) {}
+    }
+
+    try {
+      const data = await fs.readFile(RADIO_SETTINGS_FILE, 'utf-8');
+      return res.json({ settings: JSON.parse(data) });
+    } catch {
+      return res.json({ settings: null });
+    }
+  } catch (error) {
+    console.error('Error reading radio settings:', error);
+    res.status(500).json({ error: 'Failed to read radio settings' });
+  }
+});
+
+// POST /api/radio/settings
+router.post('/radio/settings', async (req: any, res: any) => {
+  try {
+    const { settings } = req.body;
+    if (!settings) {
+      return res.status(400).json({ error: 'Missing settings' });
+    }
+
+    const token = req.cookies?.token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        if (decoded?.userId) {
+          const userState = (await getUserState(decoded.userId)) || {};
+          userState.radio_state = typeof settings === 'string' ? settings : JSON.stringify(settings);
+          await saveUserState(decoded.userId, userState);
+          return res.json({ success: true, settings });
+        }
+      } catch (e) {}
+    }
+
+    const dataDir = path.join(process.cwd(), 'data');
+    try {
+      await fs.mkdir(dataDir, { recursive: true });
+    } catch {}
+    await fs.writeFile(RADIO_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
+
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('Error saving radio settings:', error);
+    res.status(500).json({ error: 'Failed to save radio settings' });
+  }
+});
+
+// PUT /api/radio/settings
+router.put('/radio/settings', async (req: any, res: any) => {
+  try {
+    const { settings } = req.body;
+    if (!settings) {
+      return res.status(400).json({ error: 'Missing settings' });
+    }
+
+    const token = req.cookies?.token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        if (decoded?.userId) {
+          const userState = (await getUserState(decoded.userId)) || {};
+          userState.radio_state = typeof settings === 'string' ? settings : JSON.stringify(settings);
+          await saveUserState(decoded.userId, userState);
+          return res.json({ success: true, settings });
+        }
+      } catch (e) {}
+    }
+
+    const dataDir = path.join(process.cwd(), 'data');
+    try {
+      await fs.mkdir(dataDir, { recursive: true });
+    } catch {}
+    await fs.writeFile(RADIO_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
+
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('Error updating radio settings:', error);
+    res.status(500).json({ error: 'Failed to update radio settings' });
+  }
+});
+
 export default router;

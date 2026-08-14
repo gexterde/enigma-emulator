@@ -15,6 +15,7 @@ async function startServer() {
 
   // API endpoints
   app.use("/api/auth", authRoutes);
+  app.use("/api", authRoutes);
   
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", service: "Enigma Radio Transceiver Server" });
@@ -168,6 +169,21 @@ async function startServer() {
                 otherClient.frequency === client.frequency &&
                 otherWs.readyState === WebSocket.OPEN
               ) {
+                otherWs.send(payload);
+              }
+            });
+            break;
+          }
+
+          case "radio_settings_update": {
+            const payload = JSON.stringify({
+              type: "radio_settings_update",
+              senderId: client.id,
+              settings: message.settings,
+              timestamp: Date.now(),
+            });
+            clients.forEach((otherClient, otherWs) => {
+              if (otherWs !== ws && otherWs.readyState === WebSocket.OPEN) {
                 otherWs.send(payload);
               }
             });
