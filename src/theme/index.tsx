@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ThemeName, ThemeOption, AVAILABLE_THEMES, ThemeProduct, ThemeFactory } from './types';
+import { ThemeName, ThemeOption, AVAILABLE_THEMES, ThemeProduct, ThemeFactory, CSS_VARIABLES_THEME } from './types';
 import { VintageThemeFactory } from './vintage';
 import { BakeliteBrassThemeFactory } from './bakeliteBrass';
 import { BletchleyParkThemeFactory } from './bletchleyPark';
@@ -34,8 +34,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       const saved = localStorage.getItem('enigma_theme') as ThemeName;
-      if (AVAILABLE_THEMES.some((t) => t.id === saved)) setTheme(saved);
-    } catch(e) {}
+      if (AVAILABLE_THEMES.some((t) => t.id === saved)) {
+        setTheme(saved);
+        AVAILABLE_THEMES.forEach((themeOpt) => {
+          document.documentElement.classList.remove(`theme-${themeOpt.id}`);
+        });
+        document.documentElement.classList.add(`theme-${saved}`);
+      } else {
+        document.documentElement.classList.add('theme-vintage');
+      }
+    } catch(e) {
+      document.documentElement.classList.add('theme-vintage');
+    }
   }, []);
 
   const handleSetTheme = (t: ThemeName) => {
@@ -44,9 +54,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     AVAILABLE_THEMES.forEach((themeOpt) => {
       document.documentElement.classList.remove(`theme-${themeOpt.id}`);
     });
-    if (t !== 'vintage') {
-      document.documentElement.classList.add(`theme-${t}`);
-    }
+    document.documentElement.classList.add(`theme-${t}`);
   };
 
   return <ThemeContext.Provider value={{ theme, setTheme: handleSetTheme }}>{children}</ThemeContext.Provider>;
@@ -54,37 +62,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export const useTheme = () => useContext(ThemeContext);
 
-export const getTheme = (theme: ThemeName): ThemeProduct => {
-  let factory: ThemeFactory;
-  switch (theme) {
-    case 'vintage':
-      factory = new VintageThemeFactory();
-      break;
-    case 'bakelite-brass':
-      factory = new BakeliteBrassThemeFactory();
-      break;
-    case 'bletchley-park':
-      factory = new BletchleyParkThemeFactory();
-      break;
-    case 'cipher-noir':
-      factory = new CipherNoirThemeFactory();
-      break;
-    case 'vintage-navy':
-      factory = new VintageNavyThemeFactory();
-      break;
-    case 'modern-dark':
-      factory = new ModernDarkThemeFactory();
-      break;
-    case 'amber-crt':
-      factory = new AmberCrtThemeFactory();
-      break;
-    case 'emerald-crt':
-      factory = new EmeraldCrtThemeFactory();
-      break;
-    case 'modern':
-    default:
-      factory = new ModernThemeFactory();
-      break;
-  }
-  return factory.createTheme();
+export const getTheme = (_theme?: ThemeName): ThemeProduct => {
+  return CSS_VARIABLES_THEME;
 };
+
