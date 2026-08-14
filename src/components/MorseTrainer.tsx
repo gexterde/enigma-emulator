@@ -356,10 +356,8 @@ export const MorseTrainer: React.FC = () => {
     };
 
     window.addEventListener('storage', handleStorage);
-    window.addEventListener('local-storage-change', handleStorage);
     return () => {
       window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('local-storage-change', handleStorage);
     };
   }, []);
   

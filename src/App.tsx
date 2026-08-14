@@ -138,10 +138,10 @@ export default function App() {
 
   useEffect(() => {
     if (user?.callSign) {
-      setSenderCallSign(user.callSign);
-      setConfig((prev) => ({ ...prev, senderCallSign: user.callSign }));
+      setSenderCallSign((prev) => (prev !== user.callSign ? user.callSign! : prev));
+      setConfig((prev) => (prev.senderCallSign !== user.callSign ? { ...prev, senderCallSign: user.callSign! } : prev));
     }
-  }, [user]);
+  }, [user?.callSign]);
 
 
   // Simulated Battery Level (0 to 100)
@@ -238,7 +238,22 @@ export default function App() {
     setBatteryMode(mode);
     playRotorClickSound(soundEnabled);
   };
-  const [compactMode, setCompactMode] = useState<boolean>(false);
+  const [compactMode, setCompactMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('enigma_compact_mode');
+      return saved === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('enigma_compact_mode', String(compactMode));
+    } catch (e) {
+      // ignore
+    }
+  }, [compactMode]);
   const [inputTape, setInputTape] = useState<string>('');
   const [cipherTape, setCipherTape] = useState<string>('');
   const [cipherHeader, setCipherHeader] = useState<string>('');

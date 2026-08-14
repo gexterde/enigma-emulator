@@ -496,6 +496,9 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
   const clientIdRef = useRef(clientId);
   clientIdRef.current = clientId;
 
+  const dashThresholdMsRef = useRef(dashThresholdMs);
+  dashThresholdMsRef.current = dashThresholdMs;
+
   // WebSocket Connection
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -543,7 +546,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
               stopTone();
 
               const duration = msg.duration || 100;
-              const symbol = duration < dashThresholdMs ? '.' : '-';
+              const symbol = duration < dashThresholdMsRef.current ? '.' : '-';
               setCurrentMorseSymbols((prev) => prev + symbol);
             }
             break;
@@ -586,23 +589,23 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
           case 'radio_settings_update':
             if (msg.settings) {
               const s = msg.settings;
-              if (s.isPowerOn !== undefined) setIsPowerOn(s.isPowerOn);
+              if (s.isPowerOn !== undefined) setIsPowerOn((prev) => (prev !== s.isPowerOn ? s.isPowerOn : prev));
               if (s.frequency !== undefined) {
-                setFrequency(s.frequency);
+                setFrequency((prev) => (prev !== s.frequency ? s.frequency : prev));
                 frequencyRef.current = s.frequency;
               }
-              if (s.tuningSpeed !== undefined) setTuningSpeed(s.tuningSpeed);
-              if (s.volume !== undefined) setVolume(s.volume);
-              if (s.pitch !== undefined) setPitch(s.pitch);
+              if (s.tuningSpeed !== undefined) setTuningSpeed((prev) => (prev !== s.tuningSpeed ? s.tuningSpeed : prev));
+              if (s.volume !== undefined) setVolume((prev) => (prev !== s.volume ? s.volume : prev));
+              if (s.pitch !== undefined) setPitch((prev) => (prev !== s.pitch ? s.pitch : prev));
               if (s.wpm !== undefined) {
-                setWpm(s.wpm);
+                setWpm((prev) => (prev !== s.wpm ? s.wpm : prev));
                 prevWpmRef.current = s.wpm;
               }
-              if (s.staticEnabled !== undefined) setStaticEnabled(s.staticEnabled);
-              if (s.letterPauseMs !== undefined) setLetterPauseMs(s.letterPauseMs);
-              if (s.dashThresholdMs !== undefined) setDashThresholdMs(s.dashThresholdMs);
-              if (s.showMorseChart !== undefined) setShowMorseChart(s.showMorseChart);
-              if (Array.isArray(s.qsoLogs)) setQsoLogs(s.qsoLogs);
+              if (s.staticEnabled !== undefined) setStaticEnabled((prev) => (prev !== s.staticEnabled ? s.staticEnabled : prev));
+              if (s.letterPauseMs !== undefined) setLetterPauseMs((prev) => (prev !== s.letterPauseMs ? s.letterPauseMs : prev));
+              if (s.dashThresholdMs !== undefined) setDashThresholdMs((prev) => (prev !== s.dashThresholdMs ? s.dashThresholdMs : prev));
+              if (s.showMorseChart !== undefined) setShowMorseChart((prev) => (prev !== s.showMorseChart ? s.showMorseChart : prev));
+              if (Array.isArray(s.qsoLogs)) setQsoLogs((prev) => (JSON.stringify(prev) !== JSON.stringify(s.qsoLogs) ? s.qsoLogs : prev));
 
               try {
                 localStorage.setItem('radio_state', JSON.stringify(s));
@@ -622,7 +625,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
     return () => {
       ws.close();
     };
-  }, [startTone, stopTone, dashThresholdMs]);
+  }, [startTone, stopTone]);
 
   // Channel & Call Sign updates
   const handleFrequencyChange = (newFreq: string) => {

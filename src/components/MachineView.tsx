@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { EnigmaConfig, LogEntry, StepTrace, RotorType, ReflectorType } from '../types';
 import {
   encryptChar,
@@ -46,14 +46,14 @@ function useLocalStorage<T>(key: string, initial: T): [T, (val: T) => void] {
     }
   });
 
-  const setStored = (val: T) => {
+  const setStored = useCallback((val: T) => {
     setValue(val);
     try {
       localStorage.setItem(key, typeof val === 'string' ? val : String(val));
     } catch (e) {
       // ignore
     }
-  };
+  }, [key]);
 
   return [value, setStored];
 }
@@ -480,17 +480,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
       playRotorClickSound(soundEnabled);
     }
   };
-  const [isCompactMode, setIsCompactMode] = useLocalStorage<boolean>('enigma_compact_mode', false);
-
-  useEffect(() => {
-    if (compactMode !== undefined && compactMode !== isCompactMode) {
-      setIsCompactMode(compactMode);
-    }
-  }, [compactMode, isCompactMode, setIsCompactMode]);
+  const isCompactMode = compactMode ?? false;
 
   const handleToggleCompactMode = () => {
-    const next = !isCompactMode;
-    setIsCompactMode(next);
     if (onToggleCompactMode) {
       onToggleCompactMode();
     }

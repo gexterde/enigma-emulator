@@ -12,6 +12,8 @@ import {
 } from '../lib/enigmaEngine';
 import { playRotorClickSound } from '../lib/audio';
 import { useTheme, getTheme } from '../lib/theme';
+import { CORD_COLORS } from './PlugboardPanel';
+import { getOrCreateBombeWorker, BombeWorkerMessage } from '../lib/bombeWorker';
 
 interface CryptanalysisViewProps {
   config: EnigmaConfig;
@@ -46,7 +48,66 @@ interface CryptanalysisMatch {
   score?: number;
   selfEncryptCount?: number;
   germanTrigramScore?: number;
+  chiSquared?: number;
 }
+
+// Helper component for Rotor Dial visualization
+const RotorDial = ({ 
+  rotorType, 
+  ringSetting, 
+  currentPosLetter, 
+  label,
+  isRecentStop
+}: { 
+  rotorType: string, 
+  ringSetting: number, 
+  currentPosLetter: string, 
+  label: string,
+  isRecentStop: boolean
+}) => {
+  const { theme } = useTheme();
+  const t = getTheme(theme);
+  const rotorDef = ROTOR_SPECS[rotorType as keyof typeof ROTOR_SPECS];
+  const notches = rotorDef ? getRotorNotchPositions(rotorType as any) : [];
+  const ringLetter = numToChar(ringSetting - 1);
+  
+  return (
+    <div className="flex flex-col items-center gap-1 sm:gap-2">
+      <div className={`relative w-20 h-20 sm:w-28 sm:h-28 lg:w-36 lg:h-36 rounded-full border-[3px] sm:border-4 ${isRecentStop ? `${t.borderSuccess} shadow-[0_0_15px_rgba(34,197,94,0.4)]` : `${t.borderAccent}`} ${t.panelInner} shadow-xl flex items-center justify-center transition-colors duration-300`}>
+        <div className={`absolute inset-0 bg-radial-gradient from-transparent ${t.codebookSheetBg.includes('slate') ? 'to-slate-900/10' : 'to-[#120e04]/90'} pointer-events-none rounded-full`} />
+        
+        {/* Outer Ring Letters */}
+        {Array.from({ length: 26 }).map((_, i) => {
+          const letter = String.fromCharCode(65 + i);
+          const isNotch = notches.includes(i);
+          const isRingSetting = letter === ringLetter;
+          const angle = (i * (360 / 26)) - 90; // Start A at top
+          
+          return (
+            <div 
+              key={i}
+              className="absolute w-full h-full pointer-events-none"
+              style={{ transform: `rotate(${angle}deg)` }}
+            >
+              <div className="absolute top-[2%] sm:top-1 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                {isNotch && <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 lg:w-2 lg:h-2 ${t.bgAccentSolid} mb-[1px]`} style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }} />}
+                <span className={`text-[5px] sm:text-[7px] lg:text-[9px] ${t.fontMono} font-bold leading-none ${isRingSetting ? `${t.textAccent} drop-shadow-[0_0_3px_rgba(235,194,56,0.6)]` : `${t.textMuted}/40`}`} style={{ transform: `rotate(${-angle}deg)` }}>
+                  {letter}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+        
+        {/* Inner Ring / Wiring Position */}
+        <span className={`${t.fontRotor} text-2xl sm:text-4xl lg:text-5xl font-bold z-10 select-none transition-colors duration-200 ${isRecentStop ? `${t.textSuccess} drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]` : t.textAccent}`}>
+          {currentPosLetter}
+        </span>
+      </div>
+      <span className={`text-[8px] sm:text-[10px] ${t.fontMono} ${t.textMuted} uppercase text-center max-w-[80px] sm:max-w-none leading-tight`}>{label}</span>
+    </div>
+  );
+};
 
 export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
   config,
@@ -99,6 +160,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
   // Bombe Cryptanalysis Engine Mode
   const [bombeEngineMode, setBombeEngineMode] = useState<'welchman_diagonal' | 'direct_scan'>('welchman_diagonal');
+  const [autoRefineIterative, setAutoRefineIterative] = useState<boolean>(false);
+  const workerRef = useRef<Worker | null>(null);
 
   // Interactive Inspector Drawers & Modals
   const [showMenuGraphModal, setShowMenuGraphModal] = useState<boolean>(false);
@@ -123,13 +186,6 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
   } | null>(null);
 
   const [isStopFlashing, setIsStopFlashing] = useState(false);
-  useEffect(() => {
-    if (recentStop) {
-      setIsStopFlashing(true);
-      const timer = setTimeout(() => setIsStopFlashing(false), 500);
-      return () => clearTimeout(timer);
-    }
-  }, [recentStop]);
 
   // Search scope (single selected, 3-rotor permutations, or 5/8 rotor pools)
   const [rotorScanScope, setRotorScanScope] = useState<'selected' | 'permutations_3' | 'all_5' | 'all_8'>('selected');
@@ -153,23 +209,51 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
   // Async loop control refs
   const stopSearchRef = useRef<boolean>(false);
   const animFrameIdRef = useRef<number | null>(null);
+  const lastProgressUpdateRef = useRef<number>(0);
+  const lastStopUpdateRef = useRef<number>(0);
+  const stopFlashTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isSearchingRef = useRef<boolean>(false);
 
   const stopBombeSearch = () => {
     stopSearchRef.current = true;
+    isSearchingRef.current = false;
     if (animFrameIdRef.current !== null) {
       cancelAnimationFrame(animFrameIdRef.current);
       animFrameIdRef.current = null;
     }
+    if (stopFlashTimerRef.current) {
+      clearTimeout(stopFlashTimerRef.current);
+      stopFlashTimerRef.current = null;
+    }
+    if (workerRef.current) {
+      workerRef.current.postMessage({ command: 'cancel' });
+      workerRef.current.terminate();
+      workerRef.current = null;
+    }
+    setIsStopFlashing(false);
     setIsSearching(false);
   };
+
+  useEffect(() => {
+    return () => {
+      if (stopFlashTimerRef.current) {
+        clearTimeout(stopFlashTimerRef.current);
+      }
+      if (workerRef.current) {
+        workerRef.current.postMessage({ command: 'cancel' });
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+    };
+  }, []);
   const [matches, setMatches] = useState<CryptanalysisMatch[]>([]);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
 
   // Sync results mapper rings to scan rings by default
   useEffect(() => {
-    setMapperLeftRing(leftRotorRing);
-    setMapperMiddleRing(middleRotorRing);
-    setMapperRightRing(rightRotorRing);
+    setMapperLeftRing((prev) => (prev !== leftRotorRing ? leftRotorRing : prev));
+    setMapperMiddleRing((prev) => (prev !== middleRotorRing ? middleRotorRing : prev));
+    setMapperRightRing((prev) => (prev !== rightRotorRing ? rightRotorRing : prev));
   }, [leftRotorRing, middleRotorRing, rightRotorRing]);
 
   // Sync with machine ciphertext on load if present
@@ -177,22 +261,21 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     if (cipherTape) {
       // Clean up punctuation and spaces for raw Enigma analysis
       const cleaned = cipherTape.toUpperCase().replace(/[^A-Z]/g, '');
-      setCiphertext(cleaned);
+      setCiphertext((prev) => (prev !== cleaned ? cleaned : prev));
     }
   }, [cipherTape]);
 
   // Handle alignment offset limits
   const maxOffset = Math.max(0, ciphertext.length - crib.length);
   useEffect(() => {
-    if (alignmentOffset > maxOffset) {
-      setAlignmentOffset(maxOffset);
-    }
-  }, [ciphertext, crib, alignmentOffset, maxOffset]);
+    setAlignmentOffset((prev) => (prev > maxOffset ? maxOffset : prev));
+  }, [maxOffset]);
 
-  // Reset results when search configuration parameters are modified
+  // Reset results when search configuration parameters are modified (only when not searching)
   useEffect(() => {
-    setMatches([]);
-    setHasSearched(false);
+    if (isSearchingRef.current) return;
+    setMatches((prev) => (prev.length > 0 ? [] : prev));
+    setHasSearched((prev) => (prev ? false : prev));
   }, [
     ciphertext,
     crib,
@@ -441,10 +524,51 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     return map;
   };
 
-  // German Trigram and Frequency Scoring for decrypted candidate text
-  const GERMAN_TRIGRAMS = ['DER', 'DIE', 'DAS', 'UND', 'ICH', 'DEN', 'DEM', 'MIT', 'VON', 'DES', 'EIN', 'AUS', 'AUF', 'FUR', 'SCH', 'UNG', 'GEN', 'CHE', 'IGE'];
+  // Standard German Monogram Frequencies (relative percentages)
+  const GERMAN_MONOGRAM_FREQ: Record<string, number> = {
+    A: 0.0651, B: 0.0189, C: 0.0306, D: 0.0508, E: 0.1639, F: 0.0166, G: 0.0301,
+    H: 0.0458, I: 0.0755, J: 0.0027, K: 0.0121, L: 0.0344, M: 0.0253, N: 0.0978,
+    O: 0.0251, P: 0.0079, Q: 0.0002, R: 0.0700, S: 0.0727, T: 0.0615, U: 0.0435,
+    V: 0.0067, W: 0.0189, X: 0.0003, Y: 0.0004, Z: 0.0113
+  };
 
-  const scoreDecryption = (decrypted: string, ciphertext: string, cribText: string): { score: number; selfEncryptCount: number; germanTrigramScore: number } => {
+  // Top German Trigrams with log-frequency weighting
+  const GERMAN_TRIGRAM_WEIGHTS: Record<string, number> = {
+    'DER': 25, 'DIE': 25, 'UND': 24, 'DEN': 22, 'SCH': 22, 'ICH': 20, 'EIN': 20, 'GEH': 18,
+    'NGE': 18, 'TER': 18, 'BEN': 16, 'EIT': 16, 'BER': 16, 'VER': 16, 'STE': 16, 'DAS': 16,
+    'DEM': 15, 'MIT': 15, 'VON': 15, 'DES': 14, 'AUS': 14, 'AUF': 14, 'FUR': 14, 'UNG': 14,
+    'GEN': 14, 'CHE': 14, 'IGE': 14, 'TEN': 14, 'ERS': 12, 'RDE': 12, 'PRO': 12, 'IST': 12,
+    'MAN': 10, 'SEI': 10, 'RIC': 10, 'STR': 10, 'END': 10, 'CHT': 10, 'ACH': 10
+  };
+
+  const calculateChiSquared = (text: string): number => {
+    const clean = text.toUpperCase().replace(/[^A-Z]/g, '');
+    if (clean.length < 5) return 100;
+
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < 26; i++) {
+      counts[String.fromCharCode(65 + i)] = 0;
+    }
+    for (let i = 0; i < clean.length; i++) {
+      counts[clean[i]] = (counts[clean[i]] || 0) + 1;
+    }
+
+    let chi2 = 0;
+    const N = clean.length;
+    for (let i = 0; i < 26; i++) {
+      const letter = String.fromCharCode(65 + i);
+      const expected = N * (GERMAN_MONOGRAM_FREQ[letter] || 0.01);
+      const observed = counts[letter] || 0;
+      chi2 += Math.pow(observed - expected, 2) / (expected + 0.0001);
+    }
+    return Math.round(chi2 * 10) / 10;
+  };
+
+  const scoreDecryption = (
+    decrypted: string,
+    ciphertext: string,
+    cribText: string
+  ): { score: number; selfEncryptCount: number; germanTrigramScore: number; chiSquared: number } => {
     let selfEncryptCount = 0;
     const cleanDec = decrypted.toUpperCase().replace(/[^A-Z]/g, '');
     const cleanCiph = ciphertext.toUpperCase().replace(/[^A-Z]/g, '');
@@ -455,13 +579,16 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       }
     }
 
-    let germanTrigramScore = 0;
-    for (const tri of GERMAN_TRIGRAMS) {
-      if (cleanDec.includes(tri)) {
-        germanTrigramScore += 15;
+    // 1. Frequency-weighted trigram scoring across all sliding windows
+    let trigramWeightedScore = 0;
+    for (let i = 0; i <= cleanDec.length - 3; i++) {
+      const tri = cleanDec.slice(i, i + 3);
+      if (GERMAN_TRIGRAM_WEIGHTS[tri]) {
+        trigramWeightedScore += GERMAN_TRIGRAM_WEIGHTS[tri];
       }
     }
 
+    // 2. Vowel ratio check
     let vowels = 0;
     for (let i = 0; i < cleanDec.length; i++) {
       if (['A', 'E', 'I', 'O', 'U'].includes(cleanDec[i])) {
@@ -469,11 +596,22 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       }
     }
     const vowelRatio = cleanDec.length > 0 ? vowels / cleanDec.length : 0;
-    if (vowelRatio >= 0.30 && vowelRatio <= 0.50) {
-      germanTrigramScore += 20;
+    if (vowelRatio >= 0.28 && vowelRatio <= 0.48) {
+      trigramWeightedScore += 25;
     }
 
-    return { score: germanTrigramScore - (selfEncryptCount * 25), selfEncryptCount, germanTrigramScore };
+    // 3. Chi-squared (χ²) goodness-of-fit statistic
+    const chiSquared = calculateChiSquared(cleanDec);
+    const chiSquaredContribution = Math.max(0, Math.round(100 - (chiSquared * 0.8)));
+
+    const totalScore = trigramWeightedScore + chiSquaredContribution - (selfEncryptCount * 25);
+
+    return {
+      score: totalScore,
+      selfEncryptCount,
+      germanTrigramScore: trigramWeightedScore + chiSquaredContribution,
+      chiSquared
+    };
   };
 
   const deduplicateAndScoreMatches = (
@@ -489,14 +627,15 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
         seen.add(key);
 
         const deducedCount = m.deducedSteckers ? Object.keys(m.deducedSteckers).length : 0;
-        const { selfEncryptCount, germanTrigramScore } = scoreDecryption(m.decrypted, ciphertext, cribText);
-        const totalScore = (cribText.length * 10) + (deducedCount * 8) + germanTrigramScore - (selfEncryptCount * 25);
+        const { selfEncryptCount, germanTrigramScore, chiSquared, score: textScore } = scoreDecryption(m.decrypted, ciphertext, cribText);
+        const totalScore = (cribText.length * 10) + (deducedCount * 12) + textScore;
 
         unique.push({
           ...m,
           score: totalScore,
           selfEncryptCount,
           germanTrigramScore,
+          chiSquared,
         });
       }
     }
@@ -845,6 +984,29 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     return { l0Mapped, m0Mapped, r0Mapped };
   };
 
+  const handleApplyDeducedSteckers = (match: CryptanalysisMatch, rescan: boolean = false) => {
+    if (!match.deducedSteckers) return;
+    const currentMap = parseKnownSteckers(knownSteckers);
+    const mergedMap = { ...currentMap, ...match.deducedSteckers };
+    const pairs: string[] = [];
+    const visited = new Set<string>();
+    for (const [a, b] of Object.entries(mergedMap)) {
+      if (!visited.has(a) && !visited.has(b)) {
+        visited.add(a);
+        visited.add(b);
+        pairs.push(`${a}${b}`);
+      }
+    }
+    const newKnownStr = pairs.join(' ');
+    setKnownSteckers(newKnownStr);
+    setCopiedToast(`Applied ${Object.keys(match.deducedSteckers).length / 2} deduced stecker pairs to Known Steckers Seed!`);
+    setTimeout(() => setCopiedToast(null), 3000);
+
+    if (rescan) {
+      setTimeout(() => startBombeSearch(), 100);
+    }
+  };
+
   // Helper to process raw matches into finalized, deduplicated, scored results
   const processFoundMatches = (
     rawMatches: Array<CryptanalysisMatch>,
@@ -909,11 +1071,20 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     const offsetsToScan = alignmentScanMode === 'all_viable' ? viableOffsets : [alignmentOffset];
     if (offsetsToScan.length === 0) return;
 
+    if (workerRef.current) {
+      workerRef.current.postMessage({ command: 'cancel' });
+      workerRef.current.terminate();
+      workerRef.current = null;
+    }
+
     stopSearchRef.current = false;
+    isSearchingRef.current = true;
     setIsSearching(true);
     setProgress(0);
     setMatches([]);
     setHasSearched(false);
+    setRecentStop(null);
+    setIsStopFlashing(false);
 
     // 2. Build list of rotor combinations to scan based on user selection
     const rotorCombs: Array<{ left: string; middle: string; right: string }> = [];
@@ -963,12 +1134,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       }
     }
 
-    const isM4 = fourthRotorType === 'Beta' || fourthRotorType === 'Gamma';
-    const fourthR = isM4 ? prepareRotor(fourthRotorType, fourthRotorRing) : null;
-
     const reflectorSpec = REFLECTOR_SPECS[reflectorType as any] || REFLECTOR_SPECS['Reflector B'];
     const reflectorWiring = reflectorSpec.wiring.split('').map(charToNum);
-    const hasDualReflector = reflectorType === 'UKW-Dual-Dynamic';
 
     // Prepare plugboard number array lookup
     const pMap = new Array(26);
@@ -982,16 +1149,26 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
       }
     }
 
-    // Precalculate sliced text targets for fast loop across all offsets
+    // Precalculate targets with partial crib gap support
     const precalculatedOffsets = offsetsToScan.map(offset => {
       const cipherTextSliced = ciphertext.toUpperCase().slice(offset, offset + crib.length);
-      const cipherNums = cipherTextSliced.split('').map(charToNum);
-      const cribNums = crib.toUpperCase().split('').map(charToNum);
+      const cribUpper = crib.toUpperCase();
 
-      // Build menu graph edges for Welchman's Diagonal Board search
       const menuEdges: Array<{ i: number; p: number; c: number }> = [];
-      for (let i = 0; i < cribNums.length; i++) {
-        menuEdges.push({ i, p: cribNums[i], c: cipherNums[i] });
+      const validLetterPairs: Array<{ index: number; cipherNum: number; cribNum: number }> = [];
+
+      for (let i = 0; i < cribUpper.length; i++) {
+        const cribChar = cribUpper[i];
+        const ciphChar = cipherTextSliced[i];
+
+        // Only create edge/pair if both crib and ciphertext contain valid A-Z letters
+        // Wildcard placeholders ('_', '?', '*', ' ') are skipped while preserving step index 'i'
+        if (cribChar && ciphChar && /^[A-Z]$/.test(cribChar) && /^[A-Z]$/.test(ciphChar)) {
+          const p = charToNum(cribChar);
+          const c = charToNum(ciphChar);
+          menuEdges.push({ i, p, c });
+          validLetterPairs.push({ index: i, cipherNum: c, cribNum: p });
+        }
       }
 
       // Calculate node degrees to pick optimal testNode (highest degree node)
@@ -1011,252 +1188,93 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
       return {
         offset,
-        cipherNums,
-        cribNums,
         menuEdges,
         testNode,
+        validLetterPairs
       };
     });
 
-    const foundMatches: Array<{
-      leftRotor: string;
-      middleRotor: string;
-      rightRotor: string;
-      left: string;
-      middle: string;
-      right: string;
-      offset: number;
-      decrypted: string;
-      deducedSteckers?: Record<string, string>;
-      stopHypothesis?: string;
-    }> = [];
-
-    let currentCombIndex = 0;
-    let combinationIndex = 0;
-    const totalCombinationsPerRotor = 17576; // 26 * 26 * 26 starting positions for Left, Middle, Right
-
-    // Pre-cache rotor states for speed
-    const rotorCache = new Map<string, any>();
-    const getCachedRotor = (type: string, ring: number) => {
-      const key = `${type}-${ring}`;
-      if (!rotorCache.has(key)) {
-        rotorCache.set(key, prepareRotor(type, ring));
-      }
-      return rotorCache.get(key);
-    };
-
     const speedMap: Record<string, number> = {
       paused: 0,
-      slow: 5,
-      normal: 100,
-      fast: 1000,
+      slow: 50,
+      normal: 500,
+      fast: 2500,
       realtime: 17576
     };
 
-    let lastFoundMatchesCount = 0;
+    const worker = getOrCreateBombeWorker();
+    workerRef.current = worker;
 
-    const runBatch = () => {
-      if (stopSearchRef.current) {
-        // Search aborted by operator! Process any matches found up to cancellation
-        if (foundMatches.length > 0) {
-          const processed = processFoundMatches(foundMatches, crib);
-          setMatches(processed);
-          setHasSearched(true);
+    const accumulatedRawMatches: Array<any> = [];
+
+    worker.onmessage = (e: MessageEvent<BombeWorkerMessage>) => {
+      const data = e.data;
+      if (data.type === 'progress') {
+        const now = Date.now();
+        if (now - lastProgressUpdateRef.current > 50 || data.progress === 100) {
+          lastProgressUpdateRef.current = now;
+          setProgress(data.progress);
+          setCurrentScan(data.currentScan);
+          setCurrentRotorComb(data.currentRotorComb);
+          if (data.currentScanOffset !== undefined) {
+            setCurrentScanOffset(data.currentScanOffset);
+          }
+          playRotorClickSound(soundEnabled);
         }
-        setIsSearching(false);
-        return;
-      }
-
-      const speedSetting = scanSpeedRef.current;
-      if (speedSetting === 'paused') {
-        animFrameIdRef.current = requestAnimationFrame(runBatch);
-        return;
-      }
-
-      if (currentCombIndex >= rotorCombs.length) {
-        // Complete! Roll back found starting positions to offset 0 and fill in decryptions across requested Ring search scope
-        const processed = processFoundMatches(foundMatches, crib);
+      } else if (data.type === 'stop_found') {
+        accumulatedRawMatches.push(data.stopData);
+        const now = Date.now();
+        if (now - lastStopUpdateRef.current > 100) {
+          lastStopUpdateRef.current = now;
+          setRecentStop({
+            left: data.stopData.left,
+            middle: data.stopData.middle,
+            right: data.stopData.right,
+            offset: data.stopData.offset,
+            rotorComb: `${data.stopData.leftRotor}-${data.stopData.middleRotor}-${data.stopData.rightRotor}`,
+            steckerHypothesis: data.stopData.stopHypothesis,
+            timestamp: now
+          });
+          setIsStopFlashing(true);
+          if (stopFlashTimerRef.current) clearTimeout(stopFlashTimerRef.current);
+          stopFlashTimerRef.current = setTimeout(() => setIsStopFlashing(false), 500);
+        }
+      } else if (data.type === 'complete') {
+        const matchesToProcess = accumulatedRawMatches.length > 0 ? accumulatedRawMatches : data.rawMatches;
+        const processed = processFoundMatches(matchesToProcess, crib);
         setMatches(processed);
         setHasSearched(true);
+        isSearchingRef.current = false;
         setIsSearching(false);
-        return;
+        workerRef.current = null;
       }
-
-      const activeComb = rotorCombs[currentCombIndex];
-      const leftR = getCachedRotor(activeComb.left, leftRotorRing);
-      const middleR = getCachedRotor(activeComb.middle, middleRotorRing);
-      const rightR = getCachedRotor(activeComb.right, rightRotorRing);
-
-      const batchSize = speedMap[speedSetting];
-      const limit = Math.min(combinationIndex + batchSize, totalCombinationsPerRotor);
-
-      for (let c = combinationIndex; c < limit; c++) {
-        // Unpack composite index into 3 independent dial values (0-25)
-        const r = c % 26;
-        const m = Math.floor(c / 26) % 26;
-        const l = Math.floor(c / 676) % 26;
-
-        for (const precalc of precalculatedOffsets) {
-          if (bombeEngineMode === 'welchman_diagonal') {
-            const result = testWelchmanDiagonalBoardPos(
-              l, m, r,
-              precalc.menuEdges,
-              precalc.testNode,
-              leftR,
-              middleR,
-              rightR,
-              fourthR,
-              reflectorWiring,
-              hasDualReflector,
-              reflectorRing,
-              reflectorStart
-            );
-
-            if (result.isStop) {
-              foundMatches.push({
-                leftRotor: activeComb.left,
-                middleRotor: activeComb.middle,
-                rightRotor: activeComb.right,
-                left: numToChar(l),
-                middle: numToChar(m),
-                right: numToChar(r),
-                offset: precalc.offset,
-                decrypted: '',
-                deducedSteckers: result.deducedSteckers,
-                stopHypothesis: result.stopHypothesis,
-              });
-            }
-          } else {
-            const isMatch = testStartPos(
-              l, m, r,
-              precalc.cipherNums,
-              precalc.cribNums,
-              leftR,
-              middleR,
-              rightR,
-              fourthR,
-              reflectorWiring,
-              hasDualReflector,
-              reflectorRing,
-              reflectorStart,
-              pMap
-            );
-
-            if (isMatch) {
-              foundMatches.push({
-                leftRotor: activeComb.left,
-                middleRotor: activeComb.middle,
-                rightRotor: activeComb.right,
-                left: numToChar(l),
-                middle: numToChar(m),
-                right: numToChar(r),
-                offset: precalc.offset,
-                decrypted: '',
-              });
-            }
-          }
-        }
-      }
-
-      combinationIndex = limit;
-      const totalSteps = rotorCombs.length * totalCombinationsPerRotor * precalculatedOffsets.length;
-      const completedSteps = (currentCombIndex * totalCombinationsPerRotor + combinationIndex) * precalculatedOffsets.length;
-      setProgress(Math.round((completedSteps / totalSteps) * 100));
-
-      if (combinationIndex >= totalCombinationsPerRotor) {
-        currentCombIndex++;
-        combinationIndex = 0;
-      }
-
-      // Visual updates: show scanned position or active rotor combination names
-      const currentActiveComb = rotorCombs[Math.min(currentCombIndex, rotorCombs.length - 1)];
-      const lastR = limit % 26;
-      const lastM = Math.floor(limit / 26) % 26;
-      const lastL = Math.floor(limit / 676) % 26;
-      
-      setCurrentScan([numToChar(lastL), numToChar(lastM), numToChar(lastR)]);
-      setCurrentRotorComb(`${currentActiveComb.left}-${currentActiveComb.middle}-${currentActiveComb.right}`);
-      
-      if (precalculatedOffsets.length > 0) {
-        setCurrentScanOffset(precalculatedOffsets[0].offset); // Show first offset being scanned
-      }
-
-      if (foundMatches.length > lastFoundMatchesCount) {
-        const lastMatch = foundMatches[foundMatches.length - 1];
-        setRecentStop({
-          left: lastMatch.left,
-          middle: lastMatch.middle,
-          right: lastMatch.right,
-          offset: lastMatch.offset,
-          rotorComb: `${lastMatch.leftRotor}-${lastMatch.middleRotor}-${lastMatch.rightRotor}`,
-          steckerHypothesis: lastMatch.stopHypothesis,
-          timestamp: Date.now()
-        });
-        lastFoundMatchesCount = foundMatches.length;
-      }
-
-      playRotorClickSound(soundEnabled);
-      animFrameIdRef.current = requestAnimationFrame(runBatch);
     };
 
-    animFrameIdRef.current = requestAnimationFrame(runBatch);
+    worker.postMessage({
+      command: 'start',
+      payload: {
+        bombeEngineMode,
+        rotorCombs,
+        precalculatedOffsets,
+        leftRotorRing,
+        middleRotorRing,
+        rightRotorRing,
+        fourthRotorType,
+        fourthRotorRing,
+        fourthRotorStart,
+        reflectorType,
+        reflectorWiring,
+        reflectorRing,
+        reflectorStart,
+        hasDualReflector: reflectorType === 'UKW-Dual-Dynamic',
+        knownSteckersStr: knownSteckers,
+        plugboardMap: pMap,
+        autoRefineIterative,
+        batchSize: speedMap[scanSpeedRef.current] || 2500
+      }
+    });
   };
 
-  // Helper component for Rotor Dial visualization
-  const RotorDial = ({ 
-    rotorType, 
-    ringSetting, 
-    currentPosLetter, 
-    label,
-    isRecentStop
-  }: { 
-    rotorType: string, 
-    ringSetting: number, 
-    currentPosLetter: string, 
-    label: string,
-    isRecentStop: boolean
-  }) => {
-    const rotorDef = ROTOR_SPECS[rotorType as keyof typeof ROTOR_SPECS];
-    const notches = rotorDef ? getRotorNotchPositions(rotorType as any) : [];
-    const ringLetter = numToChar(ringSetting - 1);
-    
-    return (
-      <div className="flex flex-col items-center gap-1 sm:gap-2">
-        <div className={`relative w-20 h-20 sm:w-28 sm:h-28 lg:w-36 lg:h-36 rounded-full border-[3px] sm:border-4 ${isRecentStop ? `${t.borderSuccess} shadow-[0_0_15px_rgba(34,197,94,0.4)]` : `${t.borderAccent}`} ${t.panelInner} shadow-xl flex items-center justify-center transition-colors duration-300`}>
-          <div className={`absolute inset-0 bg-radial-gradient from-transparent ${t.codebookSheetBg.includes('slate') ? 'to-slate-900/10' : 'to-[#120e04]/90'} pointer-events-none rounded-full`} />
-          
-          {/* Outer Ring Letters */}
-          {Array.from({ length: 26 }).map((_, i) => {
-            const letter = String.fromCharCode(65 + i);
-            const isNotch = notches.includes(i);
-            const isRingSetting = letter === ringLetter;
-            const angle = (i * (360 / 26)) - 90; // Start A at top
-            
-            return (
-              <div 
-                key={i}
-                className="absolute w-full h-full pointer-events-none"
-                style={{ transform: `rotate(${angle}deg)` }}
-              >
-                <div className="absolute top-[2%] sm:top-1 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                  {isNotch && <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 lg:w-2 lg:h-2 ${t.bgAccentSolid} mb-[1px]`} style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }} />}
-                  <span className={`text-[5px] sm:text-[7px] lg:text-[9px] ${t.fontMono} font-bold leading-none ${isRingSetting ? `${t.textAccent} drop-shadow-[0_0_3px_rgba(235,194,56,0.6)]` : `${t.textMuted}/40`}`} style={{ transform: `rotate(${-angle}deg)` }}>
-                    {letter}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-          
-          {/* Inner Ring / Wiring Position */}
-          <span className={`${t.fontRotor} text-2xl sm:text-4xl lg:text-5xl font-bold z-10 select-none transition-colors duration-200 ${isRecentStop ? `${t.textSuccess} drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]` : t.textAccent}`}>
-            {currentPosLetter}
-          </span>
-        </div>
-        <span className={`text-[8px] sm:text-[10px] ${t.fontMono} ${t.textMuted} uppercase text-center max-w-[80px] sm:max-w-none leading-tight`}>{label}</span>
-      </div>
-    );
-  };
   const handleApplyMatchWithRings = (
     match: typeof matches[0],
     tLeftRing: number, tMiddleRing: number, tRightRing: number,
@@ -1669,9 +1687,20 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
 
                 {/* Known Steckers Seed Input */}
                 <div className="space-y-1 pt-1">
-                  <label className={`text-[9px] ${t.textMuted} block uppercase ${t.fontMono} font-bold`}>
-                    Known Steckers Seed (e.g. AB CD EF)
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className={`text-[9px] ${t.textMuted} block uppercase ${t.fontMono} font-bold`}>
+                      Known Steckers Seed (e.g. AB CD EF)
+                    </label>
+                    {knownSteckers && (
+                      <button
+                        type="button"
+                        onClick={() => setKnownSteckers('')}
+                        className={`text-[9px] ${t.textMuted} hover:${t.textDanger} cursor-pointer font-mono`}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={knownSteckers}
@@ -1679,29 +1708,67 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                     placeholder="e.g. AT CD ER"
                     className={`w-full ${t.panelInner} ${t.textPrimary} text-xs ${t.fontMono} border ${t.borderBase} rounded py-1 px-2 focus:outline-none focus:${t.borderAccent}`}
                   />
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="checkbox"
+                      id="autoRefineCheck"
+                      checked={autoRefineIterative}
+                      onChange={(e) => setAutoRefineIterative(e.target.checked)}
+                      className="rounded cursor-pointer accent-amber-500"
+                    />
+                    <label htmlFor="autoRefineCheck" className={`text-[10px] ${t.textSecondary} cursor-pointer ${t.fontMono}`}>
+                      ⚡ Auto-Iterative Refinement (chain deduced steckers across stops)
+                    </label>
+                  </div>
                 </div>
 
                 {/* Display active plugboard connections */}
-                <div className={`p-2 ${t.panelInner} rounded border ${t.borderBase} text-[10px] ${t.fontMono}`}>
-                  <div className={`${t.textMuted} uppercase font-bold text-[9px] mb-1`}>
-                    Active Stecker Connections ({Object.keys(config.plugboard).length / 2} pairs)
+                <div className={`p-2.5 ${t.panelInner} rounded border ${t.borderBase} text-[10px] ${t.fontMono}`}>
+                  <div className={`${t.textMuted} uppercase font-bold text-[9px] mb-2 flex items-center justify-between`}>
+                    <span>Active Stecker Connections ({Object.keys(config.plugboard).length / 2}/10 pairs)</span>
+                    <span className={`${t.textAccent} font-mono text-[9px]`}>
+                      {20 - Object.keys(config.plugboard).length} sockets free
+                    </span>
                   </div>
                   {Object.keys(config.plugboard).length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {Object.entries(config.plugboard)
                         .filter(([k, v]) => k < v)
-                        .map(([a, b]) => (
-                          <span
-                            key={`${a}-${b}`}
-                            className={`px-1.5 py-0.5 rounded text-[10px] border ${
-                              plugboardMode === 'active'
-                                ? `${t.accentLightBg} ${t.textAccent} border-${t.borderAccent}`
-                                : `${t.panelInner} ${t.textSecondary} line-through opacity-60`
-                            }`}
-                          >
-                            {a}↔{b}
-                          </span>
-                        ))}
+                        .sort(([a1], [a2]) => a1.localeCompare(a2))
+                        .map(([a, b], idx) => {
+                          const colorIdx = idx % CORD_COLORS.length;
+                          const hexColor = CORD_COLORS[colorIdx];
+                          return (
+                            <div
+                              key={`${a}-${b}`}
+                              className={`px-2 py-1 rounded border text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm transition-all ${
+                                plugboardMode === 'active'
+                                  ? `${t.panelBg} text-white cable-border-${colorIdx}`
+                                  : `${t.panelInner} ${t.textSecondary} line-through opacity-50 border-zinc-700`
+                              }`}
+                              style={plugboardMode === 'active' ? { borderColor: hexColor } : undefined}
+                            >
+                              <div
+                                className={`w-2.5 h-2.5 rounded-full shadow-xs cable-bg-${colorIdx}`}
+                                style={{ backgroundColor: hexColor }}
+                              />
+                              <span className={plugboardMode === 'active' ? t.textPrimary : ''}>{a} ↔ {b}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newPb: Record<string, string> = { ...config.plugboard };
+                                  delete newPb[a];
+                                  delete newPb[String(b)];
+                                  onUpdateConfig({ ...config, plugboard: newPb });
+                                }}
+                                className="ml-0.5 opacity-60 hover:opacity-100 hover:text-red-400 cursor-pointer text-xs leading-none"
+                                title={`Unplug ${a}↔${b}`}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
                     </div>
                   ) : (
                     <span className={`${t.textMuted} italic`}>No plugboard connections configured</span>
@@ -2134,6 +2201,15 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                                 Discovered Rings: {formatRotorRing(match.leftRing)}-{formatRotorRing(match.middleRing)}-{formatRotorRing(match.rightRing)}
                               </span>
                             )}
+                            {match.chiSquared !== undefined && (
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${t.fontMono} ${
+                                match.chiSquared < 30 ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40' :
+                                match.chiSquared < 60 ? 'bg-amber-900/60 text-amber-300 border border-amber-500/40' :
+                                'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                              }`}>
+                                χ² = {match.chiSquared} {match.chiSquared < 30 ? '(Good Fit)' : match.chiSquared < 60 ? '(Fair Fit)' : ''}
+                              </span>
+                            )}
                             {match.offset > 0 && (
                               <span className={`text-[9px] ${t.successBadge} px-1.5 py-0.5 rounded font-bold ${t.fontMono}`}>
                                 Matched at Crib Offset: {match.offset}
@@ -2188,14 +2264,43 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                             )}
                           </div>
                           <div className={`flex flex-wrap gap-1.5 ${t.fontMono} text-xs`}>
-                            {Object.entries(match.deducedSteckers).map(([node, stecker]) => (
-                              <span
-                                key={`${node}-${stecker}`}
-                                className={`px-2 py-0.5 rounded border ${t.indicatorBg} ${t.textAccent} border-${t.borderAccent} font-bold`}
-                              >
-                                {node}↔{stecker}
-                              </span>
-                            ))}
+                            {Object.entries(match.deducedSteckers)
+                              .filter(([k, v]) => k <= v)
+                              .map(([node, stecker], idx) => {
+                                const colorIdx = idx % CORD_COLORS.length;
+                                const hexColor = CORD_COLORS[colorIdx];
+                                return (
+                                  <div
+                                    key={`${node}-${stecker}`}
+                                    className={`px-2 py-0.5 rounded border font-bold flex items-center gap-1.5 shadow-xs ${t.panelBg} cable-border-${colorIdx}`}
+                                    style={{ borderColor: hexColor }}
+                                  >
+                                    <div
+                                      className={`w-2 h-2 rounded-full shadow-xs cable-bg-${colorIdx}`}
+                                      style={{ backgroundColor: hexColor }}
+                                    />
+                                    <span className={t.textPrimary}>{node} ↔ {stecker}</span>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                          <div className="flex items-center gap-2 pt-1 border-t border-amber-500/20">
+                            <button
+                              type="button"
+                              onClick={() => handleApplyDeducedSteckers(match, false)}
+                              className={`py-1 px-2.5 rounded text-[10px] font-bold ${t.fontMono} ${t.buttonHighlight} flex items-center gap-1 cursor-pointer transition-colors`}
+                            >
+                              <span className="material-symbols-outlined text-xs">add_link</span>
+                              Apply {Object.keys(match.deducedSteckers).length / 2} Steckers to Known Seed
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleApplyDeducedSteckers(match, true)}
+                              className={`py-1 px-2.5 rounded text-[10px] font-bold ${t.fontMono} ${t.buttonPrimary} flex items-center gap-1 cursor-pointer transition-colors`}
+                            >
+                              <span className="material-symbols-outlined text-xs">refresh</span>
+                              Seed & Re-Scan
+                            </button>
                           </div>
                         </div>
                       )}
