@@ -15,7 +15,6 @@ async function startServer() {
 
   // API endpoints
   app.use("/api/auth", authRoutes);
-  app.use("/api", authRoutes); // mounts /api/user/state
   
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", service: "Enigma Radio Transceiver Server" });

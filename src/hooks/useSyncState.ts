@@ -21,7 +21,7 @@ export function useSyncState() {
     if (!user) return;
 
     try {
-      const res = await fetch('/api/user/state', { credentials: 'include' });
+      const res = await fetch('/api/auth/user/state', { credentials: 'include' });
       if (!res.ok) return;
       
       const state = await res.json();
@@ -59,7 +59,7 @@ export function useSyncState() {
         if (val !== null) state[key] = val;
       }
       
-      await fetch('/api/user/state', {
+      await fetch('/api/auth/user/state', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

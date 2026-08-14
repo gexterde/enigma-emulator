@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-const DATA_DIR = path.join(process.cwd(), 'data', 'users');
-const INDEX_FILE = path.join(DATA_DIR, '_email_index.json');
+export const DATA_DIR = path.join(process.cwd(), 'data', 'users');
+export const INDEX_FILE = path.join(DATA_DIR, '_email_index.json');
 
 export interface UserRecord {
   id: string;
@@ -11,6 +11,7 @@ export interface UserRecord {
   salt: string | null;
   googleId: string | null;
   callSign: string | null;
+  isAdmin: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -41,7 +42,7 @@ async function ensureDir(dirPath: string) {
   }
 }
 
-async function getEmailIndex(): Promise<Record<string, string>> {
+export async function getEmailIndex(): Promise<Record<string, string>> {
   try {
     const data = await fs.readFile(INDEX_FILE, 'utf-8');
     return JSON.parse(data);

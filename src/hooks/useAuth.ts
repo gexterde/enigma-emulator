@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 export interface User {
   id: string;
   email: string;
+  isAdmin: boolean;
 }
 
 export function useAuth() {

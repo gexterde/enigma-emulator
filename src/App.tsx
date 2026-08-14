@@ -15,6 +15,7 @@ import { FrequencyAnalysisView } from './components/FrequencyAnalysisView';
 import { CryptanalysisView } from './components/CryptanalysisView';
 import { SettingsModal, InfoModal, ShareModal, ShortcutsModal } from './components/Modals';
 import { LoginModal } from './components/LoginModal';
+import { AdminPanel } from './components/AdminPanel';
 import { ProtectedView } from './components/ProtectedView';
 import { ActiveTab, EnigmaConfig, LogEntry } from './types';
 import { DEFAULT_ENIGMA_CONFIG } from './lib/enigmaEngine';
@@ -59,6 +60,7 @@ export default function App() {
   const { user, logout } = useAuth();
   useSyncState();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>('machine');
   const [config, setConfig] = useState<EnigmaConfig>(() => {
     try {
@@ -366,6 +368,7 @@ export default function App() {
         onOpenInfo={() => setIsInfoOpen(true)}
         onOpenShare={() => setIsShareOpen(true)}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
         user={user}
         onLoginClick={() => setIsLoginOpen(true)}
         onLogoutClick={logout}
@@ -525,6 +528,7 @@ export default function App() {
       />
 
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      <AdminPanel isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
     </div>
   );
 }

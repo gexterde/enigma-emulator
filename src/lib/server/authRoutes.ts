@@ -3,7 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import crypto from 'crypto';
-import { getUserByEmail, getUserById, saveUser, getUserState, saveUserState } from './db.js';
+import path from 'path';
+import AdmZip from 'adm-zip';
+import fs from 'fs/promises';
+import { getUserByEmail, getUserById, saveUser, getUserState, saveUserState, getEmailIndex, DATA_DIR, INDEX_FILE } from './db.js';
 
 const router = Router();
 
@@ -72,6 +75,7 @@ router.post('/register', rateLimitMiddleware, async (req: any, res: any) => {
       salt,
       googleId: null,
       callSign: null,
+      isAdmin: false,
       createdAt: now,
       updatedAt: now
     });
@@ -156,6 +160,7 @@ router.post('/google', rateLimitMiddleware, async (req: any, res: any) => {
         salt: null,
         googleId: payload.sub,
         callSign: null,
+        isAdmin: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -199,11 +204,27 @@ export const requireAuth = (req: any, res: any, next: any) => {
   }
 };
 
+export const requireAdmin = async (req: any, res: any, next: any) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await getUserById((decoded as any).userId);
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+};
+
 // GET /api/auth/me
 router.get('/me', requireAuth, async (req: any, res: any) => {
   const user = await getUserById(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ user: { id: user.id, email: user.email } });
+  res.json({ user: { id: user.id, email: user.email, isAdmin: user.isAdmin } });
 });
 
 // GET /api/user/state
@@ -218,6 +239,109 @@ router.put('/user/state', requireAuth, async (req: any, res: any) => {
   const state = req.body;
   await saveUserState(req.user.userId, state);
   res.json({ success: true });
+});
+
+// GET /api/auth/admin/export
+router.get('/admin/export', requireAdmin, (req: any, res: any) => {
+  try {
+    const zip = new AdmZip();
+    const dataDir = path.join(process.cwd(), 'data', 'users');
+    
+    // Add entire data/users directory to ZIP
+    zip.addLocalFolder(dataDir, 'data/users', false);
+    
+    const buffer = zip.toBuffer();
+    const date = new Date().toISOString().split('T')[0];
+    
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="enigma-backup-${date}.zip"`);
+    res.send(buffer);
+  } catch (error) {
+    console.error('Export error:', error);
+    res.status(500).json({ error: 'Failed to create backup' });
+  }
+});
+
+// Helper: read request body to buffer
+function readBody(req: any): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+// POST /api/auth/admin/import
+router.post('/admin/import', requireAdmin, async (req: any, res: any) => {
+  try {
+    const body = await readBody(req);
+    const zip = new AdmZip(body);
+    const dataDir = path.join(process.cwd(), 'data', 'users');
+    
+    // Validate: no directory traversal
+    zip.getEntries().forEach((entry) => {
+      if (entry.entryName.includes('..')) {
+        throw new Error('Invalid ZIP: directory traversal detected');
+      }
+    });
+    
+    // Extract to data/users/
+    zip.extractAllTo(dataDir, true);
+    
+    res.json({ success: true, message: 'Backup restored successfully' });
+  } catch (error: any) {
+    console.error('Import error:', error);
+    res.status(400).json({ error: error.message || 'Failed to restore backup' });
+  }
+});
+
+// GET /api/auth/admin/users
+router.get('/admin/users', requireAdmin, async (req: any, res: any) => {
+  try {
+    const index = await getEmailIndex();
+    const users = await Promise.all(
+      Object.values(index).map(id => getUserById(id).then(u => u && {
+        id: u.id,
+        email: u.email,
+        isAdmin: u.isAdmin,
+        createdAt: u.createdAt,
+      }))
+    );
+    res.json({ users: users.filter(Boolean) });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to list users' });
+  }
+});
+
+// DELETE /api/auth/admin/users/:userId
+router.delete('/admin/users/:userId', requireAdmin, async (req: any, res: any) => {
+  try {
+    const userId = req.params.userId;
+    const userDir = path.join(DATA_DIR, userId);
+    
+    // Delete user file
+    await fs.unlink(path.join(DATA_DIR, `${userId}.json`));
+    
+    // Delete user state directory
+    await fs.rm(userDir, { recursive: true, force: true });
+    
+    // Remove from email index
+    const index = await getEmailIndex();
+    // Find email for this user
+    for (const [email, uid] of Object.entries(index)) {
+      if (uid === userId) {
+        delete index[email];
+        break;
+      }
+    }
+    await fs.writeFile(INDEX_FILE, JSON.stringify(index, null, 2));
+    
+    res.json({ success: true, message: 'User removed' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Failed to remove user' });
+  }
 });
 
 export default router;

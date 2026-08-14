@@ -8,6 +8,7 @@ interface HeaderProps {
   onOpenInfo: () => void;
   onOpenShare: () => void;
   onOpenShortcuts: () => void;
+  onOpenAdmin: () => void;
   user: User | null;
   onLoginClick: () => void;
   onLogoutClick: () => void;
@@ -20,6 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenInfo,
   onOpenShare,
   onOpenShortcuts,
+  onOpenAdmin,
   user,
   onLoginClick,
   onLogoutClick,
@@ -85,6 +87,16 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <span className="material-symbols-outlined material-fill-0">settings</span>
         </button>
+        {user?.isAdmin && (
+          <button
+            onClick={onOpenAdmin}
+            className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
+            title="Database Admin"
+            aria-label="Admin"
+          >
+            <span className="material-symbols-outlined material-fill-0">admin_panel_settings</span>
+          </button>
+        )}
         <button
           onClick={onOpenInfo}
           className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
