@@ -14,9 +14,13 @@ import { RadioStationView } from './components/RadioStationView';
 import { FrequencyAnalysisView } from './components/FrequencyAnalysisView';
 import { CryptanalysisView } from './components/CryptanalysisView';
 import { SettingsModal, InfoModal, ShareModal, ShortcutsModal } from './components/Modals';
+import { LoginModal } from './components/LoginModal';
+import { ProtectedView } from './components/ProtectedView';
 import { ActiveTab, EnigmaConfig, LogEntry } from './types';
 import { DEFAULT_ENIGMA_CONFIG } from './lib/enigmaEngine';
 import { useTheme, getTheme } from './lib/theme';
+import { useAuth } from './hooks/useAuth';
+import { useSyncState } from './hooks/useSyncState';
 
 function isValidRotorState(obj: unknown): boolean {
   if (!obj || typeof obj !== 'object') return false;
@@ -52,6 +56,9 @@ function isValidLogEntry(obj: unknown): boolean {
 }
 
 export default function App() {
+  const { user, logout } = useAuth();
+  useSyncState();
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>('machine');
   const [config, setConfig] = useState<EnigmaConfig>(() => {
     try {
@@ -359,6 +366,9 @@ export default function App() {
         onOpenInfo={() => setIsInfoOpen(true)}
         onOpenShare={() => setIsShareOpen(true)}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
+        user={user}
+        onLoginClick={() => setIsLoginOpen(true)}
+        onLogoutClick={logout}
       />
 
       {/* Body container with Sidebar and Main Content */}
@@ -432,24 +442,28 @@ export default function App() {
           )}
 
           {activeTab === 'morseTrainer' && (
-            <MorseTrainer />
+            <ProtectedView onRequireLogin={() => setIsLoginOpen(true)} title="Morse Trainer">
+              <MorseTrainer />
+            </ProtectedView>
           )}
 
           {activeTab === 'radio' && (
-            <RadioStationView
-              senderCallSign={senderCallSign}
-              onUpdateSenderCallSign={handleUpdateSenderCallSign}
-              config={config}
-              onLoadCiphertextToMachine={(header, ciphertext) => {
-                setCipherTape(ciphertext);
-                setActiveTab('machine');
-              }}
-              onSelectTab={setActiveTab}
-              incomingCiphertext={cipherTape}
-              incomingHeader={cipherHeader}
-              autoTransmitPending={pendingAutoTransmit}
-              onAutoTransmitComplete={() => setPendingAutoTransmit(false)}
-            />
+            <ProtectedView onRequireLogin={() => setIsLoginOpen(true)} title="Radio Station">
+              <RadioStationView
+                senderCallSign={senderCallSign}
+                onUpdateSenderCallSign={handleUpdateSenderCallSign}
+                config={config}
+                onLoadCiphertextToMachine={(header, ciphertext) => {
+                  setCipherTape(ciphertext);
+                  setActiveTab('machine');
+                }}
+                onSelectTab={setActiveTab}
+                incomingCiphertext={cipherTape}
+                incomingHeader={cipherHeader}
+                autoTransmitPending={pendingAutoTransmit}
+                onAutoTransmitComplete={() => setPendingAutoTransmit(false)}
+              />
+            </ProtectedView>
           )}
 
           {activeTab === 'frequency' && (
@@ -508,6 +522,8 @@ export default function App() {
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
       />
+
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </div>
   );
 }

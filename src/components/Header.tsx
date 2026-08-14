@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme, getTheme } from '../lib/theme';
+import { User } from '../hooks/useAuth';
 
 interface HeaderProps {
   onToggleMobileMenu: () => void;
@@ -7,6 +8,9 @@ interface HeaderProps {
   onOpenInfo: () => void;
   onOpenShare: () => void;
   onOpenShortcuts: () => void;
+  user: User | null;
+  onLoginClick: () => void;
+  onLogoutClick: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -14,7 +18,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSettings,
   onOpenInfo,
   onOpenShare,
-  onOpenShortcuts
+  onOpenShortcuts,
+  user,
+  onLoginClick,
+  onLogoutClick
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
@@ -36,6 +43,23 @@ export const Header: React.FC<HeaderProps> = ({
         </span>
       </div>
       <div className="flex items-center gap-1 md:gap-2">
+        {user ? (
+          <button
+            onClick={onLogoutClick}
+            className={`px-3 h-10 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-lg transform active:scale-95 text-xs font-bold uppercase tracking-wider hidden md:flex`}
+            title={`Logged in as ${user.email} - Click to Logout`}
+          >
+            Logout
+          </button>
+        ) : (
+          <button
+            onClick={onLoginClick}
+            className={`px-3 h-10 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-lg transform active:scale-95 text-xs font-bold uppercase tracking-wider hidden md:flex`}
+          >
+            <span className="material-symbols-outlined material-fill-0 mr-1 text-sm">login</span>
+            Login
+          </button>
+        )}
         <button
           onClick={onOpenShortcuts}
           className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}

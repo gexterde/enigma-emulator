@@ -3,14 +3,20 @@ import http from "http";
 import path from "path";
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer as createViteServer } from "vite";
+import cookieParser from "cookie-parser";
+import authRoutes from "./src/lib/server/authRoutes.js";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json());
+  app.use(cookieParser());
 
   // API endpoints
+  app.use("/api/auth", authRoutes);
+  app.use("/api", authRoutes); // mounts /api/user/state
+  
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", service: "Enigma Radio Transceiver Server" });
   });
