@@ -23,9 +23,9 @@ export const Footer: React.FC<FooterProps> = ({
   const t = getTheme(theme);
 
   // Determine battery color based on level
-  let barColor = 'bg-emerald-500';
+  let barColor = t.progressFill || t.bgSuccessStrong;
   if (batteryLevel < 20) {
-    barColor = 'bg-red-500 animate-pulse';
+    barColor = `${t.buttonDangerSolid || t.dangerBadge} animate-pulse`;
   } else if (batteryLevel < 50) {
     barColor = `${t.bgAccentSolid}`;
   }

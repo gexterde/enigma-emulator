@@ -1059,7 +1059,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     className={`p-1 rounded border transition-colors cursor-pointer flex items-center ${
                       cipherTape
                         ? `${t.textMuted} hover:${t.textAccent} ${t.borderBase} ${t.panelInner}`
-                        : 'opacity-40 text-slate-400 border-transparent cursor-not-allowed'
+                        : `opacity-40 ${t.textMuted} border-transparent cursor-not-allowed`
                     }`}
                     title="Copy Output Tape"
                     aria-label="Copy Output"
@@ -1187,7 +1187,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   >
                     <span className="material-symbols-outlined text-sm">settings_ethernet</span>
                     <span>PLUG SETTINGS</span>
-                    <span className="bg-blue-500/20 text-blue-600 px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
+                    <span className={`${t.accentLightBg} ${t.textAccent} px-1 py-0.2 rounded text-[9px] sm:text-[10px] ${t.fontMono}`}>
                       {Object.keys(config.plugboard || {}).length / 2} pairs
                     </span>
                   </button>
@@ -1204,7 +1204,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 <div className={`text-[10px] ${t.fontMono} ${t.textMuted}`}>
                   Reflector: <span className={`${t.textAccent} font-bold`}>{config.reflector.type}</span>
                   {isUKWDual && (
-                    <span className="text-orange-500 font-bold ml-1">
+                    <span className={`${t.textAccent} font-bold ml-1`}>
                       (Pos: {formatRotorPos(config.reflector.current, ringFormat)})
                     </span>
                   )}
@@ -1441,7 +1441,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                     >
                       <span className="material-symbols-outlined text-sm">settings_ethernet</span>
                       <span>PLUG SETTINGS</span>
-                      <span className="bg-blue-500/20 text-blue-600 px-1 py-0.2 rounded text-[9px] sm:text-[10px] font-mono">
+                      <span className={`${t.accentLightBg} ${t.textAccent} px-1 py-0.2 rounded text-[9px] sm:text-[10px] ${t.fontMono}`}>
                         {Object.keys(config.plugboard || {}).length / 2} pairs
                       </span>
                     </button>
@@ -1832,7 +1832,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   onChange={(e) => setImportText(e.target.value)}
                   placeholder={`${senderCallSign || 'DFS'} 1200 15 UIO ABCDE\nHELLOWORLD...`}
                   rows={6}
-                  className={`w-full ${t.inputBg} ${t.textPrimary} border ${t.borderBase} rounded p-2 text-xs ${t.fontMono} focus:outline-none focus:border-blue-500 resize-y`}
+                  className={`w-full ${t.inputBg} ${t.textPrimary} border ${t.borderBase} rounded p-2 text-xs ${t.fontMono} focus:outline-none focus:${t.borderAccent} resize-y`}
                 />
               </div>
 

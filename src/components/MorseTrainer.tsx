@@ -1161,7 +1161,7 @@ export const MorseTrainer: React.FC = () => {
                           type="checkbox"
                           checked={wordSpaceAuto}
                           onChange={(e) => setWordSpaceAuto(e.target.checked)}
-                          className={`accent-emerald-600 dark:accent-amber-500 rounded ${t.panelBg} w-3.5 h-3.5 cursor-pointer`}
+                          className={`${t.sliderAccent} rounded ${t.panelBg} w-3.5 h-3.5 cursor-pointer`}
                         />
                         <span className={`font-bold ${t.textPrimary}`}>Standard / Auto</span>
                       </label>
@@ -1716,9 +1716,9 @@ export const MorseTrainer: React.FC = () => {
                     })}
                   </div>
                   <div className={`flex items-center gap-1.5 text-[10px] font-mono ${t.textMuted}`}>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span className={`w-2 h-2 rounded-full ${t.bgSuccessStrong || t.bgSuccess} shrink-0`} />
                     <span>Correct Entry</span>
-                    <span className="w-2 h-2 rounded-full bg-red-500 ml-3 shrink-0" />
+                    <span className={`w-2 h-2 rounded-full ${t.buttonDangerSolid || t.textDanger} ml-3 shrink-0`} />
                     <span>Discrepancy (TX is transmitted, bottom is your entry)</span>
                   </div>
                 </div>

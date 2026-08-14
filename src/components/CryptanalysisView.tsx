@@ -1744,7 +1744,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                               className={`px-2 py-1 rounded border text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm transition-all ${
                                 plugboardMode === 'active'
                                   ? `${t.panelBg} text-white cable-border-${colorIdx}`
-                                  : `${t.panelInner} ${t.textSecondary} line-through opacity-50 border-zinc-700`
+                                  : `${t.panelInner} ${t.textSecondary} line-through opacity-50 ${t.borderBase}`
                               }`}
                               style={plugboardMode === 'active' ? { borderColor: hexColor } : undefined}
                             >
@@ -1761,7 +1761,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                                   delete newPb[String(b)];
                                   onUpdateConfig({ ...config, plugboard: newPb });
                                 }}
-                                className="ml-0.5 opacity-60 hover:opacity-100 hover:text-red-400 cursor-pointer text-xs leading-none"
+                                className={`ml-0.5 opacity-60 hover:opacity-100 hover:${t.textDanger} cursor-pointer text-xs leading-none`}
                                 title={`Unplug ${a}↔${b}`}
                               >
                                 ×
@@ -1936,7 +1936,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
             {ciphertext && crib && (
               <div className="pt-1">
                 {alignedSection.isViable ? (
-                  <div className={`p-3 ${t.successLightBg} border-2 border-green-900/60 ${t.successText} rounded flex items-center gap-3`}>
+                  <div className={`p-3 ${t.successLightBg} border-2 ${t.borderSuccess} ${t.successText} rounded flex items-center gap-3`}>
                     <span className={`material-symbols-outlined ${t.successText} text-xl animate-bounce`}>verified</span>
                     <div className="text-xs">
                       <strong className={`block uppercase tracking-wider ${t.successText} text-[10px]`}>Alignment Viable (0 Overlaps)</strong>
@@ -2203,9 +2203,9 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                             )}
                             {match.chiSquared !== undefined && (
                               <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${t.fontMono} ${
-                                match.chiSquared < 30 ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40' :
-                                match.chiSquared < 60 ? 'bg-amber-900/60 text-amber-300 border border-amber-500/40' :
-                                'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                                match.chiSquared < 30 ? `${t.successBadge} border` :
+                                match.chiSquared < 60 ? `${t.activeBadge} border` :
+                                `${t.inactiveBadge} border`
                               }`}>
                                 χ² = {match.chiSquared} {match.chiSquared < 30 ? '(Good Fit)' : match.chiSquared < 60 ? '(Fair Fit)' : ''}
                               </span>
@@ -2284,7 +2284,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                                 );
                               })}
                           </div>
-                          <div className="flex items-center gap-2 pt-1 border-t border-amber-500/20">
+                          <div className={`flex items-center gap-2 pt-1 border-t ${t.borderBase}`}>
                             <button
                               type="button"
                               onClick={() => handleApplyDeducedSteckers(match, false)}

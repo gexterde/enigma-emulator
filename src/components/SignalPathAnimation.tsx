@@ -341,7 +341,7 @@ export const SignalPathAnimation: React.FC<SignalPathAnimationProps> = ({
             </h2>
             {isKeyPressed && (
               <span className={`flex items-center gap-1.5 ${t.lampLitGlow} px-2.5 py-0.5 rounded ${t.fontMono} text-[10px] font-bold animate-pulse shadow-sm`}>
-                <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
+                <span className={`w-2 h-2 rounded-full ${t.buttonDangerSolid || t.dangerBadge} animate-ping`} />
                 KEY ACTIVE: '{selectedChar}' ➔ LAMP '{outputChar}'
               </span>
             )}
