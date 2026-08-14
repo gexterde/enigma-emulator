@@ -1211,8 +1211,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-3 max-w-xl mx-auto pt-1">
-                <div className={`flex flex-col sm:flex-row items-center justify-center gap-3 ${t.panelInner} p-2 sm:p-2.5 rounded-xl border ${t.borderBase}`}>
+              <div className="space-y-2 max-w-xl mx-auto pt-0.5">
+                <div className={`flex flex-col sm:flex-row items-center justify-center gap-2 ${t.panelInner} p-2 sm:p-2.5 rounded-xl border ${t.borderBase}`}>
                   <RotorChamber
                     config={config}
                     ringFormat={ringFormat}
@@ -1377,9 +1377,9 @@ export const MachineView: React.FC<MachineViewProps> = ({
 
       {/* Top Section: Rotors Chamber & Battery Switch Panels */}
       {!keyboardBulbsOnly && (showChamber || showBatterySwitch) && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
           {showChamber && (
-            <div className={`${showBatterySwitch ? 'lg:col-span-8' : 'lg:col-span-12'} ${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${t.appTexture} transition-all animate-fade-in`}>
+            <div className={`${showBatterySwitch ? 'lg:col-span-8' : 'lg:col-span-12'} ${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${t.appTexture} transition-all animate-fade-in flex flex-col justify-between`}>
               <div className={`flex justify-between items-center mb-3 pb-2 border-b ${t.borderBase}`}>
                 <h2 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-widest flex items-center gap-2`}>
                   <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>tune</span>
@@ -1421,37 +1421,37 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-3 max-w-xl mx-auto pt-1">
-                <div className={`flex flex-wrap items-center justify-between gap-2 ${t.panelInner} px-2 sm:px-3 py-1.5 rounded-lg border ${t.borderBase} shadow-inner`}>
+              <div className="space-y-2 max-w-xl mx-auto pt-0.5">
+                <div className={`flex flex-wrap items-center justify-between gap-1.5 ${t.panelInner} px-2 sm:px-2.5 py-1.5 rounded-lg border ${t.borderBase} shadow-inner`}>
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <button
                       type="button"
                       onClick={() => setShowRotorModal(true)}
-                      className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
+                      className={`flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-[11px] ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
                       title="Open Quick Rotor Settings Pop-Up Window"
                     >
-                      <span className="material-symbols-outlined text-sm">settings_overscan</span>
+                      <span className="material-symbols-outlined text-xs sm:text-sm">settings_overscan</span>
                       <span>ROTOR SETTINGS</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowPlugModal(true)}
-                      className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
+                      className={`flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-[11px] ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
                       title="Open Quick Plugboard Settings Pop-Up Window"
                     >
-                      <span className="material-symbols-outlined text-sm">settings_ethernet</span>
+                      <span className="material-symbols-outlined text-xs sm:text-sm">settings_ethernet</span>
                       <span>PLUG SETTINGS</span>
-                      <span className={`${t.accentLightBg} ${t.textAccent} px-1 py-0.2 rounded text-[9px] sm:text-[10px] ${t.fontMono}`}>
+                      <span className={`${t.accentLightBg} ${t.textAccent} px-1 py-0.2 rounded text-[9px] ${t.fontMono}`}>
                         {Object.keys(config.plugboard || {}).length / 2} pairs
                       </span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowCodebookModal(true)}
-                      className={`flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[10px] sm:text-xs ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
+                      className={`flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-[11px] ${t.fontMono} ${t.buttonHighlight} rounded-md font-bold transition-all shadow-sm cursor-pointer`}
                       title="Open Codebook Key Sheets Quick Window"
                     >
-                      <span className="material-symbols-outlined text-sm">menu_book</span>
+                      <span className="material-symbols-outlined text-xs sm:text-sm">menu_book</span>
                       <span>CODEBOOK</span>
                     </button>
                   </div>
@@ -1460,7 +1460,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   </div>
                 </div>
 
-                <div className={`flex flex-col sm:flex-row items-center justify-center gap-3 ${t.panelInner} p-2 sm:p-2.5 rounded-xl border ${t.borderBase}`}>
+                <div className={`flex flex-col sm:flex-row items-center justify-center gap-2 ${t.panelInner} p-2 sm:p-2.5 rounded-xl border ${t.borderBase}`}>
                   <RotorChamber
                     config={config}
                     ringFormat={ringFormat}

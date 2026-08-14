@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme, getTheme } from '../lib/theme';
 import { formatRotorPos } from '../lib/enigmaEngine';
+import { ChevronUp, ChevronDown, Shuffle } from 'lucide-react';
 
 interface RotorDialProps {
   label: string;
@@ -27,65 +28,68 @@ export const RotorDial: React.FC<RotorDialProps> = ({
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
+
   return (
-    <div className={`${t.panelInner} rounded-lg p-1.5 sm:p-2 border flex flex-col items-center max-w-[76px] sm:max-w-[105px] w-full mx-auto shadow-sm`}>
-      <span className={`text-[7.5px] sm:text-[9px] ${t.textMuted} ${t.fontMono} mb-0.5 whitespace-nowrap`}>
+    <div className={`${t.panelInner} rounded-lg p-2 border ${t.borderBase} flex flex-col items-center min-w-[72px] sm:min-w-[86px] max-w-[96px] w-full shadow-sm select-none transition-all`}>
+      {/* Rotor Label & Type */}
+      <span className={`text-[9px] sm:text-[10px] font-bold ${t.textSecondary} ${t.fontMono} mb-1 tracking-wider whitespace-nowrap`}>
         {label} {typeDisplay ? `(${typeDisplay})` : ''}
       </span>
-      <div className={`relative rounded w-9 sm:w-12 h-11 sm:h-13 flex items-center justify-center my-0.5 overflow-hidden ${t.rotorWindowBg} ${t.rotorWindowBorder} border ${t.rotorWindowShadow}`}>
+
+      {/* Compact Rotor Window Unit */}
+      <div className={`flex flex-col items-center rounded border ${t.rotorWindowBorder} ${t.rotorWindowBg} overflow-hidden ${t.rotorWindowShadow} w-11 sm:w-13 my-0.5 shadow-inner`}>
+        {/* Step Up Button */}
         <button
           type="button"
           onClick={() => onStep(1)}
-          className={`absolute top-0 w-full h-1/2 flex items-start justify-center ${t.rotorWindowControl} cursor-pointer`}
-          title="Rotate Up"
+          className={`w-full h-4 sm:h-4.5 flex items-center justify-center ${t.rotorWindowControl} border-b ${t.borderBase} hover:brightness-110 active:scale-95 transition-all cursor-pointer`}
+          title="Rotate Up (+1)"
+          aria-label="Rotate Up"
         >
-          <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_less</span>
+          <ChevronUp className="w-3 h-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)]" />
         </button>
-        <span key={currentPos} className={`${t.fontRotor} text-base sm:text-xl select-none animate-rotor-step`}>
-          {formatRotorPos(currentPos, ringFormat)}
-        </span>
+
+        {/* Clear Letter Display Viewport */}
+        <div className="w-full h-8 sm:h-9 flex items-center justify-center bg-[var(--rotor-window-bg)] relative px-0.5">
+          <span
+            key={currentPos}
+            className={`${t.fontRotor} text-lg sm:text-xl text-[var(--text-primary)] font-mono font-bold select-none leading-none animate-rotor-step tracking-normal drop-shadow-xs`}
+          >
+            {formatRotorPos(currentPos, ringFormat)}
+          </span>
+        </div>
+
+        {/* Step Down Button */}
         <button
           type="button"
           onClick={() => onStep(-1)}
-          className={`absolute bottom-0 w-full h-1/2 flex items-end justify-center ${t.rotorWindowControl} cursor-pointer`}
-          title="Rotate Down"
+          className={`w-full h-4 sm:h-4.5 flex items-center justify-center ${t.rotorWindowControl} border-t ${t.borderBase} hover:brightness-110 active:scale-95 transition-all cursor-pointer`}
+          title="Rotate Down (-1)"
+          aria-label="Rotate Down"
         >
-          <span className="material-symbols-outlined text-[10px] sm:text-[13px]">expand_more</span>
+          <ChevronDown className="w-3 h-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)]" />
         </button>
       </div>
-      {isNotch ? (
-        <div className="flex flex-col items-center mt-0.5 w-full">
-          <span className={`text-[7px] sm:text-[8px] ${t.fontMono} ${t.textAccent} whitespace-nowrap`} title={turnoverAction}>
-            Notch: {notchValue}
-          </span>
-          <button
-            type="button"
-            onClick={onRandomize}
-            className={`mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] ${t.fontMono} ${t.buttonPrimary} rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none`}
-            title="Randomize Grundstellung (Start Position)"
-          >
-            <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
-            <span className="hidden xs:inline">Rand</span>
-            <span className="inline xs:hidden">R</span>
-          </button>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center mt-0.5 w-full">
-          <span className={`text-[7px] sm:text-[8px] ${t.textSecondary} ${t.fontMono} whitespace-nowrap`} title={turnoverAction}>
-            Fixed Stator
-          </span>
-          <button
-            type="button"
-            onClick={onRandomize}
-            className={`mt-1 px-1 sm:px-1.5 py-0.5 text-[7px] sm:text-[8px] ${t.fontMono} ${t.buttonPrimary} rounded transition-colors cursor-pointer flex items-center justify-center gap-0.5 shadow-xs w-full max-w-[56px] sm:max-w-none`}
-            title="Randomize Grundstellung (Start Position)"
-          >
-            <span className="material-symbols-outlined text-[8px] sm:text-[10px]">shuffle</span>
-            <span className="hidden xs:inline">Rand</span>
-            <span className="inline xs:hidden">R</span>
-          </button>
-        </div>
-      )}
+
+      {/* Notch indicator & Randomize Button */}
+      <div className="flex items-center justify-between w-full mt-1.5 px-0.5 gap-1">
+        <span
+          className={`text-[8px] sm:text-[9px] ${t.fontMono} ${isNotch ? t.textAccent : t.textSecondary} font-semibold truncate`}
+          title={turnoverAction || (isNotch ? `Notch turnover at ${notchValue}` : 'Fixed stator')}
+        >
+          {isNotch ? `N:${notchValue}` : 'Fixed'}
+        </span>
+        <button
+          type="button"
+          onClick={onRandomize}
+          className={`px-1.5 py-0.5 text-[8px] ${t.fontMono} ${t.buttonPrimary} border ${t.borderBase} rounded transition-all cursor-pointer flex items-center gap-0.5 hover:border-[var(--border-accent)] hover:${t.textAccent}`}
+          title="Randomize Grundstellung"
+          aria-label="Randomize Grundstellung"
+        >
+          <Shuffle className="w-2.5 h-2.5 text-[var(--text-accent)]" />
+          <span className="text-[7.5px]">Rand</span>
+        </button>
+      </div>
     </div>
   );
 };

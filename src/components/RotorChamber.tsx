@@ -48,9 +48,9 @@ export const RotorChamber: React.FC<RotorChamberProps> = ({
   return (
     <div className={`grid ${
       isUKWDual
-        ? (isM4Active ? 'grid-cols-5 sm:grid-cols-5 max-w-xs sm:max-w-xl' : 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md')
-        : (isM4Active ? 'grid-cols-4 sm:grid-cols-4 max-w-xs sm:max-w-md' : 'grid-cols-3 sm:grid-cols-3 max-w-xs sm:max-w-sm')
-    } gap-1 sm:gap-2 w-full mx-auto`}>
+        ? (isM4Active ? 'grid-cols-5 max-w-sm sm:max-w-md' : 'grid-cols-4 max-w-xs sm:max-w-sm')
+        : (isM4Active ? 'grid-cols-4 max-w-xs sm:max-w-sm' : 'grid-cols-3 max-w-[280px] sm:max-w-[340px]')
+    } gap-1.5 sm:gap-2.5 w-full mx-auto justify-items-center`}>
       {/* ─── UKW-Dual-Dynamic─── */}
       {isUKWDual && (
         <RotorDial

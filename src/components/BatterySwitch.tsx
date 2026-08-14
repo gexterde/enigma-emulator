@@ -210,26 +210,26 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
   // If rendering as a standalone Panel (Card layout)
   if (isPanel) {
     return (
-      <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-4 shadow-panel ${t.textureMetal} transition-all animate-fade-in flex flex-col h-full select-none w-full`}>
+      <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-3 sm:p-4 shadow-panel ${t.textureMetal} transition-all animate-fade-in flex flex-col justify-between h-full select-none w-full`}>
         {/* Panel Header */}
-        <div className={`flex justify-between items-center mb-4 pb-2 border-b ${t.borderBase}`}>
-          <h2 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-widest flex items-center gap-2`}>
+        <div className={`flex justify-between items-center mb-2 sm:mb-3 pb-1.5 sm:pb-2 border-b ${t.borderBase}`}>
+          <h2 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-widest flex items-center gap-1.5`}>
             <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>bolt</span>
-            BATTERIESCHALTER
+            <span>BATTERIESCHALTER</span>
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {onToggleBatteryDrain && (
               <button
                 type="button"
                 onClick={onToggleBatteryDrain}
-                className={`text-[10px] ${t.fontMono} font-bold px-2 py-0.5 rounded border transition-all cursor-pointer ${
+                className={`text-[8.5px] sm:text-[9.5px] ${t.fontMono} font-medium px-1.5 py-0.5 rounded border transition-all cursor-pointer whitespace-nowrap ${
                   batteryDrainEnabled
                     ? `${t.activeBadge}`
                     : `${t.controlButton}`
                 }`}
                 title="Switch battery level drain ON or OFF"
               >
-                DRAIN: {batteryDrainEnabled ? 'ON' : 'OFF'}
+                Drain: {batteryDrainEnabled ? 'ON' : 'OFF'}
               </button>
             )}
             {onClose && (
@@ -239,7 +239,7 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
                   e.stopPropagation();
                   onClose();
                 }}
-                className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textMuted} hover:${t.textAccent} flex items-center justify-center gap-1 cursor-pointer border ${t.borderBase} w-7 h-7 rounded-md ${t.panelInner}/60 transition-all font-bold tracking-wider shrink-0`}
+                className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textMuted} hover:${t.textAccent} flex items-center justify-center cursor-pointer border ${t.borderBase} w-6 h-6 sm:w-7 sm:h-7 rounded-md ${t.panelInner}/60 transition-all font-bold shrink-0`}
                 title="Close Battery Switch"
               >
                 <span className="material-symbols-outlined text-xs">close</span>
@@ -248,21 +248,21 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
           </div>
         </div>
 
-        {/* Switch Graphical Dial */}
-        <div className="flex-1 flex flex-col justify-center items-center py-1">
-          <div className={`relative flex items-center justify-center ${t.panelBg} rounded-lg border ${t.borderBase} p-1.5 shadow-inner w-full max-w-[200px] h-28 sm:h-30 my-0.5`}>
-            {renderSvgElement('h-28 sm:h-30')}
+        {/* Switch Graphical Dial - Responsive & Balanced */}
+        <div className="flex-1 flex flex-col justify-center items-center py-1 w-full">
+          <div className={`relative flex items-center justify-center ${t.panelBg} rounded-lg border ${t.borderBase} p-1.5 shadow-inner w-full max-w-[210px] sm:max-w-[235px] aspect-[200/130] my-0.5`}>
+            {renderSvgElement('w-full h-full max-h-[140px]')}
           </div>
         </div>
 
         {/* Buttons underneath */}
-        <div className={`flex items-center justify-center gap-2 mt-4 w-full ${t.fontMono} text-xs`}>
+        <div className={`grid grid-cols-4 gap-1 sm:gap-1.5 mt-2 w-full max-w-[260px] mx-auto ${t.fontMono} text-xs`}>
           {modes.map((m) => (
             <button
               key={m.id}
               type="button"
               onClick={() => onChangeMode(m.id)}
-              className={`min-w-[54px] sm:min-w-[64px] text-center rounded border transition-all cursor-pointer font-bold px-2 py-1.5 text-xs ${
+              className={`text-center rounded border transition-all cursor-pointer font-bold px-1 sm:px-1.5 py-1 text-[9.5px] sm:text-[10.5px] truncate ${
                 mode === m.id
                   ? m.id === 'aus'
                     ? `${t.buttonDangerSolid} shadow-md`
