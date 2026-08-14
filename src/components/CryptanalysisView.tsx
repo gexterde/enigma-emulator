@@ -1222,7 +1222,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
     
     return (
       <div className="flex flex-col items-center gap-1 sm:gap-2">
-        <div className={`relative w-20 h-20 sm:w-28 sm:h-28 lg:w-36 lg:h-36 rounded-full border-[3px] sm:border-4 ${isRecentStop ? 'border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]' : `${t.borderAccent}`} ${t.panelInner} shadow-xl flex items-center justify-center transition-colors duration-300`}>
+        <div className={`relative w-20 h-20 sm:w-28 sm:h-28 lg:w-36 lg:h-36 rounded-full border-[3px] sm:border-4 ${isRecentStop ? `${t.borderSuccess} shadow-[0_0_15px_rgba(34,197,94,0.4)]` : `${t.borderAccent}`} ${t.panelInner} shadow-xl flex items-center justify-center transition-colors duration-300`}>
           <div className={`absolute inset-0 bg-radial-gradient from-transparent ${t.codebookSheetBg.includes('slate') ? 'to-slate-900/10' : 'to-[#120e04]/90'} pointer-events-none rounded-full`} />
           
           {/* Outer Ring Letters */}
@@ -1249,7 +1249,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
           })}
           
           {/* Inner Ring / Wiring Position */}
-          <span className={`${t.fontRotor} text-2xl sm:text-4xl lg:text-5xl font-bold z-10 select-none transition-colors duration-200 ${isRecentStop ? 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]' : t.textAccent}`}>
+          <span className={`${t.fontRotor} text-2xl sm:text-4xl lg:text-5xl font-bold z-10 select-none transition-colors duration-200 ${isRecentStop ? `${t.textSuccess} drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]` : t.textAccent}`}>
             {currentPosLetter}
           </span>
         </div>
@@ -1789,7 +1789,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                         onClick={() => setAlignmentOffset(offset)}
                         className={`px-2 py-0.5 rounded border cursor-pointer transition-all ${
                           alignmentOffset === offset
-                            ? `${t.successLightBg} border-green-500 ${t.successText} font-bold shadow-md`
+                            ? `${t.successBadge} font-bold shadow-md`
                             : `${t.buttonPrimary}`
                         }`}
                       >
@@ -1846,14 +1846,14 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                             key={idx}
                             className={`w-7 h-8 flex flex-col items-center justify-center rounded border font-bold transition-all duration-300 shrink-0 ${
                               isConflict
-                                ? `${t.dangerLightBg} ${t.dangerText} border-red-800 shadow-md animate-pulse`
+                                ? `${t.dangerBadge} shadow-md animate-pulse`
                                 : `${t.panelInner} ${t.textPrimary} border-current/20`
                             }`}
                             title={isConflict ? `Conflict! Both positions are "${char}"` : ''}
                           >
                             <span className="leading-none">{char}</span>
                             {isConflict && (
-                              <span className="text-[7px] text-red-500 font-bold block mt-0.5">💥</span>
+                              <span className={`text-[7px] ${t.textDanger} font-bold block mt-0.5`}>💥</span>
                             )}
                           </div>
                         );
@@ -1968,7 +1968,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 <span className={`text-xs ${t.textAccent} font-bold ${t.fontMono} uppercase px-2 py-1 ${t.accentLightBg} border-${t.borderAccent} rounded border flex items-center gap-1`}>
                   {currentRotorComb}
                   {isStopFlashing && (
-                    <span className="ml-1 px-1 bg-green-500 text-black text-[9px] rounded">STOP</span>
+                    <span className={`ml-1 px-1 ${t.successBadge} text-[9px] rounded`}>STOP</span>
                   )}
                 </span>
                 <span className={`text-[10px] ${t.textMuted} ${t.fontMono}`}>
@@ -1978,7 +1978,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
               <div className={`text-[10px] ${t.textPrimary} ${t.fontMono} text-right flex-1 ml-4 truncate`}>
                 {isSearching 
                   ? (isStopFlashing && recentStop) 
-                      ? <span className="text-green-400 font-bold">⚡ STOP! {recentStop.rotorComb} at {recentStop.left}-{recentStop.middle}-{recentStop.right} — hypothesis: {recentStop.steckerHypothesis || 'Valid'}</span>
+                      ? <span className={`${t.textSuccess} font-bold`}>⚡ STOP! {recentStop.rotorComb} at {recentStop.left}-{recentStop.middle}-{recentStop.right} — hypothesis: {recentStop.steckerHypothesis || 'Valid'}</span>
                       : `Testing ${currentScan.join('-')} at offset ${currentScanOffset ?? alignmentOffset}...`
                   : matches.length > 0
                     ? `Search complete. ${matches.length} stops found.`
@@ -2014,9 +2014,9 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                 <button
                   onClick={stopBombeSearch}
                   title="Stop Bombe Cracking Operation"
-                  className={`w-full py-3.5 bg-red-950/90 hover:bg-red-900 text-red-200 border-2 border-red-700 hover:border-red-500 rounded ${t.fontHeader} font-bold text-sm tracking-wider flex items-center justify-center gap-2 shadow-lg hover:shadow-red-950/60 active:scale-95 cursor-pointer transition-all`}
+                  className={`w-full py-3.5 ${t.buttonDangerSolid} rounded ${t.fontHeader} font-bold text-sm tracking-wider flex items-center justify-center gap-2 shadow-lg active:scale-95 cursor-pointer transition-all`}
                 >
-                  <span className="material-symbols-outlined text-lg text-red-400">stop_circle</span>
+                  <span className={`material-symbols-outlined text-lg ${t.textDanger}`}>stop_circle</span>
                   <span>STOP SEARCH</span>
                 </button>
               )}
@@ -2027,8 +2027,8 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
           {!isSearching && matches.length > 0 && (
             <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${t.appTexture} space-y-4 animate-fadeIn`}>
               <div className={`pb-1 border-b ${t.borderBase} flex items-center gap-2`}>
-                <span className="material-symbols-outlined text-sm text-green-400">task_alt</span>
-                <h3 className={`text-ui-header ${t.fontHeader} text-green-400 text-xs uppercase tracking-wider`}>
+                <span className={`material-symbols-outlined text-sm ${t.textSuccess}`}>task_alt</span>
+                <h3 className={`text-ui-header ${t.fontHeader} ${t.textSuccess} text-xs uppercase tracking-wider`}>
                   Cracked Key Settings Found ({matches.length})
                 </h3>
               </div>
@@ -2135,7 +2135,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                               </span>
                             )}
                             {match.offset > 0 && (
-                              <span className={`text-[9px] ${t.successLightBg} ${t.successText} border-green-800/40 px-1.5 py-0.5 rounded font-bold ${t.fontMono}`}>
+                              <span className={`text-[9px] ${t.successBadge} px-1.5 py-0.5 rounded font-bold ${t.fontMono}`}>
                                 Matched at Crib Offset: {match.offset}
                               </span>
                             )}
@@ -2150,7 +2150,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                         </div>
 
                         {/* Mapped Key Position */}
-                        <div className={`${t.panelBg} px-4 py-2.5 rounded border-2 ${t.successLightBg} border-green-300 shadow-sm space-y-0.5 text-center shrink-0 min-w-[150px] w-full md:w-auto`}>
+                        <div className={`${t.panelBg} px-4 py-2.5 rounded border-2 ${t.successBadge} shadow-sm space-y-0.5 text-center shrink-0 min-w-[150px] w-full md:w-auto`}>
                           <span className={`text-[9px] ${t.fontMono} ${t.successText} block uppercase font-bold tracking-wider`}>
                             {match.leftRing !== undefined ? 'Discovered Start Position (Offset 0)' : 'Mapped Start Position (Offset 0)'}
                           </span>
@@ -2285,7 +2285,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                     <span className={`${t.textAccent} font-bold`}>Step {i + 1}</span>
                     <span>{cribChar}</span>
                     <span>{cipherChar}</span>
-                    <span className={`text-green-600 font-bold ${t.panelBg} px-2 py-0.5 rounded border ${t.borderBase} w-max`}>
+                    <span className={`${t.textSuccess} font-bold ${t.panelBg} px-2 py-0.5 rounded border ${t.borderBase} w-max`}>
                       {cribChar} ↔ {cipherChar}
                     </span>
                   </div>
@@ -2353,7 +2353,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
                           key={cIdx}
                           className={`w-5 h-5 rounded flex items-center justify-center font-mono border text-[8px] ${
                             isSelf
-                              ? 'bg-red-950/40 border-red-800 text-red-500 font-bold'
+                              ? `${t.dangerBadge} font-bold`
                               : `${t.panelInner} ${t.textSecondary}`
                           }`}
                           title={`Wire connection (${numToChar(rIdx)}, ${numToChar(cIdx)})`}
