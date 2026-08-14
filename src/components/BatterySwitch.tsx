@@ -239,20 +239,19 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
                   e.stopPropagation();
                   onClose();
                 }}
-                className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textMuted} hover:${t.textAccent} flex items-center gap-1 cursor-pointer border ${t.borderBase} px-2.5 py-1 rounded-md ${t.panelInner}/60 transition-all font-bold tracking-wider`}
+                className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textMuted} hover:${t.textAccent} flex items-center justify-center gap-1 cursor-pointer border ${t.borderBase} w-7 h-7 rounded-md ${t.panelInner}/60 transition-all font-bold tracking-wider shrink-0`}
                 title="Close Battery Switch"
               >
                 <span className="material-symbols-outlined text-xs">close</span>
-                <span>CLOSE</span>
               </button>
             )}
           </div>
         </div>
 
         {/* Switch Graphical Dial */}
-        <div className="flex-1 flex flex-col justify-center items-center py-2">
-          <div className={`relative flex items-center justify-center ${t.panelBg} rounded-lg border ${t.borderBase} p-1.5 shadow-inner w-full max-w-[240px] h-32 sm:h-36 my-1`}>
-            {renderSvgElement('h-32 sm:h-36')}
+        <div className="flex-1 flex flex-col justify-center items-center py-1">
+          <div className={`relative flex items-center justify-center ${t.panelBg} rounded-lg border ${t.borderBase} p-1.5 shadow-inner w-full max-w-[200px] h-28 sm:h-30 my-0.5`}>
+            {renderSvgElement('h-28 sm:h-30')}
           </div>
         </div>
 
@@ -299,11 +298,11 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
               e.stopPropagation();
               onClose();
             }}
-            className={`text-[8px] sm:text-[9px] ${t.fontHeader} ${t.textMuted} hover:${t.textAccent} hover:${t.borderAccent}/40 flex items-center gap-0.5 cursor-pointer border ${t.borderBase} px-1 py-0.5 rounded ${t.panelInner} transition-colors shadow-sm`}
+            className={`text-[8px] sm:text-[9px] ${t.fontHeader} ${t.textMuted} hover:${t.textAccent} hover:${t.borderAccent}/40 flex items-center justify-center gap-0.5 cursor-pointer border ${t.borderBase} w-5 h-5 sm:w-auto sm:h-auto sm:px-1.5 sm:py-0.5 rounded ${t.panelInner} transition-colors shadow-sm shrink-0`}
             title="Close Battery Switch"
           >
             <span className="material-symbols-outlined text-[10px] sm:text-[12px] leading-none">close</span>
-            <span>Close</span>
+            <span className="hidden sm:inline">Close</span>
           </button>
         )}
       </div>
