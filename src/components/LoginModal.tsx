@@ -52,7 +52,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, isOpen }) => {
         </h2>
 
         {error && (
-          <div className={`mb-4 p-3 rounded ${t.dangerBadge || 'bg-red-950/50 text-red-400 border border-red-900'} text-xs font-bold`}>
+          <div className={`mb-4 p-3 rounded ${t.dangerBadge} text-xs font-bold`}>
             {error}
           </div>
         )}
@@ -108,7 +108,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, isOpen }) => {
           </button>
         </form>
 
-        <div className="mt-6 border-t border-dashed border-zinc-700/50 pt-4 flex flex-col gap-3">
+        <div className={`mt-6 border-t border-dashed ${t.borderBase} pt-4 flex flex-col gap-3`}>
           {/* Mock Google Login - if we had real client ID we'd render the Google button here */}
           <button
             type="button"

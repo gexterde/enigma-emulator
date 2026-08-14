@@ -320,8 +320,8 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
                     />
                   )}
                   {/* Gauge indicator points */}
-                  <div className="absolute top-0 bottom-0 w-0.5 bg-red-400 left-[48%]" title="Random Alphabet Floor (0.0385)" />
-                  <div className="absolute top-0 bottom-0 w-0.5 bg-green-400 left-[83%]" title="English Language Target (0.0667)" />
+                  <div className={`absolute top-0 bottom-0 w-0.5 ${t.borderDanger} left-[48%]`} title="Random Alphabet Floor (0.0385)" />
+                  <div className={`absolute top-0 bottom-0 w-0.5 ${t.borderSuccess} left-[83%]`} title="English Language Target (0.0667)" />
                 </div>
               </div>
 
@@ -341,14 +341,14 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
                     />
                   )}
                   {/* Gauge indicator points */}
-                  <div className="absolute top-0 bottom-0 w-0.5 bg-red-400 left-[48%]" title="Random Alphabet Floor (0.0385)" />
-                  <div className="absolute top-0 bottom-0 w-0.5 bg-green-400 left-[83%]" title="English Language Target (0.0667)" />
+                  <div className={`absolute top-0 bottom-0 w-0.5 ${t.borderDanger} left-[48%]`} title="Random Alphabet Floor (0.0385)" />
+                  <div className={`absolute top-0 bottom-0 w-0.5 ${t.borderSuccess} left-[83%]`} title="English Language Target (0.0667)" />
                 </div>
               </div>
             </div>
 
             <div className={`flex items-center gap-2 ${t.panelInner} p-2.5 rounded border ${t.borderBase} text-[10px] ${t.textMuted} ${t.fontMono}`}>
-              <span className="material-symbols-outlined text-xs text-blue-400">info</span>
+              <span className={`material-symbols-outlined text-xs ${t.textAccent}`}>info</span>
               <span>
                 Enigma encryption diffuses letters, pushing Ciphertext I.C. down near <strong className={`${t.textAccent}`}>0.0385</strong>. This flattened profile conceals standard letter frequencies.
               </span>
@@ -447,12 +447,12 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
                         {/* X-axis Label & Steckerbrett Indicator */}
                         <div className="absolute bottom-0 flex flex-col items-center">
                           <span className={`text-xs ${t.fontRotor} font-bold transition-colors duration-200 ${
-                            isHovered ? t.textAccent : isPlugged ? 'text-cyan-500' : t.textMuted
+                            isHovered || isPlugged ? t.textAccent : t.textMuted
                           }`}>
                             {char}
                           </span>
                           {isPlugged && (
-                            <span className="w-1 h-1 rounded-full bg-cyan-500 mt-0.5" title={`Plugged to ${isPlugged}`} />
+                            <span className={`w-1 h-1 rounded-full ${t.bgAccentSolid} mt-0.5`} title={`Plugged to ${isPlugged}`} />
                           )}
                         </div>
 
@@ -462,7 +462,7 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
                             <div className={`flex justify-between items-center pb-1 border-b ${t.borderBase}`}>
                               <span className={`font-bold text-sm ${t.textAccent} ${t.fontRotor}`}>Letter {char}</span>
                               {isPlugged ? (
-                                <span className={`px-1.5 py-0.5 rounded border uppercase font-bold text-[8px] bg-cyan-900/30 text-cyan-400 border-cyan-800/50`}>
+                                <span className={`px-1.5 py-0.5 rounded border uppercase font-bold text-[8px] ${t.accentLightBg}`}>
                                   🔌 Plugged to {isPlugged}
                                 </span>
                               ) : (
@@ -483,7 +483,7 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
                             </div>
                             <div className={`flex justify-between border-t ${t.borderBase}/50 pt-1`}>
                               <span className={`${t.textMuted}`}>Deviation:</span>
-                              <span className={`font-bold ${(outPct - refPct) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              <span className={`font-bold ${(outPct - refPct) >= 0 ? t.textSuccess : t.textDanger}`}>
                                 {(outPct - refPct) >= 0 ? '+' : ''}{(outPct - refPct).toFixed(1)}%
                               </span>
                             </div>
@@ -503,7 +503,7 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
             {/* Self-Encryption / Derangement Property Check */}
             <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${t.appTexture} space-y-3.5`}>
               <div className={`flex items-center gap-2 pb-1 border-b ${t.borderBase}`}>
-                <span className="material-symbols-outlined text-sm text-red-500">cancel</span>
+                <span className={`material-symbols-outlined text-sm ${t.textDanger}`}>cancel</span>
                 <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider`}>
                   Self-Encryption Check (Crib Analysis)
                 </h3>
@@ -523,7 +523,7 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
                     Conflict Rate
                   </span>
                   <span className={`${t.fontRotor} text-lg font-bold ${
-                    selfEncryptionDetails.hasIssues ? 'text-red-500' : 'text-green-500'
+                    selfEncryptionDetails.hasIssues ? t.textDanger : t.textSuccess
                   }`}>
                     {selfEncryptionDetails.rate.toFixed(1)}%
                   </span>
@@ -561,7 +561,7 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
             {/* Plugboard Effects Analysis */}
             <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-5 shadow-panel ${t.appTexture} space-y-3.5`}>
               <div className={`flex items-center gap-2 pb-1 border-b ${t.borderBase}`}>
-                <span className="material-symbols-outlined text-sm text-cyan-400">power_input</span>
+                <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>power_input</span>
                 <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider`}>
                   Plugboard (Steckerbrett) Effects
                 </h3>
@@ -587,10 +587,10 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
                       .map(([k, v]) => (
                         <div
                           key={k}
-                          className={`px-2 py-1 text-[10px] ${t.fontMono} rounded bg-cyan-950/40 text-cyan-400 border border-cyan-900/50 flex items-center gap-1 shadow-inner`}
+                          className={`px-2 py-1 text-[10px] ${t.fontMono} rounded ${t.accentLightBg} border flex items-center gap-1 shadow-inner`}
                         >
                           <span className="font-bold">{k}</span>
-                          <span className="material-symbols-outlined text-[8px] text-cyan-500">sync_alt</span>
+                          <span className={`material-symbols-outlined text-[8px] ${t.textAccent}`}>sync_alt</span>
                           <span className="font-bold">{v}</span>
                         </div>
                       ))}

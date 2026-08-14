@@ -395,7 +395,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, config 
             onClick={handleCopy}
             className={`px-3 py-1.5 rounded text-xs ${t.fontHeader} font-bold cursor-pointer flex items-center gap-1 transition-all ${
               copied
-                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                ? t.buttonSuccessSolid
                 : t.buttonHighlight
             }`}
           >

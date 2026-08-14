@@ -129,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onOpenSettings();
                 onCloseMobile();
               }}
-              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border border-zinc-500/10 cursor-pointer transition-colors`}
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border ${t.borderBase} cursor-pointer transition-colors`}
             >
               <span className="material-symbols-outlined text-xs">settings</span>
               Settings
@@ -139,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onOpenShortcuts();
                 onCloseMobile();
               }}
-              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border border-zinc-500/10 cursor-pointer transition-colors`}
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border ${t.borderBase} cursor-pointer transition-colors`}
             >
               <span className="material-symbols-outlined text-xs">keyboard</span>
               Shortcuts
@@ -149,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onOpenInfo();
                 onCloseMobile();
               }}
-              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border border-zinc-500/10 cursor-pointer transition-colors`}
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border ${t.borderBase} cursor-pointer transition-colors`}
             >
               <span className="material-symbols-outlined text-xs">info</span>
               Info
@@ -159,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onOpenShare();
                 onCloseMobile();
               }}
-              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border border-zinc-500/10 cursor-pointer transition-colors`}
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border ${t.borderBase} cursor-pointer transition-colors`}
             >
               <span className="material-symbols-outlined text-xs">share</span>
               Share
@@ -170,7 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onOpenAdmin();
                   onCloseMobile();
                 }}
-                className="col-span-2 flex items-center justify-center gap-1.5 py-2 px-3 rounded text-[11px] text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 cursor-pointer transition-colors"
+                className={`col-span-2 flex items-center justify-center gap-1.5 py-2 px-3 rounded text-[11px] ${t.dangerText} ${t.dangerLightBg} border ${t.borderDanger} cursor-pointer transition-colors`}
               >
                 <span className="material-symbols-outlined text-xs">admin_panel_settings</span>
                 Admin Panel

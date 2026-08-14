@@ -259,7 +259,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               </div>
               <div className={`text-[9px] ${t.textMuted} mt-1.5 italic font-mono leading-tight border-t ${t.borderBase}/30 pt-1 flex justify-between items-center`}>
                 <span>
-                  Format: <span className="font-bold text-slate-300">{senderCallSign || 'DFS'}</span> • <span className="font-bold text-slate-300">{transmissionTime || '1200'}</span> • <span className="font-bold text-slate-300">{lettersCount}</span>
+                  Format: <span className={`font-bold ${t.textPrimary}`}>{senderCallSign || 'DFS'}</span> • <span className={`font-bold ${t.textPrimary}`}>{transmissionTime || '1200'}</span> • <span className={`font-bold ${t.textPrimary}`}>{lettersCount}</span>
                 </span>
               </div>
             </div>
@@ -307,7 +307,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               </div>
               <div className={`text-[9px] ${t.textMuted} mt-1.5 italic font-mono leading-tight border-t ${t.borderBase}/30 pt-1 flex justify-between items-center`}>
                 <span>
-                  Key Day ID: <span className="font-bold text-slate-300">{kenngruppe || '—'}</span>
+                  Key Day ID: <span className={`font-bold ${t.textPrimary}`}>{kenngruppe || '—'}</span>
                 </span>
               </div>
             </div>
@@ -389,7 +389,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
                     handleCalculateIndicator();
                     setShowIndicatorModal(true);
                   }}
-                  className={`text-[8px] ${t.textAccent} hover:text-amber-300 underline font-mono cursor-pointer`}
+                  className={`text-[8px] ${t.textAccent} hover:opacity-80 underline font-mono cursor-pointer`}
                 >
                   Encrypted Indicator Workflow
                 </button>

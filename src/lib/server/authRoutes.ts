@@ -264,7 +264,7 @@ router.get('/admin/export', requireAdmin, (req: any, res: any) => {
     const dataDir = path.join(process.cwd(), 'data', 'users');
     
     // Add entire data/users directory to ZIP
-    zip.addLocalFolder(dataDir, 'data/users', false);
+    zip.addLocalFolder(dataDir, 'data/users');
     
     const buffer = zip.toBuffer();
     const date = new Date().toISOString().split('T')[0];

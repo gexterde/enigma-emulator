@@ -1,4 +1,4 @@
-import { useState, useEffect, ChangeEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { getTheme, useTheme } from '../lib/theme';
 
@@ -171,8 +171,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
         {status && (
           <div className={`p-3 rounded text-xs font-bold mb-4 ${
             status.type === 'success' 
-              ? 'bg-green-950/50 text-green-400 border border-green-900' 
-              : 'bg-red-950/50 text-red-400 border border-red-900'
+              ? t.successBadge 
+              : t.dangerBadge
           }`}>
             {status.message}
           </div>
@@ -197,7 +197,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                     <td className="py-3 pr-2 truncate max-w-[140px]" title={u.email}>{u.email}</td>
                     <td className="py-3 px-2">
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        u.isAdmin ? 'bg-amber-500/20 text-amber-400' : 'bg-black/20'
+                        u.isAdmin ? t.accentLightBg : `${t.panelInner} ${t.textMuted}`
                       }`}>
                         {u.isAdmin ? 'Admin' : 'User'}
                       </span>
@@ -210,7 +210,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                         <button
                           onClick={() => handleDeleteUser(u.id, u.email)}
                           disabled={loading}
-                          className="text-red-400 hover:text-red-300 transition-colors text-xs font-bold uppercase tracking-wider disabled:opacity-50"
+                          className={`${t.dangerText} hover:opacity-80 transition-colors text-xs font-bold uppercase tracking-wider disabled:opacity-50`}
                         >
                           Delete
                         </button>

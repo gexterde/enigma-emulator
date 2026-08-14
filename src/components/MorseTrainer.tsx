@@ -1059,8 +1059,8 @@ export const MorseTrainer: React.FC = () => {
                     {bestAccuracy !== null && (
                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
                         bestAccuracy >= 90 
-                          ? `${t.successBadge || 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'}`
-                          : `${t.dangerBadge || 'bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300 border-red-300 dark:border-red-800'}`
+                          ? t.successBadge
+                          : t.dangerBadge
                       }`}>
                         Best: {bestAccuracy.toFixed(0)}%
                       </span>
@@ -1352,7 +1352,7 @@ export const MorseTrainer: React.FC = () => {
                       <span>INCOMING TRANSMISSION PLAYING AT {wpm} WPM...</span>
                     </div>
                   ) : targetSequence ? (
-                    <div className="flex items-center gap-1.5 text-green-500 text-xs font-mono">
+                    <div className={`flex items-center gap-1.5 ${t.textSuccess} text-xs font-mono`}>
                       <span className="material-symbols-outlined text-lg">task_alt</span>
                       <span>SIGNAL CAPTURED. STANDBY FOR TRANSCRIPT CORRECTION</span>
                     </div>
@@ -1367,7 +1367,7 @@ export const MorseTrainer: React.FC = () => {
                     <label className={`block text-[10px] ${t.fontMono} ${t.textMuted} uppercase tracking-wider`}>
                       Operator's Official Log Entry
                     </label>
-                    <span className={`text-[9px] ${t.fontMono} text-amber-500 font-semibold`}>
+                    <span className={`text-[9px] ${t.fontMono} ${t.textAccent} font-semibold`}>
                       Auto-chunked into {groupLength}-char words
                     </span>
                   </div>
@@ -1393,7 +1393,7 @@ export const MorseTrainer: React.FC = () => {
                     onClick={handleStartBatch}
                     className={`py-3 rounded ${t.fontHeader} font-bold text-xs uppercase tracking-wider transition-colors border active:scale-[0.98] cursor-pointer ${
                       isPlaying 
-                        ? 'bg-red-950/40 text-red-400 border-red-800 hover:bg-red-900/40' 
+                        ? t.dangerBadge 
                         : `${t.panelInner} ${t.textAccentStrong} ${t.borderAccent} hover:opacity-90`
                     }`}
                   >
@@ -1548,8 +1548,8 @@ export const MorseTrainer: React.FC = () => {
                                 ? `${t.bgAccentFaint} ${t.textAccentStrong} ${t.borderAccent} shadow-md scale-[1.05]`
                                 : isPassed
                                 ? wasCorrect
-                                  ? 'bg-green-950/35 text-green-400 border-green-800'
-                                  : 'bg-red-950/35 text-red-400 border-red-800'
+                                  ? t.successBadge
+                                  : t.dangerBadge
                                 : `${t.panelInner} ${t.textMuted}/30 ${t.borderBase}/50`
                             }`}
                           >
@@ -1562,7 +1562,7 @@ export const MorseTrainer: React.FC = () => {
                             </span>
 
                             {isPassed && (
-                              <span className={`text-[9px] font-mono absolute -bottom-1.5 font-bold ${wasCorrect ? 'text-green-500' : 'text-red-500'}`}>
+                              <span className={`text-[9px] font-mono absolute -bottom-1.5 font-bold ${wasCorrect ? t.textSuccess : t.textDanger}`}>
                                 {typedVal || '_'}
                               </span>
                             )}
@@ -1590,7 +1590,7 @@ export const MorseTrainer: React.FC = () => {
                           e.stopPropagation();
                           handleCloseMobileKeyboard();
                         }}
-                        className="text-red-400 hover:text-red-300 font-mono text-[9px] uppercase border border-red-900/40 rounded px-1.5 py-0.5 bg-red-950/20 cursor-pointer"
+                        className={`${t.dangerText} hover:opacity-80 font-mono text-[9px] uppercase border ${t.borderDanger} rounded px-1.5 py-0.5 ${t.dangerLightBg} cursor-pointer`}
                       >
                         Close Keypad
                       </button>
@@ -1605,7 +1605,7 @@ export const MorseTrainer: React.FC = () => {
                     </span>
                     <button
                       onClick={() => setCopyTypingStatus('idle')}
-                      className={`${t.textMuted} hover:text-red-400 border border-transparent hover:border-red-900 bg-black/30 hover:bg-red-950/20 px-2 py-0.5 rounded text-[10px] uppercase transition-colors cursor-pointer`}
+                      className={`${t.textMuted} hover:${t.textDanger} border border-transparent hover:${t.borderDanger} ${t.panelInner} px-2 py-0.5 rounded text-[10px] uppercase transition-colors cursor-pointer`}
                     >
                       Abort Session (Ctrl+F1)
                     </button>
@@ -1615,8 +1615,8 @@ export const MorseTrainer: React.FC = () => {
 
               {/* COMPLETED SCREEN */}
               {copyTypingStatus === 'completed' && (
-                <div className={`${t.panelInner} rounded border border-green-900/45 p-6 text-center space-y-4`}>
-                  <span className="material-symbols-outlined text-4xl text-green-400 animate-bounce">task_alt</span>
+                <div className={`${t.panelInner} rounded border ${t.borderSuccess} p-6 text-center space-y-4`}>
+                  <span className={`material-symbols-outlined text-4xl ${t.textSuccess} animate-bounce`}>task_alt</span>
                   <h4 className={`${t.fontHeader} font-bold text-sm ${t.textPrimary} uppercase tracking-wider`}>
                     Session Log Captured Successfully
                   </h4>
@@ -1625,7 +1625,7 @@ export const MorseTrainer: React.FC = () => {
                   </p>
                   <button
                     onClick={startCopyTypingSession}
-                    className={`px-5 py-2.5 bg-green-900 hover:bg-green-800 text-green-300 ${t.fontHeader} font-bold rounded border border-green-800 text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer`}
+                    className={`px-5 py-2.5 ${t.buttonSuccessSolid} ${t.fontHeader} font-bold rounded border text-xs uppercase tracking-wider active:scale-95 transition-all cursor-pointer`}
                   >
                     Start Next Tape Session (Ctrl+F1)
                   </button>
@@ -1644,7 +1644,7 @@ export const MorseTrainer: React.FC = () => {
             }`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-1.5">
-                  <span className={`material-symbols-outlined text-xl ${result.accuracy >= 90 ? (t.textSuccess || 'text-emerald-500') : (t.textDanger || 'text-red-500')}`}>
+                  <span className={`material-symbols-outlined text-xl ${result.accuracy >= 90 ? t.textSuccess : t.textDanger}`}>
                     {result.accuracy >= 90 ? 'check_circle' : 'warning'}
                   </span>
                   <span className={`${t.fontHeader} font-bold text-xs uppercase tracking-wider ${t.textSecondary}`}>
@@ -1652,18 +1652,18 @@ export const MorseTrainer: React.FC = () => {
                   </span>
                 </div>
                 <span className={`text-2xl font-bold font-mono ${
-                  result.accuracy >= 90 ? (t.textSuccess || 'text-emerald-500') : (t.textDanger || 'text-red-500')
+                  result.accuracy >= 90 ? t.textSuccess : t.textDanger
                 }`}>
                   {result.accuracy.toFixed(1)}% Accuracy
                 </span>
               </div>
               
               {result.accuracy >= 90 ? (
-                <p className={`text-xs font-bold ${t.fontBody} ${t.textSuccess || 'text-emerald-600'}`}>
+                <p className={`text-xs font-bold ${t.fontBody} ${t.textSuccess}`}>
                   Excellent transcribing, Operator! You reached standard operational capability. Level Up initiated.
                 </p>
               ) : (
-                <p className={`text-xs font-bold ${t.fontBody} ${t.textDanger || 'text-red-600'}`}>
+                <p className={`text-xs font-bold ${t.fontBody} ${t.textDanger}`}>
                   Accuracy dropped below the 90% required. Revise character codes and retry.
                 </p>
               )}
@@ -1704,8 +1704,8 @@ export const MorseTrainer: React.FC = () => {
                             <div className={`h-[1px] w-4 ${t.borderBase} border-t my-0.5`} />
                             <span className={`text-xs leading-none font-extrabold ${
                               item.isCorrect
-                                ? 'text-emerald-700 dark:text-emerald-400'
-                                : 'text-red-700 dark:text-red-400'
+                                ? t.textSuccess
+                                : t.textDanger
                             }`}>{item.userChar || '_'}</span>
                           </div>
                           {needsGroupGap && (
@@ -1740,7 +1740,7 @@ export const MorseTrainer: React.FC = () => {
         <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b ${t.borderBase}`}>
           <div>
             <h3 className={`${t.textSecondary} ${t.fontHeader} font-bold text-sm uppercase tracking-wider flex items-center gap-2`}>
-              <span className="material-symbols-outlined text-lg text-amber-500">insights</span>
+              <span className={`material-symbols-outlined text-lg ${t.textAccent}`}>insights</span>
               Historical Performance plotting
             </h3>
             <p className={`text-[10px] ${t.textMuted}`}>Interactive graph monitoring telegraphy progress on Koch and LCWO trials.</p>
@@ -1906,7 +1906,7 @@ export const MorseTrainer: React.FC = () => {
                     <div>Level: <span className={`${t.textPrimary} font-bold`}>{hoveredDataPoint.level}</span></div>
                     <div>Accuracy: <span className={`${t.textPrimary} font-bold`}>{hoveredDataPoint.accuracy.toFixed(1)}%</span></div>
                     <div>Speed: <span className={`${t.textPrimary} font-bold`}>{hoveredDataPoint.wpm || 0} WPM</span></div>
-                    <div>Mode: <span className="text-amber-500 font-bold uppercase">{hoveredDataPoint.mode === 'copy' ? 'Realtime' : 'Classic'}</span></div>
+                    <div>Mode: <span className={`${t.textAccent} font-bold uppercase`}>{hoveredDataPoint.mode === 'copy' ? 'Realtime' : 'Classic'}</span></div>
                     <div className={`text-[8px] ${t.textMuted} pt-0.5`}>
                       {new Date(hoveredDataPoint.timestamp).toLocaleDateString()} {new Date(hoveredDataPoint.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
@@ -1922,7 +1922,7 @@ export const MorseTrainer: React.FC = () => {
                 </span>
                 <button
                   onClick={resetStats}
-                  className={`text-xs ${t.textMuted} hover:text-red-400 font-bold ${t.fontHeader} uppercase border border-transparent hover:border-red-900 bg-black/40 px-2.5 py-1 rounded transition-colors cursor-pointer`}
+                  className={`text-xs ${t.textMuted} hover:${t.textDanger} font-bold ${t.fontHeader} uppercase border border-transparent hover:${t.borderDanger} ${t.panelInner} px-2.5 py-1 rounded transition-colors cursor-pointer`}
                 >
                   Clear Plot History
                 </button>
@@ -1962,14 +1962,14 @@ export const MorseTrainer: React.FC = () => {
                               <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
                                 stat.mode === 'copy' 
                                   ? `${t.bgAccentFaint} ${t.textAccent}` 
-                                  : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                  : t.accentLightBg
                               }`}>
                                 {stat.mode === 'copy' ? 'Realtime' : 'Classic'}
                               </span>
                             </td>
                             <td className="py-2 px-3 uppercase">{stat.method} Lvl {stat.level}</td>
                             <td className="py-2 px-3">{stat.wpm} WPM</td>
-                            <td className={`py-2 px-3 font-bold ${stat.accuracy >= 90 ? 'text-green-600 dark:text-green-400' : stat.accuracy >= 70 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                            <td className={`py-2 px-3 font-bold ${stat.accuracy >= 90 ? t.textSuccess : stat.accuracy >= 70 ? t.textAccent : t.textDanger}`}>
                               {stat.accuracy.toFixed(1)}%
                             </td>
                             <td className="py-2 px-3 text-right">
@@ -2033,14 +2033,14 @@ export const MorseTrainer: React.FC = () => {
                                 key={idx}
                                 className={`flex flex-col items-center justify-center w-10 h-12 rounded border font-mono transition-all ${
                                   item.isCorrect
-                                    ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400'
+                                    ? t.successBadge
                                     : item.char === ''
-                                    ? 'border-red-500/20 bg-red-500/5 text-red-500/60 dark:text-red-400/60'
-                                    : 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400'
+                                    ? t.dangerBadge
+                                    : t.dangerBadge
                                 }`}
                               >
                                 <span className="text-xs font-bold">{item.char || '—'}</span>
-                                <span className={`text-[10px] border-t w-full text-center border-current/20 ${item.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400 line-through'}`}>
+                                <span className={`text-[10px] border-t w-full text-center border-current/20 ${item.isCorrect ? t.textSuccess : `${t.textDanger} line-through`}`}>
                                   {item.typed || '—'}
                                 </span>
                               </div>

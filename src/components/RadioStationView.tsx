@@ -947,7 +947,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
       {/* Top Header & Connection Status */}
       <div className={`${t.panelBg} p-5 rounded-lg border ${t.borderBase} shadow-xl flex flex-wrap items-center justify-between gap-4`}>
         <div className="flex items-center gap-3.5">
-          <div className={`w-12 h-12 rounded-lg ${t.wellBg} border ${t.borderAccent} flex items-center justify-center text-cyan-400 shadow-inner`}>
+          <div className={`w-12 h-12 rounded-lg ${t.wellBg} border ${t.borderAccent} flex items-center justify-center ${t.textAccent} shadow-inner`}>
             <span className="material-symbols-outlined text-3xl animate-pulse">radio</span>
           </div>
           <div>
@@ -955,7 +955,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
               <span>Military CW Radio Transceiver</span>
               <span className={`text-xs px-2.5 py-1 rounded font-mono font-bold uppercase transition-all shadow-sm ${
                 !isPowerOn
-                  ? 'bg-red-950/90 text-red-400 border border-red-800/80 shadow-[0_0_8px_rgba(239,68,68,0.3)]'
+                  ? t.dangerBadge
                   : isConnected
                     ? t.successBadge
                     : t.dangerBadge
@@ -1275,7 +1275,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
                     onWheel={handleTuningWheel}
                     onMouseDown={handleTuningMouseDown}
                     className={`relative w-28 h-28 rounded-full bg-gradient-to-b ${t.radioRotaryKnobBg} border-4 ${t.radioRotaryKnobBorder} shadow-[0_8px_20px_rgba(0,0,0,0.9),inset_0_2px_4px_rgba(255,255,255,0.1)] flex items-center justify-center select-none ${
-                      isPowerOn ? 'cursor-grab active:cursor-grabbing hover:border-amber-600' : 'opacity-40 cursor-not-allowed'
+                      isPowerOn ? `cursor-grab active:cursor-grabbing hover:${t.borderAccent}` : 'opacity-40 cursor-not-allowed'
                     }`}
                     title="Scroll mouse wheel or drag left/right to turn Rotary Knob"
                   >

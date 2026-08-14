@@ -1879,7 +1879,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                                   type="button"
                                   onClick={() => handleDeleteDayEntry(entry.day)}
                                   title="Delete Entry"
-                                  className="p-1 rounded bg-[#801818] text-white hover:bg-red-700 transition-colors"
+                                  className={`p-1 rounded ${t.buttonDangerSolid} transition-colors`}
                                 >
                                   <span className="material-symbols-outlined text-xs">close</span>
                                 </button>
@@ -2210,7 +2210,7 @@ export const CodebookView: React.FC<CodebookViewProps> = ({ currentConfig, onApp
                 <button
                   type="button"
                   onClick={handleCopyShareLink}
-                  className={`${t.panelInner} hover:bg-slate-100 border-slate-200 p-3.5 border rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between`}
+                  className={`${t.panelInner} ${t.cardInteractive} p-3.5 border rounded-lg text-left transition-all cursor-pointer group flex flex-col justify-between`}
                 >
                   <div className={`flex items-center gap-2 ${t.textAccent} font-bold text-xs uppercase mb-1`}>
                     <span className="material-symbols-outlined text-base">link</span>

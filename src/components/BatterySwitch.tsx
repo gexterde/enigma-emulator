@@ -225,7 +225,7 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
                 className={`text-[10px] ${t.fontMono} font-bold px-2 py-0.5 rounded border transition-all cursor-pointer ${
                   batteryDrainEnabled
                     ? `${t.activeBadge}`
-                    : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200'
+                    : `${t.controlButton}`
                 }`}
                 title="Switch battery level drain ON or OFF"
               >
@@ -265,7 +265,7 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
               className={`min-w-[54px] sm:min-w-[64px] text-center rounded border transition-all cursor-pointer font-bold px-2 py-1.5 text-xs ${
                 mode === m.id
                   ? m.id === 'aus'
-                    ? 'bg-red-600 text-white border-red-600 shadow-md'
+                    ? `${t.buttonDangerSolid} shadow-md`
                     : `${t.buttonHighlight} font-extrabold shadow-md`
                   : `${t.buttonPrimary}`
               }`}
@@ -321,7 +321,7 @@ export const BatterySwitch: React.FC<BatterySwitchProps> = ({
             className={`rounded transition-all cursor-pointer font-bold ${compact ? 'px-1 py-0.2' : 'px-1.5 py-0.5'} ${
               mode === m.id
                 ? m.id === 'aus'
-                  ? 'bg-red-600 text-white shadow-md'
+                  ? `${t.buttonDangerSolid} shadow-md`
                   : `${t.buttonHighlight} shadow-md`
                 : `${t.buttonPrimary}`
             }`}

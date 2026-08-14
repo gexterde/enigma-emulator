@@ -322,7 +322,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
       {/* Physical Wooden Steckerbrett Housing with SVG Patch Cables */}
       <div ref={parentRef} className="w-full overflow-x-auto pb-2 rounded-xl focus:outline-none scrollbar-thin">
         {scale <= 0.48 && (
-          <div className="text-center text-[10px] font-monospaced-technical text-amber-500/80 flex items-center justify-center gap-1 mb-1 opacity-90 animate-pulse">
+          <div className={`text-center text-[10px] font-monospaced-technical ${t.textAccent} flex items-center justify-center gap-1 mb-1 opacity-90 animate-pulse`}>
             <span className="material-symbols-outlined text-xs">swap_horiz</span>
             Scroll horizontally to view remaining plugboard sockets
           </div>
@@ -430,7 +430,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => handleSocketClick(a)}
-                    className={`${t.textMuted} hover:text-red-500 text-xs p-0.5 cursor-pointer`}
+                    className={`${t.textMuted} hover:${t.textDanger} text-xs p-0.5 cursor-pointer`}
                     title="Remove plug"
                   >
                     <span className="material-symbols-outlined text-xs">close</span>

@@ -27,7 +27,7 @@ export const Footer: React.FC<FooterProps> = ({
   if (batteryLevel < 20) {
     barColor = 'bg-red-500 animate-pulse';
   } else if (batteryLevel < 50) {
-    barColor = 'bg-amber-500';
+    barColor = `${t.bgAccentSolid}`;
   }
 
   const isPowerOn = batteryMode !== 'aus';
@@ -42,19 +42,19 @@ export const Footer: React.FC<FooterProps> = ({
       <div className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border ${t.borderBase} ${t.panelInner} shadow-inner`}>
         <div className="flex items-center gap-1.5">
           {batteryLevel === 0 ? (
-            <BatteryWarning className="w-4 h-4 text-red-500 animate-bounce" id="battery-icon-empty" />
+            <BatteryWarning className={`w-4 h-4 ${t.textDanger} animate-bounce`} id="battery-icon-empty" />
           ) : isPowerOn ? (
-            <Zap className="w-4 h-4 text-amber-400 animate-pulse" id="battery-icon-zap" />
+            <Zap className={`w-4 h-4 ${t.textAccent} animate-pulse`} id="battery-icon-zap" />
           ) : (
-            <Battery className="w-4 h-4 text-emerald-400" id="battery-icon-full" />
+            <Battery className={`w-4 h-4 ${t.textSuccess}`} id="battery-icon-full" />
           )}
-          <span className={`${t.fontMono} font-bold text-xs ${batteryLevel < 20 ? 'text-red-400 animate-pulse' : t.textPrimary}`}>
+          <span className={`${t.fontMono} font-bold text-xs ${batteryLevel < 20 ? `${t.textDanger} animate-pulse` : t.textPrimary}`}>
             {Math.round(batteryLevel)}%
           </span>
         </div>
 
         {/* Outer Battery Bar */}
-        <div className="w-20 h-2.5 bg-zinc-800 rounded-sm overflow-hidden border border-zinc-700 p-[1px] flex items-center">
+        <div className={`w-20 h-2.5 ${t.panelInner} rounded-sm overflow-hidden border ${t.borderBase} p-[1px] flex items-center`}>
           <div
             className={`h-full ${barColor} rounded-xs transition-all duration-300`}
             style={{ width: `${batteryLevel}%` }}
@@ -79,7 +79,7 @@ export const Footer: React.FC<FooterProps> = ({
             className={`px-2 py-0.5 rounded text-[9px] ${t.fontMono} font-bold cursor-pointer transition-all ${
               batteryDrainEnabled
                 ? `${t.activeBadge}`
-                : 'bg-zinc-800 text-zinc-400 border border-zinc-700 hover:text-zinc-200'
+                : `${t.controlButton}`
             }`}
             title="Switch battery level drain / change ON or OFF"
           >
@@ -92,7 +92,7 @@ export const Footer: React.FC<FooterProps> = ({
           onClick={onRecharge}
           className={`px-2 py-0.5 rounded text-[9px] ${t.fontMono} font-bold cursor-pointer transition-all ${
             batteryLevel < 30
-              ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse'
+              ? `${t.buttonDangerSolid} animate-pulse`
               : `${t.buttonHighlight}`
           }`}
           title="Recharge or replace the accumulator batteries"
