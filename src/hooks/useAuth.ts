@@ -1,16 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { hashPassword, generateSalt, encryptState, decryptState } from '../lib/crypto';
+import { useState, useEffect } from 'react';
 
 export interface User {
   id: string;
   email: string;
-  salt: string;
-}
-
-let activePassword = ''; // Store password in memory for state encryption/decryption during session
-
-export function getActivePassword() {
-  return activePassword;
 }
 
 export function useAuth() {
@@ -41,17 +33,13 @@ export function useAuth() {
     }
     const data = await res.json();
     setUser(data.user);
-    activePassword = password;
   };
 
   const register = async (email: string, password: string) => {
-    const salt = generateSalt();
-    const passwordHash = await hashPassword(password, salt);
-
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, passwordHash, salt })
+      body: JSON.stringify({ email, password })
     });
     
     if (!res.ok) {
@@ -66,7 +54,6 @@ export function useAuth() {
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
-    activePassword = '';
   };
 
   return { user, loading, login, register, logout };

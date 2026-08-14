@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useAuth, getActivePassword } from './useAuth';
-import { encryptState, decryptState } from '../lib/crypto';
+import { useAuth } from './useAuth';
 
 // Keys to sync
 const SYNC_KEYS = [
@@ -20,16 +19,12 @@ export function useSyncState() {
   // Restore state from server
   const restoreState = useCallback(async () => {
     if (!user) return;
-    const password = getActivePassword();
-    if (!password) return; // Can't decrypt without password
 
     try {
       const res = await fetch('/api/user/state');
       if (!res.ok) return;
-      const { salt, nonce, ciphertext } = await res.json();
       
-      const decryptedJson = await decryptState(ciphertext, nonce, password, salt);
-      const state = JSON.parse(decryptedJson);
+      const state = await res.json();
       
       isRestoring.current = true;
       let changed = false;
@@ -45,8 +40,6 @@ export function useSyncState() {
       // Dispatch storage event to update other components using localStorage
       if (changed) {
         window.dispatchEvent(new Event('storage'));
-        // We might also just reload the window to ensure everything picks up the new state cleanly
-        // window.location.reload();
       }
       
       setTimeout(() => { isRestoring.current = false; }, 1000);
@@ -58,8 +51,6 @@ export function useSyncState() {
   // Save state to server
   const saveState = useCallback(async () => {
     if (!user || isRestoring.current) return;
-    const password = getActivePassword();
-    if (!password) return;
 
     try {
       const state: Record<string, string> = {};
@@ -67,13 +58,11 @@ export function useSyncState() {
         const val = localStorage.getItem(key);
         if (val !== null) state[key] = val;
       }
-
-      const { ciphertext, nonce } = await encryptState(JSON.stringify(state), password, user.salt);
       
       await fetch('/api/user/state', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ salt: user.salt, nonce, ciphertext })
+        body: JSON.stringify(state)
       });
     } catch (e) {
       console.error('Failed to sync state', e);
@@ -82,7 +71,7 @@ export function useSyncState() {
 
   // Initial restore when user logs in
   useEffect(() => {
-    if (user && getActivePassword()) {
+    if (user) {
       restoreState();
     }
   }, [user, restoreState]);

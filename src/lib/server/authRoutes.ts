@@ -13,8 +13,8 @@ const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { email, passwordHash, salt } = req.body;
-    if (!email || !passwordHash || !salt) {
+    const { email, password } = req.body;
+    if (!email || !password) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -26,18 +26,28 @@ router.post('/register', async (req, res) => {
     const userId = uuidv4();
     const now = new Date().toISOString();
     
-    await saveUser({
-      id: userId,
-      email,
-      passwordHash,
-      salt,
-      googleId: null,
-      callSign: null,
-      createdAt: now,
-      updatedAt: now
-    });
+    // Server-side salt and hash derivation using PBKDF2
+    const salt = crypto.randomBytes(16).toString('hex');
+    crypto.pbkdf2(password, salt, 100000, 32, 'sha256', async (err, derivedKey) => {
+      if (err) {
+        return res.status(500).json({ error: 'Key derivation failed' });
+      }
+      
+      const passwordHash = derivedKey.toString('hex');
 
-    res.status(201).json({ message: 'User registered successfully' });
+      await saveUser({
+        id: userId,
+        email,
+        passwordHash,
+        salt,
+        googleId: null,
+        callSign: null,
+        createdAt: now,
+        updatedAt: now
+      });
+
+      res.status(201).json({ message: 'User registered successfully' });
+    });
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -47,12 +57,7 @@ router.post('/register', async (req, res) => {
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body; // Actually, client will send password, we need to derive here? 
-    // Wait, the plan says:
-    // "Client sends email + password (over HTTPS only)
-    // Server looks up user by email, retrieves stored salt + hash
-    // Server derives key from submitted password using stored salt (PBKDF2, 100k iterations)
-    // Server compares derived hash with stored hash (constant-time comparison)"
+    const { email, password } = req.body;
     
     if (!email || !password) {
       return res.status(400).json({ error: 'Missing credentials' });
@@ -86,11 +91,7 @@ router.post('/login', async (req, res) => {
         maxAge: 7 * 24 * 60 * 60 * 1000
       });
 
-      // We also need to send back the salt so the client can use it for encryption!
-      // The plan says client derives encryption key using PBKDF2(password, salt, 100k, 32, SHA-256)
-      // Client needs the salt! Or client can just keep it if it logged in... 
-      // wait, client just sent password. It needs the salt to derive the encryption key!
-      res.json({ user: { id: user.id, email: user.email, salt: user.salt } });
+      res.json({ user: { id: user.id, email: user.email } });
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -167,7 +168,7 @@ export const requireAuth = (req: any, res: any, next: any) => {
 router.get('/me', requireAuth, async (req: any, res: any) => {
   const user = await getUserById(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ user: { id: user.id, email: user.email, salt: user.salt } });
+  res.json({ user: { id: user.id, email: user.email } });
 });
 
 // GET /api/user/state
@@ -179,11 +180,8 @@ router.get('/user/state', requireAuth, async (req: any, res: any) => {
 
 // PUT /api/user/state
 router.put('/user/state', requireAuth, async (req: any, res: any) => {
-  const { salt, nonce, ciphertext } = req.body;
-  if (!salt || !nonce || !ciphertext) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-  await saveUserState(req.user.userId, { salt, nonce, ciphertext });
+  const state = req.body;
+  await saveUserState(req.user.userId, state);
   res.json({ success: true });
 });
 

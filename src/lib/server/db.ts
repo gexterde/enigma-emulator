@@ -14,12 +14,6 @@ export interface UserRecord {
   updatedAt: string;
 }
 
-export interface EncryptedState {
-  salt: string;
-  nonce: string;
-  ciphertext: string;
-}
-
 async function ensureDir(dirPath: string) {
   try {
     await fs.access(dirPath);
@@ -65,19 +59,19 @@ export async function saveUser(user: UserRecord): Promise<void> {
   await fs.writeFile(filePath, JSON.stringify(user, null, 2), 'utf-8');
 }
 
-export async function getUserState(userId: string): Promise<EncryptedState | null> {
+export async function getUserState(userId: string): Promise<Record<string, string> | null> {
   try {
-    const filePath = path.join(DATA_DIR, userId, 'state.enc');
+    const filePath = path.join(DATA_DIR, userId, 'state.json');
     const data = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(data) as EncryptedState;
+    return JSON.parse(data);
   } catch {
     return null;
   }
 }
 
-export async function saveUserState(userId: string, state: EncryptedState): Promise<void> {
+export async function saveUserState(userId: string, state: Record<string, string>): Promise<void> {
   const userDir = path.join(DATA_DIR, userId);
   await ensureDir(userDir);
-  const filePath = path.join(userDir, 'state.enc');
+  const filePath = path.join(userDir, 'state.json');
   await fs.writeFile(filePath, JSON.stringify(state, null, 2), 'utf-8');
 }

@@ -106,8 +106,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, isOpen }) => {
 
           <button 
             type="button"
-            onClick={() => setIsRegister(!isRegister)}
+            onClick={() => {
+              if (!email) {
+                setError('Please enter your email address to request a password reset.');
+                return;
+              }
+              alert(`Password reset functionality requires SMTP configuration. In a production environment, an email would be sent to ${email} with a reset token.`);
+            }}
             className={`text-xs text-center ${t.textMuted} hover:${t.textPrimary} hover:underline transition-all block w-full`}
+          >
+            Forgot passphrase?
+          </button>
+
+          <button 
+            type="button"
+            onClick={() => {
+              setIsRegister(!isRegister);
+              setError('');
+            }}
+            className={`text-xs text-center ${t.textMuted} hover:${t.textPrimary} hover:underline transition-all block w-full mt-2`}
           >
             {isRegister ? 'Already have credentials? Authenticate' : 'Request new credentials? Register'}
           </button>
