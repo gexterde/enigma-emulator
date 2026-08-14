@@ -369,6 +369,7 @@ export default function App() {
         user={user}
         onLoginClick={() => setIsLoginOpen(true)}
         onLogoutClick={logout}
+        senderCallSign={senderCallSign}
       />
 
       {/* Body container with Sidebar and Main Content */}

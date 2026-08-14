@@ -11,6 +11,7 @@ interface HeaderProps {
   user: User | null;
   onLoginClick: () => void;
   onLogoutClick: () => void;
+  senderCallSign?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -21,7 +22,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenShortcuts,
   user,
   onLoginClick,
-  onLogoutClick
+  onLogoutClick,
+  senderCallSign
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
@@ -44,20 +46,27 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
       <div className="flex items-center gap-1 md:gap-2">
         {user ? (
-          <button
-            onClick={onLogoutClick}
-            className={`px-3 h-10 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-lg transform active:scale-95 text-xs font-bold uppercase tracking-wider hidden md:flex`}
-            title={`Logged in as ${user.email} - Click to Logout`}
-          >
-            Logout
-          </button>
+          <div className="flex items-center bg-black/10 rounded-lg px-2 md:px-3 h-10 border border-zinc-500/20 mr-1 md:mr-2 shadow-inner">
+            <span className={`hidden md:inline text-xs font-bold ${t.textMuted} mr-2 uppercase tracking-wider`}>Absender:</span>
+            <span className={`${t.fontHeader} text-base md:text-lg ${t.textPrimary} tracking-widest`}>
+              {senderCallSign || 'DFS'}
+            </span>
+            <div className="w-px h-5 bg-zinc-500/30 mx-2 md:mx-3"></div>
+            <button
+              onClick={onLogoutClick}
+              className={`flex items-center justify-center ${t.textMuted} hover:${t.textAccent} transition-colors transform active:scale-95 text-xs font-bold uppercase tracking-wider`}
+              title={`Logged in as ${user.email} - Click to Logout`}
+            >
+              <span className="material-symbols-outlined text-[18px]">logout</span>
+            </button>
+          </div>
         ) : (
           <button
             onClick={onLoginClick}
-            className={`px-3 h-10 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-lg transform active:scale-95 text-xs font-bold uppercase tracking-wider hidden md:flex`}
+            className={`px-3 h-10 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-lg transform active:scale-95 text-xs font-bold uppercase tracking-wider`}
           >
             <span className="material-symbols-outlined material-fill-0 mr-1 text-sm">login</span>
-            Login
+            <span className="hidden md:inline">Login</span>
           </button>
         )}
         <button
