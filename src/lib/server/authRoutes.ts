@@ -7,7 +7,7 @@ import path from 'path';
 import AdmZip from 'adm-zip';
 import multer from 'multer';
 import fs from 'fs/promises';
-import { getUserByEmail, getUserById, saveUser, getUserState, saveUserState, getEmailIndex, DATA_DIR, INDEX_FILE } from './db.js';
+import { getUserByEmail, getUserById, getUserByCallSign, saveUser, getUserState, saveUserState, getEmailIndex, DATA_DIR, INDEX_FILE } from './db.js';
 
 const router = Router();
 
@@ -48,7 +48,7 @@ const rateLimitMiddleware = (req: Request, res: Response, next: NextFunction) =>
 // POST /api/auth/register
 router.post('/register', rateLimitMiddleware, async (req: any, res: any) => {
   try {
-    const { email, password } = req.body;
+    let { email, password, callSign } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -61,6 +61,15 @@ router.post('/register', rateLimitMiddleware, async (req: any, res: any) => {
     if (existingUser) {
       return res.status(409).json({ error: 'User already exists' });
     }
+
+    if (callSign) {
+      callSign = callSign.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5);
+      const existingCallSign = await getUserByCallSign(callSign);
+      if (existingCallSign) {
+        return res.status(409).json({ error: 'Call sign already in use' });
+      }
+    }
+
 
     const userId = uuidv4();
     const now = new Date().toISOString();
@@ -75,7 +84,7 @@ router.post('/register', rateLimitMiddleware, async (req: any, res: any) => {
       passwordHash,
       salt,
       googleId: null,
-      callSign: null,
+      callSign: callSign || null,
       isAdmin: false,
       createdAt: now,
       updatedAt: now
@@ -89,7 +98,7 @@ router.post('/register', rateLimitMiddleware, async (req: any, res: any) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.status(201).json({ message: 'User registered successfully', user: { id: userId, email, isAdmin: false } });
+    res.status(201).json({ message: 'User registered successfully', user: { id: userId, email, isAdmin: false, callSign: callSign || null } });
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -105,7 +114,10 @@ router.post('/login', rateLimitMiddleware, async (req: any, res: any) => {
       return res.status(400).json({ error: 'Missing credentials' });
     }
 
-    const user = await getUserByEmail(email);
+    let user = await getUserByEmail(email);
+    if (!user) {
+      user = await getUserByCallSign(email.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5));
+    }
     if (!user || !user.salt || !user.passwordHash) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -128,7 +140,7 @@ router.post('/login', rateLimitMiddleware, async (req: any, res: any) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.json({ user: { id: user.id, email: user.email, isAdmin: user.isAdmin } });
+    res.json({ user: { id: user.id, email: user.email, isAdmin: user.isAdmin, callSign: user.callSign } });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -179,12 +191,13 @@ router.post('/google', rateLimitMiddleware, async (req: any, res: any) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.json({ user: { id: user.id, email: user.email, isAdmin: user.isAdmin } });
+    res.json({ user: { id: user.id, email: user.email, isAdmin: user.isAdmin, callSign: user.callSign } });
   } catch (error) {
     console.error('Google auth error:', error);
     res.status(401).json({ error: 'Invalid Google token' });
   }
 });
+
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
@@ -338,6 +351,32 @@ router.delete('/admin/users/:userId', requireAdmin, async (req: any, res: any) =
   } catch (error) {
     console.error('Delete user error:', error);
     res.status(500).json({ error: 'Failed to remove user' });
+  }
+});
+
+
+// PUT /api/auth/callsign
+router.put('/callsign', requireAuth, async (req: any, res: any) => {
+  try {
+    let { callSign } = req.body;
+    if (!callSign) return res.status(400).json({ error: 'Missing callSign' });
+    callSign = callSign.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5);
+    
+    // Check if unique
+    const existing = await getUserByCallSign(callSign);
+    if (existing && existing.id !== req.user.userId) {
+      return res.status(409).json({ error: 'Call sign already taken' });
+    }
+    
+    const user = await getUserById(req.user.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    user.callSign = callSign;
+    await saveUser(user);
+    
+    res.json({ success: true, callSign });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

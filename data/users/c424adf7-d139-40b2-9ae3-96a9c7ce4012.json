@@ -4,7 +4,7 @@
   "passwordHash": "ed2527f193519f37d85cf81abd51ea6da3d3cc8d845d6448addf2e6bfea3ed4f",
   "salt": "86deb01df67dcd8614b0c39fb8168d20",
   "googleId": null,
-  "callSign": null,
+  "callSign": "ADMIN",
   "isAdmin": true,
   "createdAt": "2026-08-14T08:22:26.258Z",
   "updatedAt": "2026-08-14T08:22:26.258Z"

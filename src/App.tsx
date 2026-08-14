@@ -103,8 +103,30 @@ export default function App() {
     return config.senderCallSign || 'DFS';
   });
 
-  const handleUpdateSenderCallSign = (newSender: string) => {
+  
+  const handleUpdateSenderCallSign = async (newSender: string) => {
     const clean = newSender.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5);
+    
+    if (user) {
+      try {
+        const res = await fetch('/api/auth/callsign', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ callSign: clean })
+        });
+        if (!res.ok) {
+           const data = await res.json();
+           alert("Failed to save Call Sign: " + (data.error || 'Unknown error'));
+           // Revert back
+           return;
+        }
+      } catch(e) {
+         alert("Network error saving Call Sign");
+         return;
+      }
+    }
+
     setSenderCallSign(clean);
     try {
       localStorage.setItem('enigma_sender_callsign', clean);
@@ -113,6 +135,14 @@ export default function App() {
     }
     setConfig((prev) => ({ ...prev, senderCallSign: clean }));
   };
+
+  useEffect(() => {
+    if (user?.callSign) {
+      setSenderCallSign(user.callSign);
+      setConfig((prev) => ({ ...prev, senderCallSign: user.callSign }));
+    }
+  }, [user]);
+
 
   // Simulated Battery Level (0 to 100)
   const [batteryLevel, setBatteryLevel] = useState<number>(() => {

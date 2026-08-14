@@ -6,6 +6,7 @@ import { saveUser } from './db.js';
 
 const email = process.env.ADMIN_EMAIL;
 const password = process.env.ADMIN_PASSWORD;
+const callSign = 'ADMIN';
 
 if (!email || !password) {
   console.log('Set ADMIN_EMAIL and ADMIN_PASSWORD env vars to create admin user.');
@@ -22,7 +23,7 @@ saveUser({
   passwordHash,
   salt,
   googleId: null,
-  callSign: null,
+  callSign: callSign,
   isAdmin: true,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),

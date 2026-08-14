@@ -4,13 +4,14 @@ export interface User {
   id: string;
   email: string;
   isAdmin: boolean;
+  callSign: string | null;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, callSign?: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -47,12 +48,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   };
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string, callSign?: string) => {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, callSign })
     });
     
     if (!res.ok) {

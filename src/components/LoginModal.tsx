@@ -10,6 +10,7 @@ interface LoginModalProps {
 export const LoginModal: React.FC<LoginModalProps> = ({ onClose, isOpen }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [callSign, setCallSign] = useState('');
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState('');
   const { login, register } = useAuth();
@@ -23,7 +24,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, isOpen }) => {
     setError('');
     try {
       if (isRegister) {
-        await register(email, password);
+        await register(email, password, callSign);
       } else {
         await login(email, password);
       }
@@ -59,17 +60,33 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onClose, isOpen }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className={`block text-xs font-bold mb-1.5 ${t.textSecondary}`}>
-              Operator Designation (Email)
+              Operator Designation (Email or Call Sign)
             </label>
             <input 
-              type="email" 
+              type="text" 
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
               className={`w-full ${t.inputBg} border ${t.borderBase} rounded p-2 text-sm ${t.textPrimary} focus:outline-none focus:border-opacity-100 transition-colors`}
             />
           </div>
-          <div>
+          
+          {isRegister && (
+            <div>
+              <label className={`block text-xs font-bold mb-1.5 ${t.textSecondary}`}>
+                Sender Call Sign (Optional)
+              </label>
+              <input 
+                type="text" 
+                maxLength={5}
+                value={callSign}
+                onChange={e => setCallSign(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                placeholder="DFS"
+                className={`w-full ${t.inputBg} border ${t.borderBase} rounded p-2 text-sm ${t.textPrimary} focus:outline-none focus:border-opacity-100 transition-colors`}
+              />
+            </div>
+          )}
+<div>
             <label className={`block text-xs font-bold mb-1.5 ${t.textSecondary}`}>
               Passphrase
             </label>

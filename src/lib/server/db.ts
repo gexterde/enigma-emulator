@@ -155,3 +155,30 @@ export async function saveUserState(userId: string, state: Record<string, string
     release();
   }
 }
+
+
+export async function getUserByCallSign(callSign: string): Promise<UserRecord | null> {
+  try {
+    const release = await acquireLock('_read_all_users');
+    try {
+      await ensureDir(DATA_DIR);
+      const files = await fs.readdir(DATA_DIR);
+      for (const file of files) {
+        if (file.endsWith('.json') && !file.startsWith('_')) {
+          try {
+            const data = await fs.readFile(path.join(DATA_DIR, file), 'utf-8');
+            const user = JSON.parse(data) as UserRecord;
+            if (user.callSign && user.callSign.toUpperCase() === callSign.toUpperCase()) {
+              return user;
+            }
+          } catch (e) {}
+        }
+      }
+      return null;
+    } finally {
+      release();
+    }
+  } catch (error) {
+    return null;
+  }
+}
