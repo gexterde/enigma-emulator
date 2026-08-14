@@ -1426,9 +1426,9 @@ export const MorseTrainer: React.FC = () => {
               </div>
 
               {/* SHARED DECODING CONTROLS TOOLBAR (Always visible and accessible) */}
-              <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-black/30 rounded border border-zinc-800/50">
-                <div className="text-[10px] uppercase font-mono text-zinc-400 font-bold flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-xs text-amber-500 animate-spin-slow">tune</span>
+              <div className={`flex flex-wrap items-center justify-between gap-3 p-3 ${t.panelInner} rounded border ${t.borderBase}`}>
+                <div className={`text-[10px] uppercase font-mono ${t.textSecondary} font-bold flex items-center gap-1.5`}>
+                  <span className={`material-symbols-outlined text-xs ${t.textAccent} animate-spin-slow`}>tune</span>
                   <span>Tape Configuration Desk:</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -1437,8 +1437,8 @@ export const MorseTrainer: React.FC = () => {
                     onClick={() => setShowHints(!showHints)}
                     className={`px-2.5 py-1 text-[10px] ${t.fontHeader} rounded border transition-all cursor-pointer flex items-center gap-1.5 ${
                       showHints 
-                        ? `${t.bgAccentFaint} border-amber-500/80 ${t.textAccentStrong} font-bold`
-                        : t.tabInactive
+                        ? `${t.bgAccentFaint} ${t.borderAccent} ${t.textAccentStrong} font-bold`
+                        : `${t.borderBase} ${t.textMuted} hover:${t.textPrimary}`
                     }`}
                   >
                     <span className="material-symbols-outlined text-[13px]">{showHints ? 'visibility' : 'visibility_off'}</span>
@@ -1450,8 +1450,8 @@ export const MorseTrainer: React.FC = () => {
                     onClick={() => setHideFutureChars(!hideFutureChars)}
                     className={`px-2.5 py-1 text-[10px] ${t.fontHeader} rounded border transition-all cursor-pointer flex items-center gap-1.5 ${
                       hideFutureChars 
-                        ? `${t.bgAccentFaint} border-amber-500/80 ${t.textAccentStrong} font-bold`
-                        : t.tabInactive
+                        ? `${t.bgAccentFaint} ${t.borderAccent} ${t.textAccentStrong} font-bold`
+                        : `${t.borderBase} ${t.textMuted} hover:${t.textPrimary}`
                     }`}
                   >
                     <span className="material-symbols-outlined text-[13px]">{hideFutureChars ? 'disabled_by_default' : 'view_week'}</span>
@@ -1469,8 +1469,8 @@ export const MorseTrainer: React.FC = () => {
                     }}
                     className={`px-2.5 py-1 text-[10px] ${t.fontHeader} rounded border transition-all cursor-pointer flex items-center gap-1.5 ${
                       isMobileKeyboardOpen
-                        ? `${t.bgAccentFaint} border-amber-500/80 ${t.textAccentStrong} font-bold`
-                        : t.tabInactive
+                        ? `${t.bgAccentFaint} ${t.borderAccent} ${t.textAccentStrong} font-bold`
+                        : `${t.borderBase} ${t.textMuted} hover:${t.textPrimary}`
                     }`}
                   >
                     <span className="material-symbols-outlined text-[13px]">smartphone</span>
@@ -1545,7 +1545,7 @@ export const MorseTrainer: React.FC = () => {
                             ref={isScrollTarget ? activeCharRef : undefined}
                             className={`w-10 h-12 flex flex-col items-center justify-center rounded border font-bold transition-all relative shrink-0 ${
                               isCurrent
-                                ? `${t.bgAccentFaint} ${t.textAccentStrong} border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.35)] scale-[1.05]`
+                                ? `${t.bgAccentFaint} ${t.textAccentStrong} ${t.borderAccent} shadow-md scale-[1.05]`
                                 : isPassed
                                 ? wasCorrect
                                   ? 'bg-green-950/35 text-green-400 border-green-800'
@@ -1931,14 +1931,14 @@ export const MorseTrainer: React.FC = () => {
               {/* Detailed Recent Sessions Logs & Review Panel */}
               <div className={`mt-6 pt-6 border-t ${t.borderBase} space-y-4`}>
                 <h4 className={`text-xs ${t.fontHeader} font-bold ${t.textPrimary} uppercase tracking-wider flex items-center gap-2`}>
-                  <span className="material-symbols-outlined text-sm text-amber-500">history_edu</span>
+                  <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>history_edu</span>
                   Operator Session Log Book
                 </h4>
                 
-                <div className="overflow-x-auto rounded-lg border border-[#3b3426] bg-black/30">
+                <div className={`overflow-x-auto rounded-lg border ${t.borderBase} ${t.panelInner}`}>
                   <table className={`w-full text-left text-xs ${t.fontMono} ${t.textSecondary} min-w-[500px]`}>
                     <thead>
-                      <tr className="border-b border-[#3b3426] bg-black/40 text-[10px] uppercase tracking-wider text-amber-500/80">
+                      <tr className={`border-b ${t.borderBase} bg-black/15 text-[10px] uppercase tracking-wider ${t.textAccent} font-bold`}>
                         <th className="py-2.5 px-3">Run</th>
                         <th className="py-2.5 px-3">Timestamp</th>
                         <th className="py-2.5 px-3">Mode</th>
@@ -1948,26 +1948,28 @@ export const MorseTrainer: React.FC = () => {
                         <th className="py-2.5 px-3 text-right">Review</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#3b3426]/50">
+                    <tbody className={`divide-y ${t.borderBase}/50`}>
                       {[...stats].reverse().map((stat, revIdx) => {
                         const originalIdx = stats.length - 1 - revIdx;
                         const isSelected = selectedReviewIndex === originalIdx;
                         return (
-                          <tr key={stat.timestamp || originalIdx} className={`hover:bg-amber-500/5 transition-colors ${isSelected ? 'bg-amber-500/10' : ''}`}>
-                            <td className="py-2 px-3 font-bold text-amber-500">#{originalIdx + 1}</td>
-                            <td className="py-2 px-3 text-[10px] text-gray-400">
+                          <tr key={stat.timestamp || originalIdx} className={`${t.tableRowHover} transition-colors ${isSelected ? t.tableRowActive : ''}`}>
+                            <td className={`py-2 px-3 font-bold ${t.textAccent}`}>#{originalIdx + 1}</td>
+                            <td className={`py-2 px-3 text-[10px] ${t.textMuted}`}>
                               {new Date(stat.timestamp).toLocaleDateString()} {new Date(stat.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </td>
                             <td className="py-2 px-3">
                               <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                stat.mode === 'copy' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'
+                                stat.mode === 'copy' 
+                                  ? `${t.bgAccentFaint} ${t.textAccent}` 
+                                  : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
                               }`}>
                                 {stat.mode === 'copy' ? 'Realtime' : 'Classic'}
                               </span>
                             </td>
                             <td className="py-2 px-3 uppercase">{stat.method} Lvl {stat.level}</td>
                             <td className="py-2 px-3">{stat.wpm} WPM</td>
-                            <td className={`py-2 px-3 font-bold ${stat.accuracy >= 90 ? 'text-green-400' : stat.accuracy >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
+                            <td className={`py-2 px-3 font-bold ${stat.accuracy >= 90 ? 'text-green-600 dark:text-green-400' : stat.accuracy >= 70 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
                               {stat.accuracy.toFixed(1)}%
                             </td>
                             <td className="py-2 px-3 text-right">
@@ -1975,8 +1977,8 @@ export const MorseTrainer: React.FC = () => {
                                 onClick={() => setSelectedReviewIndex(isSelected ? null : originalIdx)}
                                 className={`text-[10px] font-bold ${t.fontHeader} uppercase px-2 py-0.5 rounded border transition-colors cursor-pointer ${
                                   isSelected 
-                                    ? 'bg-amber-500 text-black border-amber-500 font-extrabold'
-                                    : 'border-amber-500/40 text-amber-500 hover:bg-amber-500/20'
+                                    ? `${t.bgAccentSolid} text-white border-transparent font-extrabold`
+                                    : `border-current/25 ${t.textSecondary} hover:${t.textPrimary} hover:bg-black/5`
                                 }`}
                               >
                                 {isSelected ? 'Close' : 'Review'}
@@ -1987,7 +1989,7 @@ export const MorseTrainer: React.FC = () => {
                       })}
                       {stats.length === 0 && (
                         <tr>
-                          <td colSpan={7} className="py-6 text-center text-gray-500 italic">
+                          <td colSpan={7} className={`py-6 text-center ${t.textMuted} italic`}>
                             No training trials completed yet. Start practicing above!
                           </td>
                         </tr>
@@ -2000,19 +2002,19 @@ export const MorseTrainer: React.FC = () => {
                 {selectedReviewIndex !== null && stats[selectedReviewIndex] && (() => {
                   const rStat = stats[selectedReviewIndex];
                   return (
-                    <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/[0.02] space-y-4 animate-fadeIn">
-                      <div className="flex justify-between items-center pb-2 border-b border-[#3b3426]">
+                    <div className={`p-4 rounded-lg border ${t.borderAccent}/30 ${t.bgAccentFaint} space-y-4 animate-fadeIn`}>
+                      <div className={`flex justify-between items-center pb-2 border-b ${t.borderBase}`}>
                         <div>
-                          <h5 className="text-xs font-bold text-amber-500 uppercase tracking-wider font-mono">
+                          <h5 className={`text-xs font-bold ${t.textAccent} uppercase tracking-wider font-mono`}>
                             Audit Card: Run #{selectedReviewIndex + 1} ({rStat.mode === 'copy' ? 'Real-Time Copy' : 'Classic Batch'})
                           </h5>
-                          <p className="text-[10px] text-gray-400 font-mono">
+                          <p className={`text-[10px] ${t.textSecondary} font-mono`}>
                             Level {rStat.level} ({rStat.method.toUpperCase()}) — {rStat.wpm} WPM — {rStat.accuracy.toFixed(1)}% Accuracy
                           </p>
                         </div>
                         <button
                           onClick={() => setSelectedReviewIndex(null)}
-                          className="text-[10px] uppercase font-bold text-gray-400 hover:text-white font-mono"
+                          className={`text-[10px] uppercase font-bold ${t.textMuted} hover:${t.textPrimary} font-mono`}
                         >
                           ✕ Close Review
                         </button>
@@ -2021,7 +2023,7 @@ export const MorseTrainer: React.FC = () => {
                       {/* Display letter comparison scorecard */}
                       {rStat.results && rStat.results.length > 0 ? (
                         <div className="space-y-3">
-                          <span className="text-[10px] uppercase tracking-wider text-amber-500/80 font-bold font-mono block">
+                          <span className={`text-[10px] uppercase tracking-wider ${t.textAccent} font-bold font-mono block`}>
                             Letter-by-Letter Analysis
                           </span>
                           
@@ -2031,14 +2033,14 @@ export const MorseTrainer: React.FC = () => {
                                 key={idx}
                                 className={`flex flex-col items-center justify-center w-10 h-12 rounded border font-mono transition-all ${
                                   item.isCorrect
-                                    ? 'border-green-500/30 bg-green-500/10 text-green-400'
+                                    ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400'
                                     : item.char === ''
-                                    ? 'border-red-500/20 bg-red-500/5 text-red-400/60'
-                                    : 'border-red-500/30 bg-red-500/10 text-red-400'
+                                    ? 'border-red-500/20 bg-red-500/5 text-red-500/60 dark:text-red-400/60'
+                                    : 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400'
                                 }`}
                               >
                                 <span className="text-xs font-bold">{item.char || '—'}</span>
-                                <span className={`text-[10px] border-t w-full text-center border-current/20 ${item.isCorrect ? 'text-green-500' : 'text-red-400 line-through'}`}>
+                                <span className={`text-[10px] border-t w-full text-center border-current/20 ${item.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400 line-through'}`}>
                                   {item.typed || '—'}
                                 </span>
                               </div>
@@ -2046,23 +2048,23 @@ export const MorseTrainer: React.FC = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="text-[11px] italic text-gray-500 font-mono">
+                        <div className={`text-[11px] italic ${t.textMuted} font-mono`}>
                           No letter-by-letter metrics available for this legacy record.
                         </div>
                       )}
 
                       {/* Display overall text comparisons */}
                       {rStat.transmission && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-[#3b3426]/60 font-mono text-xs">
+                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t ${t.borderBase} font-mono text-xs`}>
                           <div className="space-y-1">
-                            <span className="text-[10px] text-gray-400 uppercase">Target Transmission:</span>
-                            <div className="p-2.5 rounded bg-black/40 border border-[#3b3426] text-white break-all tracking-widest font-bold">
+                            <span className={`text-[10px] ${t.textMuted} uppercase`}>Target Transmission:</span>
+                            <div className={`p-2.5 rounded ${t.panelInner} border ${t.borderBase} ${t.textPrimary} break-all tracking-widest font-bold`}>
                               {rStat.transmission}
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-[10px] text-gray-400 uppercase">Your Input Transcript:</span>
-                            <div className="p-2.5 rounded bg-black/40 border border-[#3b3426] text-white break-all tracking-widest font-bold">
+                            <span className={`text-[10px] ${t.textMuted} uppercase`}>Your Input Transcript:</span>
+                            <div className={`p-2.5 rounded ${t.panelInner} border ${t.borderBase} ${t.textPrimary} break-all tracking-widest font-bold`}>
                               {rStat.userTyped || '—'}
                             </div>
                           </div>

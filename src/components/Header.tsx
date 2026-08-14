@@ -48,26 +48,26 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
       <div className="flex items-center gap-1 md:gap-2">
         {user ? (
-          <div className="flex items-center bg-black/10 rounded-lg px-2 md:px-3 h-10 border border-zinc-500/20 mr-1 md:mr-2 shadow-inner">
-            <span className={`hidden md:inline text-xs font-bold ${t.textMuted} mr-2 uppercase tracking-wider`}>Absender:</span>
-            <span className={`${t.fontHeader} text-base md:text-lg ${t.textPrimary} tracking-widest`}>
+          <div className="flex items-center bg-black/10 rounded-lg px-2 md:px-2.5 h-8 border border-zinc-500/20 mr-1 md:mr-1.5 shadow-inner">
+            <span className={`hidden md:inline text-[10px] font-bold ${t.textMuted} mr-1.5 uppercase tracking-wider`}>Absender:</span>
+            <span className={`${t.fontHeader} text-xs md:text-sm ${t.textPrimary} tracking-widest`}>
               {senderCallSign || 'DFS'}
             </span>
-            <div className="w-px h-5 bg-zinc-500/30 mx-2 md:mx-3"></div>
+            <div className="w-px h-4 bg-zinc-500/30 mx-1.5 md:mx-2"></div>
             <button
               onClick={onLogoutClick}
-              className={`flex items-center justify-center ${t.textMuted} hover:${t.textAccent} transition-colors transform active:scale-95 text-xs font-bold uppercase tracking-wider`}
+              className={`flex items-center justify-center ${t.textMuted} hover:${t.textAccent} transition-colors transform active:scale-95 text-[10px] font-bold uppercase tracking-wider`}
               title={`Logged in as ${user.email} - Click to Logout`}
             >
-              <span className="material-symbols-outlined text-[18px]">logout</span>
+              <span className="material-symbols-outlined text-[15px]">logout</span>
             </button>
           </div>
         ) : (
           <button
             onClick={onLoginClick}
-            className={`px-3 h-10 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-lg transform active:scale-95 text-xs font-bold uppercase tracking-wider`}
+            className={`px-2.5 h-8 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-lg transform active:scale-95 text-[10px] font-bold uppercase tracking-wider`}
           >
-            <span className="material-symbols-outlined material-fill-0 mr-1 text-sm">login</span>
+            <span className="material-symbols-outlined material-fill-0 mr-1 text-xs">login</span>
             <span className="hidden md:inline">Login</span>
           </button>
         )}
