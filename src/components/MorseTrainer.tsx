@@ -1055,7 +1055,7 @@ export const MorseTrainer: React.FC = () => {
                   <span>Lesson Characters Level</span>
                   <div className="flex items-center gap-1.5">
                     {bestAccuracy !== null && (
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                      <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded border shadow-xs tracking-tight ${
                         bestAccuracy >= 90 
                           ? t.successBadge
                           : t.dangerBadge
@@ -1522,7 +1522,7 @@ export const MorseTrainer: React.FC = () => {
                 <div className="space-y-4">
                   
                   {/* Glowing letter box tape with auto-centering horizontal scroller */}
-                  <div className={`bg-black border ${t.borderBase} rounded-md p-4 overflow-x-auto scroll-smooth`}>
+                  <div className={`${t.panelInner} border ${t.borderBase} shadow-inner rounded-md p-4 overflow-x-auto scroll-smooth`}>
                     <div className="flex gap-2 justify-start py-2 px-[45%] min-w-max">
                       {targetSequence.split('').map((char, idx) => {
                         const isCurrent = idx === copyTypingIndex;
@@ -1545,7 +1545,7 @@ export const MorseTrainer: React.FC = () => {
                               ref={isScrollTarget ? activeCharRef : undefined}
                               className="w-5 h-12 border border-transparent flex items-center justify-center shrink-0"
                             >
-                              <span className={`text-[10px] ${t.textMuted}/40`}>•</span>
+                              <span className={`text-[10px] ${t.textMuted}`}>•</span>
                             </div>
                           );
                         }
@@ -1556,12 +1556,12 @@ export const MorseTrainer: React.FC = () => {
                             ref={isScrollTarget ? activeCharRef : undefined}
                             className={`w-10 h-12 flex flex-col items-center justify-center rounded border font-bold transition-all relative shrink-0 ${
                               isCurrent
-                                ? `${t.bgAccentFaint} ${t.textAccentStrong} ${t.borderAccent} shadow-md scale-[1.05]`
+                                ? `${t.bgAccentFaint} ${t.textAccentStrong} ${t.borderAccent} shadow-md scale-[1.05] ring-1 ring-[var(--text-accent)]/30`
                                 : isPassed
                                 ? wasCorrect
-                                  ? t.successBadge
-                                  : t.dangerBadge
-                                : `${t.panelInner} ${t.textMuted}/30 ${t.borderBase}/50`
+                                  ? `${t.successBadge} shadow-xs`
+                                  : `${t.dangerBadge} shadow-xs`
+                                : `${t.panelBg} ${t.textMuted} ${t.borderBase} opacity-60`
                             }`}
                           >
                             <span className="text-base">

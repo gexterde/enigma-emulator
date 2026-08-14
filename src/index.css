@@ -26,12 +26,12 @@
   --badge-active-text: #1a150c;
   --badge-inactive-bg: #1b160e;
   --badge-inactive-text: #d1c4b7;
-  --badge-success-bg: rgba(46, 125, 50, 0.3);
-  --badge-success-text: #a5d6a7;
-  --badge-success-border: #4caf50;
-  --badge-danger-bg: #2a1a1a;
-  --badge-danger-text: #ff8a80;
-  --badge-danger-border: #5c2b2b;
+  --badge-success-bg: #1c4520;
+  --badge-success-text: #bbf7d0;
+  --badge-success-border: #22c55e;
+  --badge-danger-bg: #4c1116;
+  --badge-danger-text: #fecaca;
+  --badge-danger-border: #ef4444;
   --accent-light-bg: rgba(235, 194, 56, 0.2);
   --accent-solid-bg: #ebc238;
   --accent-solid-hover: #ffd700;
@@ -168,12 +168,12 @@
   --badge-active-text: #140d07;
   --badge-inactive-bg: #23180f;
   --badge-inactive-text: #c2ab91;
-  --badge-success-bg: rgba(28, 56, 28, 0.6);
-  --badge-success-text: #a5d6a7;
-  --badge-success-border: #4caf50;
-  --badge-danger-bg: rgba(56, 22, 22, 0.7);
-  --badge-danger-text: #ff8a80;
-  --badge-danger-border: #7a2e2e;
+  --badge-success-bg: #1c4520;
+  --badge-success-text: #bbf7d0;
+  --badge-success-border: #22c55e;
+  --badge-danger-bg: #4c1116;
+  --badge-danger-text: #fecaca;
+  --badge-danger-border: #ef4444;
   --accent-light-bg: rgba(212, 175, 55, 0.2);
   --accent-solid-bg: #d4af37;
   --accent-solid-hover: #e5c158;
@@ -310,11 +310,11 @@
   --badge-active-text: #faf6ee;
   --badge-inactive-bg: #eae0cd;
   --badge-inactive-text: #5e4b37;
-  --badge-success-bg: rgba(43, 89, 36, 0.15);
-  --badge-success-text: #204a1b;
-  --badge-success-border: #3b782c;
-  --badge-danger-bg: rgba(138, 28, 28, 0.15);
-  --badge-danger-text: #731212;
+  --badge-success-bg: #2d6a2e;
+  --badge-success-text: #ffffff;
+  --badge-success-border: #388e3c;
+  --badge-danger-bg: #8a1c1c;
+  --badge-danger-text: #ffffff;
   --badge-danger-border: #a83232;
   --accent-light-bg: rgba(138, 51, 20, 0.12);
   --accent-solid-bg: #8a3314;
@@ -452,12 +452,12 @@
   --badge-active-text: #ffffff;
   --badge-inactive-bg: #181820;
   --badge-inactive-text: #a1a1aa;
-  --badge-success-bg: rgba(6, 78, 59, 0.7);
-  --badge-success-text: #34d399;
-  --badge-success-border: #065f46;
-  --badge-danger-bg: #2a080d;
-  --badge-danger-text: #ff8093;
-  --badge-danger-border: #7a1826;
+  --badge-success-bg: #064e3b;
+  --badge-success-text: #a7f3d0;
+  --badge-success-border: #10b981;
+  --badge-danger-bg: #4c0519;
+  --badge-danger-text: #fecdd3;
+  --badge-danger-border: #f43f5e;
   --accent-light-bg: rgba(255, 42, 75, 0.15);
   --accent-solid-bg: #ff2a4b;
   --accent-solid-hover: #ff4763;
@@ -736,12 +736,12 @@
   --badge-active-text: #ffffff;
   --badge-inactive-bg: #f1f5f9;
   --badge-inactive-text: #475569;
-  --badge-success-bg: rgba(22, 163, 74, 0.15);
-  --badge-success-text: #15803d;
-  --badge-success-border: #22c55e;
-  --badge-danger-bg: rgba(220, 38, 38, 0.15);
-  --badge-danger-text: #b91c1c;
-  --badge-danger-border: #ef4444;
+  --badge-success-bg: #15803d;
+  --badge-success-text: #ffffff;
+  --badge-success-border: #16a34a;
+  --badge-danger-bg: #b91c1c;
+  --badge-danger-text: #ffffff;
+  --badge-danger-border: #dc2626;
   --accent-light-bg: rgba(37, 99, 235, 0.1);
   --accent-solid-bg: #2563eb;
   --accent-solid-hover: #1d4ed8;
@@ -1336,34 +1336,42 @@
 
   /* Compact Mode Styles */
   .wood-texture {
-    background: radial-gradient(circle at center, #2e2417 0%, #1a130b 100%),
-                radial-gradient(ellipse at top, #3a2e1d 0%, transparent 70%);
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
+    background: radial-gradient(circle at center, var(--bg-panel) 0%, var(--bg-app) 100%),
+                radial-gradient(ellipse at top, var(--bg-panel-inner) 0%, transparent 70%);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.3);
   }
   .metal-plate {
-    background: linear-gradient(180deg, var(--bg-panel) 0%, var(--bg-panel-inner) 100%);
+    background: linear-gradient(180deg, var(--keyboard-panel-bg, var(--bg-panel)) 0%, var(--bg-panel-inner) 100%);
     border: 1px solid var(--border-base);
     box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 4px 10px rgba(0,0,0,0.3);
   }
   .bakelite-key {
-    background: radial-gradient(circle at 30% 30%, #4a4234 0%, #1c1810 80%);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.2), 0 0 0 2px #0f0c08;
-    transition: all 0.05s ease;
+    background: radial-gradient(circle at 30% 30%, var(--key-base-hover-bg) 0%, var(--key-base-bg) 80%);
+    border: 2px solid var(--key-base-border);
+    color: var(--key-base-text);
+    box-shadow: 0 3px 5px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.15);
+    transition: all 0.08s ease;
+  }
+  .bakelite-key:hover {
+    border-color: var(--key-base-hover-border);
+    background: radial-gradient(circle at 30% 30%, var(--key-base-hover-bg) 0%, var(--key-base-bg) 70%);
   }
   .bakelite-key:active, .bakelite-key.key-pressed {
-    transform: translateY(2px);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 2px 4px rgba(0,0,0,0.6), 0 0 0 2px #0f0c08;
-    background: radial-gradient(circle at 50% 50%, #2a251a 0%, #120e08 80%);
+    transform: translateY(2px) scale(0.96);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.3);
+    background: var(--key-pressed-bg) !important;
+    border-color: var(--key-pressed-border) !important;
+    color: var(--key-pressed-text) !important;
   }
   .lamp-socket {
-    background: radial-gradient(circle at center, #15120c 0%, #0a0805 100%);
+    background: radial-gradient(circle at center, var(--lamp-base-bg) 0%, var(--bg-panel-inner) 100%);
     border: 1px solid var(--border-base);
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.9);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
   }
   .lamp-glass {
-    background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.15) 0%, rgba(40,35,25,0.8) 60%, rgba(15,12,8,0.95) 100%);
+    background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.15) 0%, var(--lamp-base-bg) 60%, var(--bg-panel-inner) 100%);
     color: var(--text-secondary);
-    text-shadow: 0 -1px 1px rgba(0,0,0,0.8);
+    text-shadow: 0 -1px 1px rgba(0,0,0,0.4);
   }
   .lamp-on .lamp-glass, .lamp-on-hell .lamp-glass {
     background: radial-gradient(circle at 50% 50%, #ffffff 0%, #ffe899 25%, #ffc83b 55%, #d48800 85%);

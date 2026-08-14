@@ -139,7 +139,7 @@ export const KeyboardPanel: React.FC<KeyboardPanelProps> = ({
 
   if (isCompact) {
     return (
-      <div className={`${t.compactPlateBg} p-2 xs:p-3 sm:p-4 rounded-xl flex flex-col items-center w-full`}>
+      <div className={`${t.keyboardPanelBg} border ${t.borderBase} p-2 xs:p-3 sm:p-4 rounded-xl flex flex-col items-center w-full`}>
         <div className={`w-full flex justify-between items-center mb-2 sm:mb-3 pb-1 border-b ${t.borderBase} px-1`}>
           <span className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textSecondary} tracking-wider uppercase flex items-center gap-1.5 font-bold`}>
             <span className={`material-symbols-outlined text-xs sm:text-sm ${t.textSecondary}`}>keyboard</span>

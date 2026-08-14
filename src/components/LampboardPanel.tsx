@@ -51,8 +51,8 @@ const LampSocket: React.FC<LampSocketProps> = ({ char, isLit, isDimIdle, battery
       : undefined;
 
     const sizeClasses = isLarge
-      ? 'w-10 h-10 xs:w-11 xs:h-11 sm:w-14 sm:h-14 md:w-15 md:h-15 text-xs xs:text-sm sm:text-base md:text-lg'
-      : 'w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[11px] xs:text-xs sm:text-sm';
+      ? 'w-10 h-10 min-w-[40px] min-h-[40px] xs:w-11 xs:h-11 sm:w-14 sm:h-14 md:w-16 md:h-16 text-sm xs:text-base sm:text-lg md:text-xl'
+      : 'w-8 h-8 min-w-[32px] min-h-[32px] xs:w-9 xs:h-9 xs:min-w-[36px] sm:w-11 sm:h-11 sm:min-w-[44px] md:w-12 md:h-12 md:min-w-[48px] text-xs xs:text-sm sm:text-base md:text-lg';
 
     return (
       <div
@@ -140,7 +140,7 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
 
   if (isCompact) {
     return (
-      <div className={`${t.compactPlateBg} p-2 xs:p-3 sm:p-4 rounded-xl flex flex-col items-center w-full`}>
+      <div className={`${t.lampboardPanelBg} border ${t.borderBase} p-2 xs:p-3 sm:p-4 rounded-xl flex flex-col items-center w-full`}>
         <div className={`w-full flex justify-between items-center mb-2 sm:mb-3 pb-1 border-b ${t.borderBase} px-1`}>
           <span className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textSecondary} tracking-wider uppercase flex items-center gap-1.5 font-bold`}>
             <span className={`material-symbols-outlined text-xs sm:text-sm ${t.textAccent}`}>lightbulb</span>

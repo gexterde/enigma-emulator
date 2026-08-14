@@ -64,10 +64,10 @@ export const t = {
 
   // Keys
   keyShape: 'rounded-full',
-  keyBase: 'border-[var(--key-base-border)] bg-[var(--key-base-bg)] shadow-key-base hover:border-[var(--key-base-hover-border)] hover:bg-[var(--key-base-hover-bg)]',
+  keyBase: 'border-[var(--key-base-border)] bg-[var(--key-base-bg)] text-[var(--key-base-text)] shadow-key-base hover:border-[var(--key-base-hover-border)] hover:bg-[var(--key-base-hover-bg)]',
   keyPressed: 'bg-[var(--key-pressed-bg)] text-[var(--key-pressed-text)] border-[var(--key-pressed-border)] ring-4 ring-[var(--accent-solid-bg)]/40 shadow-[0_0_15px_var(--accent-solid-bg)]',
-  keyCompactBase: 'bakelite-key text-[var(--key-base-text)]',
-  keyCompactPressed: 'key-pressed ring-2 ring-[var(--accent-solid-bg)]/60 text-[var(--text-accent)]',
+  keyCompactBase: 'bakelite-key border-2 border-[var(--key-base-border)] bg-[var(--key-base-bg)] text-[var(--key-base-text)] shadow-key-base hover:border-[var(--key-base-hover-border)] hover:bg-[var(--key-base-hover-bg)]',
+  keyCompactPressed: 'key-pressed bg-[var(--key-pressed-bg)] text-[var(--key-pressed-text)] border-2 border-[var(--key-pressed-border)] ring-2 ring-[var(--accent-solid-bg)]/60 shadow-[0_0_12px_var(--accent-solid-bg)]',
 
   // Lamps & Signals
   lampShape: 'rounded-full',
@@ -83,7 +83,7 @@ export const t = {
   // Panels & Surfaces
   keyboardPanelBg: 'bg-[var(--keyboard-panel-bg)] border-[var(--keyboard-panel-border)] shadow-panel',
   lampboardPanelBg: 'bg-[var(--lampboard-panel-bg)] border-[var(--lampboard-panel-border)] shadow-panel',
-  compactPlateBg: 'metal-plate shadow-md',
+  compactPlateBg: 'bg-[var(--keyboard-panel-bg)] border-[var(--keyboard-panel-border)] shadow-panel',
   paperTapeBg: 'paper-tape',
   paperTapeText: 'text-[var(--paper-tape-text)]',
   paperTapeBorder: 'border-[var(--paper-tape-border)]',
