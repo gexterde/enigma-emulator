@@ -5,6 +5,7 @@ import { OAuth2Client } from 'google-auth-library';
 import crypto from 'crypto';
 import path from 'path';
 import AdmZip from 'adm-zip';
+import multer from 'multer';
 import fs from 'fs/promises';
 import { getUserByEmail, getUserById, saveUser, getUserState, saveUserState, getEmailIndex, DATA_DIR, INDEX_FILE } from './db.js';
 
@@ -83,12 +84,12 @@ router.post('/register', rateLimitMiddleware, async (req: any, res: any) => {
     const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '7d' });
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.status(201).json({ message: 'User registered successfully', user: { id: userId, email } });
+    res.status(201).json({ message: 'User registered successfully', user: { id: userId, email, isAdmin: false } });
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -122,12 +123,12 @@ router.post('/login', rateLimitMiddleware, async (req: any, res: any) => {
     const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.json({ user: { id: user.id, email: user.email } });
+    res.json({ user: { id: user.id, email: user.email, isAdmin: user.isAdmin } });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -173,12 +174,12 @@ router.post('/google', rateLimitMiddleware, async (req: any, res: any) => {
     const jwtToken = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
     res.cookie('token', jwtToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.json({ user: { id: user.id, email: user.email } });
+    res.json({ user: { id: user.id, email: user.email, isAdmin: user.isAdmin } });
   } catch (error) {
     console.error('Google auth error:', error);
     res.status(401).json({ error: 'Invalid Google token' });
@@ -187,16 +188,18 @@ router.post('/google', rateLimitMiddleware, async (req: any, res: any) => {
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', { httpOnly: true, secure: true, sameSite: 'none' });
   res.json({ message: 'Logged out' });
 });
 
 // Middleware for auth
-export const requireAuth = (req: any, res: any, next: any) => {
+export const requireAuth = async (req: any, res: any, next: any) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await getUserById((decoded as any).userId);
+    if (!user) return res.status(401).json({ error: 'User not found' });
     req.user = decoded;
     next();
   } catch {
@@ -262,21 +265,15 @@ router.get('/admin/export', requireAdmin, (req: any, res: any) => {
   }
 });
 
-// Helper: read request body to buffer
-function readBody(req: any): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on('data', (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
-}
+const upload = multer({ storage: multer.memoryStorage() });
 
 // POST /api/auth/admin/import
-router.post('/admin/import', requireAdmin, async (req: any, res: any) => {
+router.post('/admin/import', requireAdmin, upload.single('backup'), async (req: any, res: any) => {
   try {
-    const body = await readBody(req);
-    const zip = new AdmZip(body);
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ error: 'No backup file provided' });
+    }
+    const zip = new AdmZip(req.file.buffer);
     const dataDir = path.join(process.cwd(), 'data', 'users');
     
     // Validate: no directory traversal

@@ -122,7 +122,10 @@ export async function saveUser(user: UserRecord): Promise<void> {
   try {
     await ensureDir(DATA_DIR);
     const filePath = path.join(DATA_DIR, `${user.id}.json`);
-    await fs.writeFile(filePath, JSON.stringify(user, null, 2), 'utf-8');
+    await fs.writeFile(filePath, JSON.stringify({
+      isAdmin: false,
+      ...user
+    }, null, 2), 'utf-8');
     
     // Update index without waiting for it to finish the outer lock
     await updateEmailIndex(user.email, user.id);

@@ -97,13 +97,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     setLoading(true);
     setStatus(null);
     try {
+      const formData = new FormData();
+      formData.append('backup', file);
+      
       const res = await fetch('/api/auth/admin/import', {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/zip'
-        },
-        body: file,
+        body: formData,
       });
       
       const data = await res.json();
