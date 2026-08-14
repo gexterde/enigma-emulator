@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ThemeName, ThemeOption, AVAILABLE_THEMES, ThemeProduct, ThemeFactory } from './types';
 import { VintageThemeFactory } from './vintage';
+import { BakeliteBrassThemeFactory } from './bakeliteBrass';
+import { BletchleyParkThemeFactory } from './bletchleyPark';
+import { CipherNoirThemeFactory } from './cipherNoir';
 import { VintageNavyThemeFactory } from './vintageNavy';
 import { ModernThemeFactory } from './modern';
 import { ModernDarkThemeFactory } from './modernDark';
@@ -9,6 +12,9 @@ import { EmeraldCrtThemeFactory } from './emeraldCrt';
 
 export * from './types';
 export * from './vintage';
+export * from './bakeliteBrass';
+export * from './bletchleyPark';
+export * from './cipherNoir';
 export * from './vintageNavy';
 export * from './modern';
 export * from './modernDark';
@@ -53,6 +59,15 @@ export const getTheme = (theme: ThemeName): ThemeProduct => {
   switch (theme) {
     case 'vintage':
       factory = new VintageThemeFactory();
+      break;
+    case 'bakelite-brass':
+      factory = new BakeliteBrassThemeFactory();
+      break;
+    case 'bletchley-park':
+      factory = new BletchleyParkThemeFactory();
+      break;
+    case 'cipher-noir':
+      factory = new CipherNoirThemeFactory();
       break;
     case 'vintage-navy':
       factory = new VintageNavyThemeFactory();

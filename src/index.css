@@ -236,6 +236,36 @@
   background: #94a3b8;
 }
 
+.theme-bletchley-park ::-webkit-scrollbar-track {
+  background: #eae0cd;
+}
+.theme-bletchley-park ::-webkit-scrollbar-thumb {
+  background: #baa78d;
+}
+.theme-bletchley-park ::-webkit-scrollbar-thumb:hover {
+  background: #8a3314;
+}
+
+.theme-cipher-noir ::-webkit-scrollbar-track {
+  background: #0e0e12;
+}
+.theme-cipher-noir ::-webkit-scrollbar-thumb {
+  background: #272732;
+}
+.theme-cipher-noir ::-webkit-scrollbar-thumb:hover {
+  background: #ff2a4b;
+}
+
+.theme-bakelite-brass ::-webkit-scrollbar-track {
+  background: #18110b;
+}
+.theme-bakelite-brass ::-webkit-scrollbar-thumb {
+  background: #443021;
+}
+.theme-bakelite-brass ::-webkit-scrollbar-thumb:hover {
+  background: #d4af37;
+}
+
 /* Print optimizations for codebook printing */
 @media print {
   body, html {
