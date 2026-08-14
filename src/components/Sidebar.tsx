@@ -9,6 +9,12 @@ interface SidebarProps {
   isMobileOpen: boolean;
   onCloseMobile: () => void;
   config: EnigmaConfig;
+  onOpenSettings: () => void;
+  onOpenShortcuts: () => void;
+  onOpenInfo: () => void;
+  onOpenShare: () => void;
+  onOpenAdmin: () => void;
+  isAdmin?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -17,7 +23,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onResetMachine,
   isMobileOpen,
   onCloseMobile,
-  config
+  config,
+  onOpenSettings,
+  onOpenShortcuts,
+  onOpenInfo,
+  onOpenShare,
+  onOpenAdmin,
+  isAdmin
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
@@ -104,6 +116,67 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             );
           })}
+        </div>
+
+        {/* Mobile-only utility actions */}
+        <div className="md:hidden px-4 py-3 border-t border-[#3b3426]/30 flex flex-col gap-1">
+          <span className={`text-[9px] ${t.textMuted} font-mono uppercase tracking-wider mb-2 block`}>
+            Utility Actions
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => {
+                onOpenSettings();
+                onCloseMobile();
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border border-zinc-500/10 cursor-pointer transition-colors`}
+            >
+              <span className="material-symbols-outlined text-xs">settings</span>
+              Settings
+            </button>
+            <button
+              onClick={() => {
+                onOpenShortcuts();
+                onCloseMobile();
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border border-zinc-500/10 cursor-pointer transition-colors`}
+            >
+              <span className="material-symbols-outlined text-xs">keyboard</span>
+              Shortcuts
+            </button>
+            <button
+              onClick={() => {
+                onOpenInfo();
+                onCloseMobile();
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border border-zinc-500/10 cursor-pointer transition-colors`}
+            >
+              <span className="material-symbols-outlined text-xs">info</span>
+              Info
+            </button>
+            <button
+              onClick={() => {
+                onOpenShare();
+                onCloseMobile();
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded text-[11px] ${t.textMuted} hover:bg-black/10 hover:${t.textPrimary} border border-zinc-500/10 cursor-pointer transition-colors`}
+            >
+              <span className="material-symbols-outlined text-xs">share</span>
+              Share
+            </button>
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  onOpenAdmin();
+                  onCloseMobile();
+                }}
+                className="col-span-2 flex items-center justify-center gap-1.5 py-2 px-3 rounded text-[11px] text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 cursor-pointer transition-colors"
+              >
+                <span className="material-symbols-outlined text-xs">admin_panel_settings</span>
+                Admin Panel
+              </button>
+            )}
+          </div>
         </div>
 
         <div className={`p-4 border-t ${t.borderBase}`}>

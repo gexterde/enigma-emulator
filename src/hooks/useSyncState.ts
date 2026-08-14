@@ -9,7 +9,12 @@ const SYNC_KEYS = [
   'enigma_sender_callsign',
   'enigma_machine_logs',
   'morse_trainer_state',
-  'radio_state'
+  'morse_trainer_stats',
+  'enigma_custom_codebooks_v1',
+  'radio_state',
+  'enigma_theme',
+  'enigma_ring_format',
+  'enigma_battery_drain'
 ];
 
 export function useSyncState() {

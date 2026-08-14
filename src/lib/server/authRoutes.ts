@@ -240,7 +240,7 @@ export const requireAdmin = async (req: any, res: any, next: any) => {
 router.get('/me', requireAuth, async (req: any, res: any) => {
   const user = await getUserById(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ user: { id: user.id, email: user.email, isAdmin: user.isAdmin } });
+  res.json({ user: { id: user.id, email: user.email, isAdmin: user.isAdmin, callSign: user.callSign } });
 });
 
 // GET /api/user/state

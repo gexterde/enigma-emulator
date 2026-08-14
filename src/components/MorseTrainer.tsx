@@ -18,6 +18,9 @@ interface LevelStats {
   wpm: number;
   mode: PracticeMode;
   timestamp: number;
+  transmission?: string;
+  userTyped?: string;
+  results?: Array<{ char: string; typed: string; isCorrect: boolean }>;
 }
 
 class MorsePlayer {
@@ -202,16 +205,163 @@ class MorsePlayer {
 export const MorseTrainer: React.FC = () => {
   const { theme } = useTheme();
   const t = getTheme(theme);
-  const [method, setMethod] = useState<TrainingMethod>('koch');
-  const [level, setLevel] = useState<number>(2);
-  const [wpm, setWpm] = useState<number>(15); // eff. Speed (overall speed) - default 15 WpM
-  const [charWpm, setCharWpm] = useState<number>(20); // Speed (character speed) - default 20 WpM
-  const [frequency, setFrequency] = useState<number>(600);
-  const [noiseLevel, setNoiseLevel] = useState<number>(0);
-  const [wordSpaceAuto, setWordSpaceAuto] = useState<boolean>(true); // Word space Auto - default true (Standard / Auto)
-  const [wordSpaceMultiplier, setWordSpaceMultiplier] = useState<number>(2.0); // Word space (multiplier) - default 2x
-  const [edgeMs, setEdgeMs] = useState<number>(10); // Edge (milliseconds envelope rise/fall) - default 10
-  const [volume, setVolume] = useState<number>(1.0); // Volume (0 to 1.0) - default 100%
+  const [method, setMethod] = useState<TrainingMethod>(() => {
+    try {
+      const saved = localStorage.getItem('morse_trainer_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.method) return parsed.method;
+      }
+    } catch (e) {}
+    return 'koch';
+  });
+  const [level, setLevel] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('morse_trainer_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.level !== undefined) return parsed.level;
+      }
+    } catch (e) {}
+    return 2;
+  });
+  const [wpm, setWpm] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('morse_trainer_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.wpm !== undefined) return parsed.wpm;
+      }
+    } catch (e) {}
+    return 15;
+  });
+  const [charWpm, setCharWpm] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('morse_trainer_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.charWpm !== undefined) return parsed.charWpm;
+      }
+    } catch (e) {}
+    return 20;
+  });
+  const [frequency, setFrequency] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('morse_trainer_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.frequency !== undefined) return parsed.frequency;
+      }
+    } catch (e) {}
+    return 600;
+  });
+  const [noiseLevel, setNoiseLevel] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('morse_trainer_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.noiseLevel !== undefined) return parsed.noiseLevel;
+      }
+    } catch (e) {}
+    return 0;
+  });
+  const [wordSpaceAuto, setWordSpaceAuto] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('morse_trainer_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.wordSpaceAuto !== undefined) return parsed.wordSpaceAuto;
+      }
+    } catch (e) {}
+    return true;
+  });
+  const [wordSpaceMultiplier, setWordSpaceMultiplier] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('morse_trainer_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.wordSpaceMultiplier !== undefined) return parsed.wordSpaceMultiplier;
+      }
+    } catch (e) {}
+    return 2.0;
+  });
+  const [edgeMs, setEdgeMs] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('morse_trainer_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.edgeMs !== undefined) return parsed.edgeMs;
+      }
+    } catch (e) {}
+    return 10;
+  });
+  const [volume, setVolume] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('morse_trainer_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.volume !== undefined) return parsed.volume;
+      }
+    } catch (e) {}
+    return 1.0;
+  });
+
+  // Save settings on change
+  useEffect(() => {
+    try {
+      const stateObj = {
+        method,
+        level,
+        wpm,
+        charWpm,
+        frequency,
+        noiseLevel,
+        wordSpaceAuto,
+        wordSpaceMultiplier,
+        edgeMs,
+        volume
+      };
+      localStorage.setItem('morse_trainer_state', JSON.stringify(stateObj));
+    } catch (e) {}
+  }, [method, level, wpm, charWpm, frequency, noiseLevel, wordSpaceAuto, wordSpaceMultiplier, edgeMs, volume]);
+
+  // Listen for storage changes to sync across windows/tabs and upon server restoration
+  useEffect(() => {
+    const handleStorage = (e: Event) => {
+      if (e instanceof StorageEvent && e.key && e.key !== 'morse_trainer_state' && e.key !== 'morse_trainer_stats') {
+        return;
+      }
+      
+      try {
+        const saved = localStorage.getItem('morse_trainer_state');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.method !== undefined) setMethod(parsed.method);
+          if (parsed.level !== undefined) setLevel(parsed.level);
+          if (parsed.wpm !== undefined) setWpm(parsed.wpm);
+          if (parsed.charWpm !== undefined) setCharWpm(parsed.charWpm);
+          if (parsed.frequency !== undefined) setFrequency(parsed.frequency);
+          if (parsed.noiseLevel !== undefined) setNoiseLevel(parsed.noiseLevel);
+          if (parsed.wordSpaceAuto !== undefined) setWordSpaceAuto(parsed.wordSpaceAuto);
+          if (parsed.wordSpaceMultiplier !== undefined) setWordSpaceMultiplier(parsed.wordSpaceMultiplier);
+          if (parsed.edgeMs !== undefined) setEdgeMs(parsed.edgeMs);
+          if (parsed.volume !== undefined) setVolume(parsed.volume);
+        }
+        
+        const savedStats = localStorage.getItem('morse_trainer_stats');
+        if (savedStats) {
+          setStats(JSON.parse(savedStats));
+        }
+      } catch (err) {}
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('local-storage-change', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('local-storage-change', handleStorage);
+    };
+  }, []);
   
   // Practice configuration
   const [practiceMode, setPracticeMode] = useState<PracticeMode>('batch');
@@ -254,6 +404,7 @@ export const MorseTrainer: React.FC = () => {
   
   // Interactive charting and stats
   const [showChart, setShowChart] = useState<boolean>(false);
+  const [selectedReviewIndex, setSelectedReviewIndex] = useState<number | null>(null);
   const [stats, setStats] = useState<LevelStats[]>([]);
   const [chartMetric, setChartMetric] = useState<'accuracy' | 'wpm' | 'level'>('accuracy');
   const [hoveredDataPoint, setHoveredDataPoint] = useState<(LevelStats & { x: number; y: number; index: number }) | null>(null);
@@ -455,11 +606,21 @@ export const MorseTrainer: React.FC = () => {
     
     let correct = 0;
     const minLen = Math.min(target.length, user.length);
+    const results: Array<{ char: string; typed: string; isCorrect: boolean }> = [];
+    const maxLen = Math.max(target.length, user.length);
     
-    for (let i = 0; i < minLen; i++) {
-      if (target[i] === user[i]) {
+    for (let i = 0; i < maxLen; i++) {
+      const targetChar = target[i] || '';
+      const userChar = user[i] || '';
+      const isCorrect = targetChar === userChar;
+      if (i < minLen && isCorrect) {
         correct++;
       }
+      results.push({
+        char: targetChar,
+        typed: userChar,
+        isCorrect
+      });
     }
     
     const accuracy = target.length > 0 ? (correct / target.length) * 100 : 0;
@@ -474,7 +635,10 @@ export const MorseTrainer: React.FC = () => {
       accuracy,
       wpm: scoredWpm,
       mode: 'batch',
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      transmission: targetSequence,
+      userTyped: userInput,
+      results
     };
     
     const newStats = [...stats, newStat];
@@ -639,10 +803,21 @@ export const MorseTrainer: React.FC = () => {
     }
 
     let correct = 0;
-    for (let i = 0; i < target.length; i++) {
-      if (target[i] === userTypedNoSpaces[i]?.toUpperCase()) {
+    const results: Array<{ char: string; typed: string; isCorrect: boolean }> = [];
+    const maxLen = Math.max(target.length, userTypedNoSpaces.length);
+
+    for (let i = 0; i < maxLen; i++) {
+      const targetChar = target[i] || '';
+      const userChar = userTypedNoSpaces[i]?.toUpperCase() || '';
+      const isCorrect = targetChar === userChar;
+      if (i < target.length && isCorrect) {
         correct++;
       }
+      results.push({
+        char: targetChar,
+        typed: userChar,
+        isCorrect
+      });
     }
 
     const accuracy = target.length > 0 ? (correct / target.length) * 100 : 0;
@@ -663,7 +838,10 @@ export const MorseTrainer: React.FC = () => {
       accuracy,
       wpm: scoredWpm,
       mode: 'copy',
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      transmission: targetSequence,
+      userTyped: finalTyped.join(''),
+      results
     };
 
     const updatedStats = [...stats, newStat];
@@ -1738,7 +1916,7 @@ export const MorseTrainer: React.FC = () => {
               </div>
 
               {/* Table details list */}
-              <div className="flex flex-wrap items-center justify-between gap-4 pt-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-4 pt-1.5 pb-4">
                 <span className={`text-[10px] ${t.textMuted} uppercase tracking-wider ${t.fontMono}`}>
                   Displaying last {chartData.length} trial records. Hover nodes to audit parameters.
                 </span>
@@ -1748,6 +1926,151 @@ export const MorseTrainer: React.FC = () => {
                 >
                   Clear Plot History
                 </button>
+              </div>
+
+              {/* Detailed Recent Sessions Logs & Review Panel */}
+              <div className={`mt-6 pt-6 border-t ${t.borderBase} space-y-4`}>
+                <h4 className={`text-xs ${t.fontHeader} font-bold ${t.textPrimary} uppercase tracking-wider flex items-center gap-2`}>
+                  <span className="material-symbols-outlined text-sm text-amber-500">history_edu</span>
+                  Operator Session Log Book
+                </h4>
+                
+                <div className="overflow-x-auto rounded-lg border border-[#3b3426] bg-black/30">
+                  <table className={`w-full text-left text-xs ${t.fontMono} ${t.textSecondary} min-w-[500px]`}>
+                    <thead>
+                      <tr className="border-b border-[#3b3426] bg-black/40 text-[10px] uppercase tracking-wider text-amber-500/80">
+                        <th className="py-2.5 px-3">Run</th>
+                        <th className="py-2.5 px-3">Timestamp</th>
+                        <th className="py-2.5 px-3">Mode</th>
+                        <th className="py-2.5 px-3">Method / Lvl</th>
+                        <th className="py-2.5 px-3">WPM</th>
+                        <th className="py-2.5 px-3">Accuracy</th>
+                        <th className="py-2.5 px-3 text-right">Review</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#3b3426]/50">
+                      {[...stats].reverse().map((stat, revIdx) => {
+                        const originalIdx = stats.length - 1 - revIdx;
+                        const isSelected = selectedReviewIndex === originalIdx;
+                        return (
+                          <tr key={stat.timestamp || originalIdx} className={`hover:bg-amber-500/5 transition-colors ${isSelected ? 'bg-amber-500/10' : ''}`}>
+                            <td className="py-2 px-3 font-bold text-amber-500">#{originalIdx + 1}</td>
+                            <td className="py-2 px-3 text-[10px] text-gray-400">
+                              {new Date(stat.timestamp).toLocaleDateString()} {new Date(stat.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="py-2 px-3">
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                stat.mode === 'copy' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'
+                              }`}>
+                                {stat.mode === 'copy' ? 'Realtime' : 'Classic'}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 uppercase">{stat.method} Lvl {stat.level}</td>
+                            <td className="py-2 px-3">{stat.wpm} WPM</td>
+                            <td className={`py-2 px-3 font-bold ${stat.accuracy >= 90 ? 'text-green-400' : stat.accuracy >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
+                              {stat.accuracy.toFixed(1)}%
+                            </td>
+                            <td className="py-2 px-3 text-right">
+                              <button
+                                onClick={() => setSelectedReviewIndex(isSelected ? null : originalIdx)}
+                                className={`text-[10px] font-bold ${t.fontHeader} uppercase px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                                  isSelected 
+                                    ? 'bg-amber-500 text-black border-amber-500 font-extrabold'
+                                    : 'border-amber-500/40 text-amber-500 hover:bg-amber-500/20'
+                                }`}
+                              >
+                                {isSelected ? 'Close' : 'Review'}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {stats.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="py-6 text-center text-gray-500 italic">
+                            No training trials completed yet. Start practicing above!
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* EXPANDED DETAILED COMPARISON PANEL */}
+                {selectedReviewIndex !== null && stats[selectedReviewIndex] && (() => {
+                  const rStat = stats[selectedReviewIndex];
+                  return (
+                    <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/[0.02] space-y-4 animate-fadeIn">
+                      <div className="flex justify-between items-center pb-2 border-b border-[#3b3426]">
+                        <div>
+                          <h5 className="text-xs font-bold text-amber-500 uppercase tracking-wider font-mono">
+                            Audit Card: Run #{selectedReviewIndex + 1} ({rStat.mode === 'copy' ? 'Real-Time Copy' : 'Classic Batch'})
+                          </h5>
+                          <p className="text-[10px] text-gray-400 font-mono">
+                            Level {rStat.level} ({rStat.method.toUpperCase()}) — {rStat.wpm} WPM — {rStat.accuracy.toFixed(1)}% Accuracy
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setSelectedReviewIndex(null)}
+                          className="text-[10px] uppercase font-bold text-gray-400 hover:text-white font-mono"
+                        >
+                          ✕ Close Review
+                        </button>
+                      </div>
+
+                      {/* Display letter comparison scorecard */}
+                      {rStat.results && rStat.results.length > 0 ? (
+                        <div className="space-y-3">
+                          <span className="text-[10px] uppercase tracking-wider text-amber-500/80 font-bold font-mono block">
+                            Letter-by-Letter Analysis
+                          </span>
+                          
+                          <div className="flex flex-wrap gap-2">
+                            {rStat.results.map((item, idx) => (
+                              <div
+                                key={idx}
+                                className={`flex flex-col items-center justify-center w-10 h-12 rounded border font-mono transition-all ${
+                                  item.isCorrect
+                                    ? 'border-green-500/30 bg-green-500/10 text-green-400'
+                                    : item.char === ''
+                                    ? 'border-red-500/20 bg-red-500/5 text-red-400/60'
+                                    : 'border-red-500/30 bg-red-500/10 text-red-400'
+                                }`}
+                              >
+                                <span className="text-xs font-bold">{item.char || '—'}</span>
+                                <span className={`text-[10px] border-t w-full text-center border-current/20 ${item.isCorrect ? 'text-green-500' : 'text-red-400 line-through'}`}>
+                                  {item.typed || '—'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-[11px] italic text-gray-500 font-mono">
+                          No letter-by-letter metrics available for this legacy record.
+                        </div>
+                      )}
+
+                      {/* Display overall text comparisons */}
+                      {rStat.transmission && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-[#3b3426]/60 font-mono text-xs">
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-gray-400 uppercase">Target Transmission:</span>
+                            <div className="p-2.5 rounded bg-black/40 border border-[#3b3426] text-white break-all tracking-widest font-bold">
+                              {rStat.transmission}
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-gray-400 uppercase">Your Input Transcript:</span>
+                            <div className="p-2.5 rounded bg-black/40 border border-[#3b3426] text-white break-all tracking-widest font-bold">
+                              {rStat.userTyped || '—'}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
             </div>

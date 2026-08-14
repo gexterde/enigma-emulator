@@ -414,6 +414,12 @@ export default function App() {
           isMobileOpen={isMenuOpen}
           onCloseMobile={() => setIsMenuOpen(false)}
           config={config}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenShortcuts={() => setIsShortcutsOpen(true)}
+          onOpenInfo={() => setIsInfoOpen(true)}
+          onOpenShare={() => setIsShareOpen(true)}
+          onOpenAdmin={() => setIsAdminOpen(true)}
+          isAdmin={!!user?.isAdmin}
         />
 
         {/* Main View Area */}

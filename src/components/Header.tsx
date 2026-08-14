@@ -42,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <span className={`${t.fontRotor} tracking-widest uppercase text-lg md:text-2xl truncate`}>
+        <span className={`${t.fontRotor} tracking-widest uppercase text-base sm:text-lg md:text-2xl truncate`}>
           Enigma Emulator
         </span>
       </div>
@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
         <button
           onClick={onOpenShortcuts}
-          className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
+          className={`w-11 h-11 hidden md:flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
           title="Keyboard Shortcuts (F9 / ?)"
           aria-label="Keyboard Shortcuts"
         >
@@ -81,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
         <button
           onClick={onOpenSettings}
-          className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
+          className={`w-11 h-11 hidden md:flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
           title="Settings (^S)"
           aria-label="Settings"
         >
@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
         {user?.isAdmin && (
           <button
             onClick={onOpenAdmin}
-            className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
+            className={`w-11 h-11 hidden md:flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
             title="Database Admin"
             aria-label="Admin"
           >
@@ -99,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
         <button
           onClick={onOpenInfo}
-          className={`w-11 h-11 flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
+          className={`w-11 h-11 hidden md:flex items-center justify-center ${t.textMuted} hover:bg-black/5 hover:${t.textAccent} transition-colors rounded-full transform active:scale-95`}
           title="Historical Information (F7 / ^H)"
           aria-label="Info"
         >
