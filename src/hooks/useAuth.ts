@@ -10,7 +10,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/auth/me')
+    fetch('/api/auth/me', { credentials: 'include' })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data?.user) {
@@ -25,6 +25,7 @@ export function useAuth() {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, password })
     });
     if (!res.ok) {
@@ -39,6 +40,7 @@ export function useAuth() {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, password })
     });
     
@@ -47,12 +49,12 @@ export function useAuth() {
       throw new Error(error || 'Registration failed');
     }
     
-    // Auto-login after register
-    await login(email, password);
+    const data = await res.json();
+    setUser(data.user);
   };
 
   const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     setUser(null);
   };
 

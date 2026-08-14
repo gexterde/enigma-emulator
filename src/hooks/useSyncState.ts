@@ -21,7 +21,7 @@ export function useSyncState() {
     if (!user) return;
 
     try {
-      const res = await fetch('/api/user/state');
+      const res = await fetch('/api/user/state', { credentials: 'include' });
       if (!res.ok) return;
       
       const state = await res.json();
@@ -62,6 +62,7 @@ export function useSyncState() {
       await fetch('/api/user/state', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(state)
       });
     } catch (e) {
