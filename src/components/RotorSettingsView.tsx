@@ -10,6 +10,7 @@ import {
   ROTOR_SPECS
 } from '../lib/enigmaEngine';
 import { playRotorClickSound } from '../lib/audio';
+import { CodebookQuickModal } from './CodebookQuickModal';
 
 interface RotorSettingsViewProps {
   config: EnigmaConfig;
@@ -27,6 +28,7 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
   // Local editable draft state initialized from props
   const [draftConfig, setDraftConfig] = useState<EnigmaConfig>(JSON.parse(JSON.stringify(config)));
   const [showAppliedToast, setShowAppliedToast] = useState(false);
+  const [isCodebookQuickModalOpen, setIsCodebookQuickModalOpen] = useState(false);
 
   // Ringstellung display format state ('number' | 'letter')
   const [ringFormat, setRingFormat] = useState<'number' | 'letter'>(() => {
@@ -617,6 +619,15 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
               <span className="material-symbols-outlined text-[12px]">shuffle</span>
               <span>Randomize All</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setIsCodebookQuickModalOpen(true)}
+              className={`text-[11px] ${t.fontHeader} ${t.buttonPrimary} px-2.5 py-1 rounded transition-colors cursor-pointer flex items-center gap-1 font-bold border ${t.borderBase}`}
+              title="Open Quick Codebook Loader"
+            >
+              <span className="material-symbols-outlined text-[12px] text-[#ebc238]">menu_book</span>
+              <span>Quick Codebook</span>
+            </button>
           </div>
         </div>
 
@@ -930,17 +941,42 @@ export const RotorSettingsView: React.FC<RotorSettingsViewProps> = ({
             <h3 className={`${t.fontHeader} ${t.textPrimary}`}>Apply Rotor Configuration</h3>
             <p className={`text-xs ${t.textMuted}`}>Updates scrambler wiring, rings, and starting positions across the machine state.</p>
           </div>
-          <button
-            onClick={handleApply}
-            className={`w-full sm:w-auto min-w-[200px] min-h-[48px] py-3 px-6 rounded transition-all ${t.fontHeader} font-bold text-base flex items-center justify-center gap-2 group cursor-pointer ${t.applyButton}`}
-          >
-            <span className="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500">
-              memory
-            </span>
-            Apply Settings
-          </button>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              onClick={() => setIsCodebookQuickModalOpen(true)}
+              className={`py-3 px-4 rounded transition-all ${t.fontHeader} font-bold text-sm flex items-center justify-center gap-2 cursor-pointer ${t.buttonPrimary} border ${t.borderBase}`}
+              title="Open Quick Codebook Loader"
+            >
+              <span className="material-symbols-outlined text-base text-[#ebc238]">
+                menu_book
+              </span>
+              Codebook
+            </button>
+            <button
+              onClick={handleApply}
+              className={`flex-1 sm:flex-none min-w-[180px] min-h-[48px] py-3 px-6 rounded transition-all ${t.fontHeader} font-bold text-base flex items-center justify-center gap-2 group cursor-pointer ${t.applyButton}`}
+            >
+              <span className="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500">
+                memory
+              </span>
+              Apply Settings
+            </button>
+          </div>
         </div>
       </div>
+
+      <CodebookQuickModal
+        isOpen={isCodebookQuickModalOpen}
+        onClose={() => setIsCodebookQuickModalOpen(false)}
+        onUpdateConfig={(newConfig) => {
+          setDraftConfig(newConfig);
+          onApplyConfig(newConfig);
+          setShowAppliedToast(true);
+          setTimeout(() => setShowAppliedToast(false), 4000);
+        }}
+        soundEnabled={soundEnabled}
+        ringFormat={ringFormat}
+      />
     </div>
   );
 };

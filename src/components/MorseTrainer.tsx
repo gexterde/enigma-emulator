@@ -699,12 +699,12 @@ export const MorseTrainer: React.FC = () => {
   }, [stats]);
 
   const operatorRank = useMemo(() => {
-    if (maxWpmScored === 0) return { title: "Station X Trainee", icon: "badge", desc: "Report to Bletchley Park. Complete your first practice transmission to receive your assignment." };
+    if (maxWpmScored === 0) return { title: "Station X Trainee", icon: "badge", desc: "Report to Operations HQ. Complete your first practice transmission to receive your assignment." };
     if (maxWpmScored < 10) return { title: "Novice Telegrapher (Straight Key)", icon: "keyboard", desc: "Building core hand-ear muscle memory. Operating a classic brass straight key." };
     if (maxWpmScored < 15) return { title: "Radio Transcriber (Cootie Key)", icon: "radio", desc: "Decoding tactical battlefield communications. Swiping letters on a double-speed keyer." };
     if (maxWpmScored < 22) return { title: "Station X Officer (Semi-Auto Bug)", icon: "campaign", desc: "Wartime intelligence officer decoding intercepted ciphers under stressful noise." };
     if (maxWpmScored < 30) return { title: "Cipher Commander (Electronic Keyer)", icon: "bolt", desc: "Elite dispatch leader overseeing critical cryptographic networks and high-priority cables." };
-    return { title: "Bletchley Codebreaker (High-Speed Operator)", icon: "military_tech", desc: "Legendary decrypter. Capable of flawless copy speeds matching automated wartime transmitters." };
+    return { title: "Master Codebreaker (High-Speed Operator)", icon: "military_tech", desc: "Legendary decrypter. Capable of flawless copy speeds matching automated wartime transmitters." };
   }, [maxWpmScored]);
 
   // MATH FOR HISTORY GRAPH
@@ -803,7 +803,7 @@ export const MorseTrainer: React.FC = () => {
         <div>
           <h1 className={`text-ui-header ${t.fontHeader} font-bold ${t.textSecondary} text-2xl flex items-center gap-2`}>
             <span className={`material-symbols-outlined text-2xl ${t.textAccent}`}>school</span>
-            Bletchley Morse Training Desk
+            Tactical Morse Training Desk
           </h1>
           <p className={`text-ui-body ${t.fontBody} ${t.textMuted} text-xs`}>
             Build auditory telegraph muscle-memory. Perfect the dits and dahs required for wartime intelligence.
@@ -879,8 +879,10 @@ export const MorseTrainer: React.FC = () => {
                   <span>Lesson Characters Level</span>
                   <div className="flex items-center gap-1.5">
                     {bestAccuracy !== null && (
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                        bestAccuracy >= 90 ? 'bg-green-950/40 text-green-400' : 'bg-red-950/40 text-red-400'
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                        bestAccuracy >= 90 
+                          ? `${t.successBadge || 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'}`
+                          : `${t.dangerBadge || 'bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300 border-red-300 dark:border-red-800'}`
                       }`}>
                         Best: {bestAccuracy.toFixed(0)}%
                       </span>
@@ -919,9 +921,9 @@ export const MorseTrainer: React.FC = () => {
               </div>
 
               {/* Telegraph Signal Parameters Desk */}
-              <div className="space-y-4 pt-2 border-t border-zinc-800/60">
-                <div className="text-[10px] uppercase font-mono text-zinc-400 font-bold flex items-center gap-1.5 pb-1">
-                  <span className="material-symbols-outlined text-xs text-amber-500 animate-spin-slow">tune</span>
+              <div className={`space-y-4 pt-2 border-t ${t.borderBase}`}>
+                <div className={`text-[10px] uppercase font-mono ${t.textSecondary} font-bold flex items-center gap-1.5 pb-1`}>
+                  <span className={`material-symbols-outlined text-xs ${t.textSecondary} animate-spin-slow`}>tune</span>
                   <span>Telegraph Signal Parameters Desk:</span>
                 </div>
 
@@ -929,8 +931,8 @@ export const MorseTrainer: React.FC = () => {
                   {/* Speed */}
                   <div className="space-y-1">
                     <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
-                      <span className="font-bold text-zinc-300">Speed:</span>
-                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{charWpm} WpM</span>
+                      <span className={`font-bold ${t.textPrimary}`}>Speed:</span>
+                      <span className={`${t.textPrimary} ${t.panelInner} px-1.5 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{charWpm} WpM</span>
                     </div>
                     <input 
                       type="range" 
@@ -949,8 +951,8 @@ export const MorseTrainer: React.FC = () => {
                   {/* eff. Speed */}
                   <div className="space-y-1">
                     <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
-                      <span className="font-bold text-zinc-300">eff. Speed:</span>
-                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{wpm} WpM</span>
+                      <span className={`font-bold ${t.textPrimary}`}>eff. Speed:</span>
+                      <span className={`${t.textPrimary} ${t.panelInner} px-1.5 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{wpm} WpM</span>
                     </div>
                     <input 
                       type="range" 
@@ -971,21 +973,21 @@ export const MorseTrainer: React.FC = () => {
                   {/* Word space */}
                   <div className="space-y-1.5">
                     <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
-                      <span className="font-bold text-zinc-300">Word space:</span>
-                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>
+                      <span className={`font-bold ${t.textPrimary}`}>Word space:</span>
+                      <span className={`${t.textPrimary} ${t.panelInner} px-1.5 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>
                         {wordSpaceAuto ? 'Auto / Standard' : `${wordSpaceMultiplier.toFixed(1)} x`}
                       </span>
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-zinc-300 select-none bg-zinc-900/40 px-2 py-0.5 rounded border border-zinc-800/50 hover:border-zinc-700/50">
+                      <label className={`flex items-center gap-1.5 cursor-pointer text-[10px] ${t.textPrimary} select-none ${t.panelInner} px-2 py-1 rounded border ${t.borderBase} hover:opacity-90`}>
                         <input
                           type="checkbox"
                           checked={wordSpaceAuto}
                           onChange={(e) => setWordSpaceAuto(e.target.checked)}
-                          className="accent-amber-500 rounded text-amber-500 bg-zinc-900 w-3.5 h-3.5 cursor-pointer"
+                          className={`accent-emerald-600 dark:accent-amber-500 rounded ${t.panelBg} w-3.5 h-3.5 cursor-pointer`}
                         />
-                        <span className="font-bold text-amber-500">Standard / Auto</span>
+                        <span className={`font-bold ${t.textPrimary}`}>Standard / Auto</span>
                       </label>
                     </div>
 
@@ -1000,10 +1002,10 @@ export const MorseTrainer: React.FC = () => {
                         className={`w-full h-1 ${t.panelInner} rounded-lg cursor-pointer`}
                       />
                     ) : (
-                      <div className="h-1 bg-zinc-800/20 rounded-lg w-full" />
+                      <div className={`h-1 ${t.panelInner} rounded-lg w-full`} />
                     )}
 
-                    <div className="text-[8.5px] text-zinc-400 leading-tight font-sans">
+                    <div className={`text-[9px] ${t.textMuted} leading-tight font-sans`}>
                       Standard / Auto setting means the program uses precise ratios according to the official international Morse standard, where pauses automatically scale with the set transmission speed.
                     </div>
                   </div>
@@ -1011,8 +1013,8 @@ export const MorseTrainer: React.FC = () => {
                   {/* Frequency */}
                   <div className="space-y-1">
                     <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
-                      <span className="font-bold text-zinc-300">Frequency:</span>
-                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{frequency} Hz</span>
+                      <span className={`font-bold ${t.textPrimary}`}>Frequency:</span>
+                      <span className={`${t.textPrimary} ${t.panelInner} px-1.5 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{frequency} Hz</span>
                     </div>
                     <input 
                       type="range" 
@@ -1030,8 +1032,8 @@ export const MorseTrainer: React.FC = () => {
                   {/* Edge */}
                   <div className="space-y-1">
                     <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
-                      <span className="font-bold text-zinc-300">Edge:</span>
-                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{edgeMs}</span>
+                      <span className={`font-bold ${t.textPrimary}`}>Edge:</span>
+                      <span className={`${t.textPrimary} ${t.panelInner} px-1.5 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{edgeMs}</span>
                     </div>
                     <input 
                       type="range" 
@@ -1047,8 +1049,8 @@ export const MorseTrainer: React.FC = () => {
                   {/* Volume */}
                   <div className="space-y-1">
                     <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
-                      <span className="font-bold text-zinc-300">Volume:</span>
-                      <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{Math.round(volume * 100)} %</span>
+                      <span className={`font-bold ${t.textPrimary}`}>Volume:</span>
+                      <span className={`${t.textPrimary} ${t.panelInner} px-1.5 py-0.5 rounded border ${t.borderBase} font-mono font-bold`}>{Math.round(volume * 100)} %</span>
                     </div>
                     <input 
                       type="range" 
@@ -1065,8 +1067,8 @@ export const MorseTrainer: React.FC = () => {
                 {/* Radio static */}
                 <div className="space-y-1">
                   <div className={`flex justify-between items-center text-[10px] ${t.fontMono} ${t.textMuted}`}>
-                    <span>Atmospheric Static Noise</span>
-                    <span className={`${t.textAccent} bg-black/40 px-1 py-0.5 rounded border ${t.borderBase} font-mono`}>{Math.round(noiseLevel * 100)}%</span>
+                    <span className={`font-bold ${t.textPrimary}`}>Atmospheric Static Noise</span>
+                    <span className={`${t.textPrimary} ${t.panelInner} px-1.5 py-0.5 rounded border ${t.borderBase} font-mono`}>{Math.round(noiseLevel * 100)}%</span>
                   </div>
                   <input 
                     type="range" 
@@ -1377,7 +1379,7 @@ export const MorseTrainer: React.FC = () => {
                               {showHints || isPassed ? char : '?'}
                             </span>
                             
-                            <span className="text-[8px] font-mono tracking-tighter block leading-none text-amber-500 opacity-60 mt-0.5">
+                            <span className={`text-[8px] font-mono tracking-tighter block leading-none ${t.textSecondary} font-semibold mt-0.5`}>
                               {MORSE_CODE[char.toUpperCase()]}
                             </span>
 
@@ -1395,12 +1397,12 @@ export const MorseTrainer: React.FC = () => {
                   {isMobileKeyboardOpen && (
                     <div 
                       onClick={() => mobileInputRef.current?.focus()}
-                      className={`${t.statusHighlight} border border-amber-500/40 rounded-lg p-2.5 flex items-center justify-between gap-2.5 cursor-pointer my-1.5`}
+                      className={`${t.statusHighlight} border ${t.borderAccent} rounded-lg p-2.5 flex items-center justify-between gap-2.5 cursor-pointer my-1.5`}
                     >
                       <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${t.bgAccentSolid} shrink-0`} />
                         <div className="text-[11px] font-mono leading-tight">
-                          <span className="font-bold text-amber-500 block">Mobile Keyboard Engaged</span>
+                          <span className={`font-bold ${t.textPrimary} block`}>Mobile Keyboard Engaged</span>
                           <span className={`${t.textMuted}`}>Tap here to refocus input if keyboard closes.</span>
                         </div>
                       </div>
@@ -1457,44 +1459,54 @@ export const MorseTrainer: React.FC = () => {
 
           {/* SHARED PERFORMANCE RESULTS FEEDBACK SCREEN */}
           {result.show && (
-            <div className={`p-4 sm:p-5 rounded border-2 animate-fadeIn ${
-              result.accuracy >= 90 ? 'bg-green-950/25 border-green-900/60 text-green-300' : 'bg-red-950/25 border-red-900/60 text-red-300'
+            <div className={`p-4 sm:p-5 rounded-lg border-2 animate-fadeIn ${
+              result.accuracy >= 90
+                ? `${t.successBadge} ${t.textPrimary}`
+                : `${t.dangerBadge} ${t.textPrimary}`
             }`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-lg">
+                  <span className={`material-symbols-outlined text-xl ${result.accuracy >= 90 ? (t.textSuccess || 'text-emerald-500') : (t.textDanger || 'text-red-500')}`}>
                     {result.accuracy >= 90 ? 'check_circle' : 'warning'}
                   </span>
-                  <span className={`${t.fontHeader} font-bold text-xs uppercase tracking-wider`}>Audit Verification Log</span>
+                  <span className={`${t.fontHeader} font-bold text-xs uppercase tracking-wider ${t.textSecondary}`}>
+                    Audit Verification Log
+                  </span>
                 </div>
                 <span className={`text-2xl font-bold font-mono ${
-                  result.accuracy >= 90 ? 'text-green-400' : 'text-red-400'
+                  result.accuracy >= 90 ? (t.textSuccess || 'text-emerald-500') : (t.textDanger || 'text-red-500')
                 }`}>
                   {result.accuracy.toFixed(1)}% Accuracy
                 </span>
               </div>
               
               {result.accuracy >= 90 ? (
-                <p className={`text-xs text-green-400 font-bold ${t.fontBody}`}>
+                <p className={`text-xs font-bold ${t.fontBody} ${t.textSuccess || 'text-emerald-600'}`}>
                   Excellent transcribing, Operator! You reached standard operational capability. Level Up initiated.
                 </p>
               ) : (
-                <p className={`text-xs text-red-400 font-bold ${t.fontBody}`}>
+                <p className={`text-xs font-bold ${t.fontBody} ${t.textDanger || 'text-red-600'}`}>
                   Accuracy dropped below the 90% required. Revise character codes and retry.
                 </p>
               )}
 
               {/* Comparative character-by-character alignment grid */}
-              <div className="space-y-3 mt-3 pt-3 border-t border-dashed border-zinc-700/50">
+              <div className={`space-y-3 mt-3 pt-3 border-t border-dashed ${t.borderBase}`}>
                 {/* Original transmitted sequence */}
                 <div className={`text-[11px] font-mono p-2.5 ${t.panelBg} border ${t.borderBase} rounded leading-normal`}>
-                  <span className="text-amber-500 font-bold block mb-1 uppercase tracking-tight text-[10px]">Original Transmitted Message:</span>
-                  <span className={`${t.textPrimary} tracking-widest text-sm break-all font-semibold uppercase`}>{targetSequence}</span>
+                  <span className={`${t.textSecondary} font-bold block mb-1 uppercase tracking-wider text-[10px]`}>
+                    Original Transmitted Message:
+                  </span>
+                  <span className={`${t.textPrimary} tracking-widest text-sm break-all font-bold uppercase`}>
+                    {targetSequence}
+                  </span>
                 </div>
 
                 {/* Grid Comparison */}
                 <div className="space-y-1.5">
-                  <span className="text-amber-500 font-bold block uppercase tracking-tight text-[10px]">Comparative Breakdown (Transmitted vs Operator Entry):</span>
+                  <span className={`${t.textSecondary} font-bold block uppercase tracking-wider text-[10px]`}>
+                    Comparative Breakdown (Transmitted vs Operator Entry):
+                  </span>
                   <div className={`flex flex-wrap gap-1.5 p-3 ${t.panelBg} border ${t.borderBase} rounded max-h-40 overflow-y-auto`}>
                     {getComparisonData().map((item, idx) => {
                       const needsGroupGap = (idx + 1) % groupLength === 0 && idx < targetSequence.replace(/\s/g, '').length - 1;
@@ -1504,28 +1516,34 @@ export const MorseTrainer: React.FC = () => {
                           <div 
                             className={`flex flex-col items-center justify-center w-8 h-12 rounded border text-xs font-mono font-bold transition-all ${
                               item.isCorrect
-                                ? 'bg-green-950/40 text-green-400 border-green-800/60'
-                                : 'bg-red-950/40 text-red-400 border-red-800/60'
+                                ? `${t.successBadge}`
+                                : `${t.dangerBadge}`
                             }`}
                             title={`Char #${idx + 1}: Transmitted '${item.targetChar}', Entered '${item.userChar || 'None'}'`}
                           >
-                            <span className="text-[8px] opacity-65 leading-none">TX</span>
-                            <span className="text-sm font-semibold">{item.targetChar}</span>
-                            <div className="h-[1px] w-4 bg-zinc-700/50 my-0.5" />
-                            <span className="text-xs leading-none text-amber-500 font-black">{item.userChar || '_'}</span>
+                            <span className={`text-[8px] opacity-75 leading-none ${t.textMuted}`}>TX</span>
+                            <span className={`text-sm font-bold ${t.textPrimary}`}>{item.targetChar}</span>
+                            <div className={`h-[1px] w-4 ${t.borderBase} border-t my-0.5`} />
+                            <span className={`text-xs leading-none font-extrabold ${
+                              item.isCorrect
+                                ? 'text-emerald-700 dark:text-emerald-400'
+                                : 'text-red-700 dark:text-red-400'
+                            }`}>{item.userChar || '_'}</span>
                           </div>
                           {needsGroupGap && (
                             <div className="w-2.5 flex items-center justify-center shrink-0 self-center">
-                              <span className="text-[14px] text-zinc-600 font-bold">/</span>
+                              <span className={`text-[14px] ${t.textMuted} font-bold`}>/</span>
                             </div>
                           )}
                         </React.Fragment>
                       );
                     })}
                   </div>
-                  <div className="flex items-center gap-1.5 text-[9px] font-mono text-zinc-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Correct Entry
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 ml-2" /> Discrepancy (TX is transmitted, bottom is your entry)
+                  <div className={`flex items-center gap-1.5 text-[10px] font-mono ${t.textMuted}`}>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span>Correct Entry</span>
+                    <span className="w-2 h-2 rounded-full bg-red-500 ml-3 shrink-0" />
+                    <span>Discrepancy (TX is transmitted, bottom is your entry)</span>
                   </div>
                 </div>
               </div>

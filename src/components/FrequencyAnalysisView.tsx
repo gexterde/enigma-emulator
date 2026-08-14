@@ -539,11 +539,11 @@ export const FrequencyAnalysisView: React.FC<FrequencyAnalysisViewProps> = ({
                   <div className={`p-2.5 ${t.successBadge} border rounded flex items-start gap-2 text-[10px] ${t.fontMono} leading-relaxed`}>
                     <span className="material-symbols-outlined text-xs shrink-0 mt-0.5">verified_user</span>
                     <span>
-                      <strong>Bletchley Park Audit: Perfect Derangement verified!</strong> Zero letters encrypt to themselves. This strict constraint is an inherent mathematical property of the Enigma reflector circuit.
+                      <strong>Audit: Perfect Derangement verified!</strong> Zero letters encrypt to themselves. This strict constraint is an inherent mathematical property of the Enigma reflector circuit.
                     </span>
                   </div>
                   <p className={`text-[10px] ${t.textMuted} leading-relaxed`}>
-                    <strong>The Cribbing Strategy:</strong> Because Enigma could never encrypt a letter to itself (e.g. "E" to "E"), codebreakers at Bletchley Park used paper strips to slide guessed plaintexts (like "WETTERVORHERSAGE" - weather forecast) over ciphertext blocks. If any letter matched, they knew that alignment was invalid. When no letters matched, they had a potential 'crib' alignment, saving weeks of rotor configuration search.
+                    <strong>The Cribbing Strategy:</strong> Because Enigma could never encrypt a letter to itself (e.g. "E" to "E"), Allied codebreakers used paper strips to slide guessed plaintexts (like "WETTERVORHERSAGE" - weather forecast) over ciphertext blocks. If any letter matched, they knew that alignment was invalid. When no letters matched, they had a potential 'crib' alignment, saving weeks of rotor configuration search.
                   </p>
                 </div>
               ) : (

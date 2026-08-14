@@ -91,23 +91,19 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
     });
 
     const isM4 = !!entry.fourthRotor;
-    let gs0: number;
-    let gs1: number;
-    let gs2: number;
-    let gs3: number;
+    const gs = (entry.grundstellung && entry.grundstellung.length >= 3)
+      ? entry.grundstellung
+      : [
+          ((entry.day * 5 + 3) % 26) + 1,
+          ((entry.day * 9 + 11) % 26) + 1,
+          ((entry.day * 13 + 17) % 26) + 1,
+          ((entry.day * 17 + 23) % 26) + 1
+        ];
 
-    if (entry.grundstellung && entry.grundstellung.length >= 3) {
-      gs0 = (entry.grundstellung[0] || 1) - 1;
-      gs1 = (entry.grundstellung[1] || 1) - 1;
-      gs2 = (entry.grundstellung[2] || 1) - 1;
-      gs3 = (entry.grundstellung[3] || 1) - 1;
-    } else {
-      // Randomize starting Grundstellung when not explicitly specified in key sheet
-      gs0 = Math.floor(Math.random() * 26);
-      gs1 = Math.floor(Math.random() * 26);
-      gs2 = Math.floor(Math.random() * 26);
-      gs3 = Math.floor(Math.random() * 26);
-    }
+    const gs0 = (gs[0] || 1) - 1;
+    const gs1 = (gs[1] || 1) - 1;
+    const gs2 = (gs[2] || 1) - 1;
+    const gs3 = (gs[3] || 1) - 1;
 
     const newEnigmaConfig: EnigmaConfig = {
       leftRotor: {
@@ -260,22 +256,28 @@ export const CodebookQuickModal: React.FC<CodebookQuickModalProps> = ({
                   </span>
                 </div>
 
-                {currentSheet?.isHistorical ? (
-                  <div className={`flex items-center justify-between ${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
-                    <span className={`text-[11px] ${t.textMuted} ${t.fontMono}`}>Grundstellung (Start):</span>
-                    <span className={`font-bold text-[#83715d] ${t.fontMono} flex items-center gap-1`}>
-                      <span className="material-symbols-outlined text-xs text-[#ebc238]">lock</span>
-                      *** *** *** (Secret / Encrypted)
-                    </span>
-                  </div>
-                ) : currentEntry.grundstellung && currentEntry.grundstellung.length > 0 && (
-                  <div className={`flex items-center justify-between ${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
-                    <span className={`text-[11px] ${t.textMuted} ${t.fontMono}`}>Grundstellung (Start):</span>
-                    <span className={`font-bold ${t.textAccent} ${t.fontMono}`}>
-                      {currentEntry.grundstellung.slice(0, currentEntry.fourthRotor ? 4 : 3).map(g => formatRotorRing(g, ringFormat)).join(' - ')}
-                    </span>
-                  </div>
-                )}
+                {(() => {
+                  const gs = currentEntry.grundstellung && currentEntry.grundstellung.length > 0
+                    ? currentEntry.grundstellung
+                    : [
+                        ((currentEntry.day * 5 + 3) % 26) + 1,
+                        ((currentEntry.day * 9 + 11) % 26) + 1,
+                        ((currentEntry.day * 13 + 17) % 26) + 1
+                      ];
+                  const formattedGs = gs
+                    .slice(0, currentEntry.fourthRotor ? 4 : 3)
+                    .map(g => formatRotorRing(g, ringFormat))
+                    .join(' - ');
+
+                  return (
+                    <div className={`flex items-center justify-between ${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
+                      <span className={`text-[11px] ${t.textMuted} ${t.fontMono}`}>Grundstellung (Start):</span>
+                      <span className={`font-bold ${t.textAccent} ${t.fontMono}`}>
+                        {formattedGs}
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 <div className={`${t.inputBgAlt} p-1.5 rounded border ${t.borderBase}`}>
                   <span className={`text-[11px] ${t.textMuted} ${t.fontMono} block mb-1`}>

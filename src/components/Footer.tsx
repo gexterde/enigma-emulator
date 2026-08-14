@@ -35,7 +35,7 @@ export const Footer: React.FC<FooterProps> = ({
   return (
     <footer className={`border-t ${t.borderBase} ${t.headerBg} flex flex-col lg:flex-row justify-between items-center px-4 md:px-8 py-3 w-full text-[10px] shrink-0 z-50 gap-3 lg:gap-0`}>
       <span className={`${t.textMuted} ${t.fontMono} text-center lg:text-left`}>
-        © 1943 Bletchley Park Systems. For instructional use only.
+        © 1943 For instructional use only.
       </span>
 
       {/* Simulated Battery Level Indicator & Recharge Control */}

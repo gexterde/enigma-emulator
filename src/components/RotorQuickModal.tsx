@@ -4,6 +4,7 @@ import { useTheme, getTheme } from '../lib/theme';
 import { EnigmaConfig, RotorType, ReflectorType } from '../types';
 import { formatRotorPos, formatRotorRing, ROTOR_SPECS } from '../lib/enigmaEngine';
 import { playRotorClickSound } from '../lib/audio';
+import { CodebookQuickModal } from './CodebookQuickModal';
 
 interface RotorQuickModalProps {
   isOpen: boolean;
@@ -24,6 +25,8 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
+  const [isCodebookQuickModalOpen, setIsCodebookQuickModalOpen] = useState(false);
+
   if (!isOpen) return null;
 
   const rotorOptions: RotorType[] = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
@@ -247,13 +250,24 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
               <p className={`text-[11px] ${t.textMuted}`}>Adjust rotor order, ring settings (Ringstellung), and initial positions</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className={`w-8 h-8 flex items-center justify-center ${t.textMuted} hover:${t.textAccent} ${t.mutedBg} rounded-full border ${t.borderBase} transition-colors cursor-pointer`}
-            title="Close"
-          >
-            <span className="material-symbols-outlined text-sm">close</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsCodebookQuickModalOpen(true)}
+              className={`text-xs ${t.fontHeader} ${t.buttonPrimary} px-2.5 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-1.5 font-bold border ${t.borderBase}`}
+              title="Open Quick Codebook Loader"
+            >
+              <span className="material-symbols-outlined text-sm text-[#ebc238]">menu_book</span>
+              <span className="hidden sm:inline">Codebook</span>
+            </button>
+            <button
+              onClick={onClose}
+              className={`w-8 h-8 flex items-center justify-center ${t.textMuted} hover:${t.textAccent} ${t.mutedBg} rounded-full border ${t.borderBase} transition-colors cursor-pointer`}
+              title="Close"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>
+            </button>
+          </div>
         </div>
 
         {/* Reflector & Machine Mode */}
@@ -707,7 +721,16 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
 
         {/* Footer buttons */}
         <div className={`flex items-center justify-between pt-3 border-t ${t.borderBase}`}>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsCodebookQuickModalOpen(true)}
+              className={`px-3 py-1.5 text-xs text-[#ebc238] hover:opacity-80 ${t.panelBg} rounded border border-[#ebc238]/40 cursor-pointer transition-colors flex items-center gap-1 font-bold`}
+              title="Open Quick Codebook Loader"
+            >
+              <span className="material-symbols-outlined text-xs">menu_book</span>
+              <span>Quick Codebook</span>
+            </button>
             <button
               type="button"
               onClick={handleResetPositions}
@@ -733,6 +756,17 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
           </button>
         </div>
       </div>
+
+      <CodebookQuickModal
+        isOpen={isCodebookQuickModalOpen}
+        onClose={() => setIsCodebookQuickModalOpen(false)}
+        onUpdateConfig={(newConfig) => {
+          onUpdateConfig(newConfig);
+          setIsCodebookQuickModalOpen(false);
+        }}
+        soundEnabled={soundEnabled}
+        ringFormat={ringFormat}
+      />
     </div>
   );
 };

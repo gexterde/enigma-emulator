@@ -286,7 +286,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         <p className={`text-[10px] ${t.textMuted} italic pt-2 border-t ${t.borderBase}`}>
-          Historical Note: Bletchley Park cryptanalysts including Alan Turing and Marian Rejewski exploited structural weaknesses in Enigma operation, pioneering modern computing with the electromechanical Bombe machine.
+          Historical Note: cryptanalysts including Alan Turing and Marian Rejewski exploited structural weaknesses in Enigma operation, pioneering modern computing with the electromechanical Bombe machine.
         </p>
       </div>
     </BaseModal>

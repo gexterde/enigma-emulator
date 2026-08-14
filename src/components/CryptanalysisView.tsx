@@ -1310,7 +1310,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
             Turing-Welchman Bombe Simulator
           </h1>
           <p className={`${t.textMuted} text-xs ${t.fontBody}`}>
-            Replicate Bletchley Park’s historical cryptanalysis techniques using a known plaintext fragment (Crib) slider and logical search.
+            Replicate historical cryptanalysis techniques using a known plaintext fragment (Crib) slider and logical search.
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
@@ -1340,7 +1340,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
             <div className={`absolute top-0 right-0 w-16 h-16 ${t.accentLightBg} transform rotate-45 translate-x-8 -translate-y-8 pointer-events-none`} />
             <h3 className={`text-ui-header ${t.fontHeader} ${t.textAccent} text-xs uppercase tracking-wider pb-1.5 border-b ${t.borderBase}/60 flex items-center gap-2`}>
               <span className="material-symbols-outlined text-xs">gavel</span>
-              Bletchley Park Protocol
+               Protocol
             </h3>
             <p className={`text-[11px] ${t.textMuted} leading-relaxed pt-2`}>
               The Turing-Welchman <strong>Bombe</strong> cracked keys not by trying millions of full decrypts, but by exploiting a critical design flaw: <strong>Enigma can never encrypt a letter to itself</strong>.
@@ -1712,7 +1712,7 @@ export const CryptanalysisView: React.FC<CryptanalysisViewProps> = ({
               {/* Warning/Info */}
               <div className={`p-2.5 ${t.panelInner} rounded border ${t.borderBase} text-[10px] ${t.textMuted} ${t.fontMono} leading-normal`}>
                 <span>
-                  Normally, Bletchley Park ran the Bombe assuming unsteckered loops (assuming most letters used in loops were unplugged) or by guessing plugboard stecker pairings subsequently.
+                  Normally, cryptanalysts ran the Bombe assuming unsteckered loops (assuming most letters used in loops were unplugged) or by guessing plugboard stecker pairings subsequently.
                 </span>
               </div>
             </div>
