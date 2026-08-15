@@ -140,28 +140,30 @@ export const KeyboardPanel: React.FC<KeyboardPanelProps> = ({
   if (isCompact) {
     return (
       <div className={`${t.keyboardPanelBg} border ${t.borderBase} p-2 xs:p-3 sm:p-4 rounded-xl flex flex-col items-center w-full`}>
-        <div className={`w-full flex justify-between items-center mb-2 sm:mb-3 pb-1 border-b ${t.borderBase} px-1`}>
-          <span className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textSecondary} tracking-wider uppercase flex items-center gap-1.5 font-bold`}>
+        <div className={`w-full flex flex-nowrap justify-between items-center mb-2 sm:mb-3 pb-1 border-b ${t.borderBase} px-1 min-h-[32px]`}>
+          <span className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textSecondary} tracking-wider uppercase flex items-center gap-1 sm:gap-1.5 font-bold shrink-0 truncate max-w-[45%] sm:max-w-none`}>
             <span className={`material-symbols-outlined text-xs sm:text-sm ${t.textSecondary}`}>keyboard</span>
-            TASTATUR (KEYBOARD)
+            <span className="hidden xs:inline">TASTATUR (KEYBOARD)</span>
+            <span className="xs:hidden">TASTATUR</span>
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             {onOpenMobileKeyboard && (
               <button
                 type="button"
                 onClick={onOpenMobileKeyboard}
-                className={`text-[9px] sm:text-[10px] ${t.fontMono} px-2 py-0.5 rounded border transition-all flex items-center gap-1 font-bold shadow-sm cursor-pointer ${t.buttonMuted}`}
+                className={`text-[9px] sm:text-[10px] ${t.fontMono} px-1.5 sm:px-2 py-0.5 rounded border transition-all flex items-center gap-1 font-bold shadow-sm cursor-pointer shrink-0 ${t.buttonMuted}`}
                 title="Open native mobile keyboard"
               >
-                <span className="material-symbols-outlined text-[12px]">smartphone</span>
-                <span>Mobile Keyboard</span>
+                <span className="material-symbols-outlined text-[11px] sm:text-[12px]">smartphone</span>
+                <span className="hidden sm:inline">Mobile Keyboard</span>
+                <span className="sm:hidden">Native</span>
               </button>
             )}
             {onToggleKeySize && (
               <button
                 type="button"
                 onClick={onToggleKeySize}
-                className={`text-[9px] sm:text-[10px] ${t.fontMono} px-1.5 py-0.5 rounded border transition-all flex items-center gap-0.5 cursor-pointer ${
+                className={`text-[9px] sm:text-[10px] ${t.fontMono} px-1.5 py-0.5 rounded border transition-all flex items-center gap-0.5 cursor-pointer shrink-0 ${
                   isLarge
                     ? `${t.buttonHighlight} font-bold shadow-sm`
                     : `${t.buttonPrimary}`
@@ -171,7 +173,8 @@ export const KeyboardPanel: React.FC<KeyboardPanelProps> = ({
                 <span className="material-symbols-outlined text-[11px]">
                   {isLarge ? 'zoom_out' : 'zoom_in'}
                 </span>
-                <span>{isLarge ? 'Large' : 'Normal'}</span>
+                <span className="hidden xs:inline">{isLarge ? 'Large' : 'Normal'}</span>
+                <span className="xs:hidden">{isLarge ? 'Lg' : 'Norm'}</span>
               </button>
             )}
           </div>
@@ -199,38 +202,41 @@ export const KeyboardPanel: React.FC<KeyboardPanelProps> = ({
 
   return (
     <div className={`${t.keyboardPanelBg} rounded-lg p-3 sm:p-4 md:p-6 flex flex-col items-center w-full`}>
-      <div className={`w-full flex justify-between items-center mb-3 sm:mb-4 pb-2 border-b ${t.borderBase}`}>
-        <span className={`${t.fontHeader} ${t.textPrimary} text-xs uppercase tracking-widest flex items-center gap-2`}>
+      <div className={`w-full flex flex-nowrap justify-between items-center mb-3 sm:mb-4 pb-2 border-b ${t.borderBase} min-h-[36px] sm:min-h-[40px]`}>
+        <span className={`${t.fontHeader} ${t.textPrimary} text-[11px] sm:text-xs uppercase tracking-wider sm:tracking-widest flex items-center gap-1.5 sm:gap-2 shrink-0 truncate max-w-[45%] sm:max-w-none`}>
           <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>keyboard</span>
-          Keyboard (Tastatur)
+          <span className="hidden xs:inline">Keyboard (Tastatur)</span>
+          <span className="xs:hidden">Keyboard</span>
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {onOpenMobileKeyboard && (
             <button
               type="button"
               onClick={onOpenMobileKeyboard}
-              className={`text-[10px] sm:text-xs ${t.fontMono} px-2.5 py-1 rounded border transition-all flex items-center gap-1 font-bold shadow-sm cursor-pointer ${t.buttonMuted}`}
+              className={`text-[9px] sm:text-[10px] md:text-xs ${t.fontMono} px-2 sm:px-2.5 py-0.5 sm:py-1 rounded border transition-all flex items-center gap-1 font-bold shadow-sm cursor-pointer shrink-0 ${t.buttonMuted}`}
               title="Open native mobile keyboard"
             >
-              <span className="material-symbols-outlined text-sm">smartphone</span>
-              <span>Mobile Keyboard</span>
+              <span className="material-symbols-outlined text-xs sm:text-sm">smartphone</span>
+              <span className="hidden sm:inline">Mobile Keyboard</span>
+              <span className="sm:hidden">Native</span>
             </button>
           )}
           {onToggleKeySize && (
             <button
               type="button"
               onClick={onToggleKeySize}
-              className={`text-[10px] ${t.fontMono} px-2 py-0.5 rounded border transition-all flex items-center gap-1 cursor-pointer ${
+              className={`text-[9px] sm:text-[10px] ${t.fontMono} px-1.5 sm:px-2 py-0.5 rounded border transition-all flex items-center gap-0.5 sm:gap-1 cursor-pointer shrink-0 ${
                 isLarge
                   ? `${t.buttonHighlight} font-bold shadow-sm`
                   : `${t.buttonPrimary}`
               }`}
               title="Toggle between normal and large button sizes"
             >
-              <span className="material-symbols-outlined text-xs">
+              <span className="material-symbols-outlined text-[11px] sm:text-xs">
                 {isLarge ? 'zoom_out' : 'zoom_in'}
               </span>
-              <span>{isLarge ? 'Large Keys' : 'Normal Size'}</span>
+              <span className="hidden xs:inline">{isLarge ? 'Large Keys' : 'Normal Size'}</span>
+              <span className="xs:hidden">{isLarge ? 'Large' : 'Normal'}</span>
             </button>
           )}
         </div>

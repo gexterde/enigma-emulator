@@ -45,40 +45,52 @@ export const RotorChamber: React.FC<RotorChamberProps> = ({
     );
   };
 
+  const colCount = isUKWDual
+    ? (isM4Active ? 5 : 4)
+    : (isM4Active ? 4 : 3);
+
+  const maxWClass = colCount === 5
+    ? 'max-w-[480px]'
+    : colCount === 4
+    ? 'max-w-[380px]'
+    : 'max-w-[290px]';
+
   return (
-    <div className={`grid ${
-      isUKWDual
-        ? (isM4Active ? 'grid-cols-5 max-w-sm sm:max-w-md' : 'grid-cols-4 max-w-xs sm:max-w-sm')
-        : (isM4Active ? 'grid-cols-4 max-w-xs sm:max-w-sm' : 'grid-cols-3 max-w-[280px] sm:max-w-[340px]')
-    } gap-1.5 sm:gap-2.5 w-full mx-auto justify-items-center`}>
-      {/* ─── UKW-Dual-Dynamic─── */}
-      {isUKWDual && (
-        <RotorDial
-          label="UKW-ROTOR"
-          typeDisplay=""
-          currentPos={config.reflector.current}
-          ringFormat={ringFormat}
-          onStep={(delta) => onManualRotorStep('reflector', delta)}
-          onRandomize={() => onRandomizeRotor('reflector')}
-          turnoverAction="Dynamic Stator"
-          isNotch={false}
-        />
-      )}
-      {/* ────────────────────────────────────────────────────── */}
+    <div className="w-full overflow-x-auto overflow-y-hidden pb-0.5 max-w-full flex justify-center">
+      <div className={`grid ${
+        colCount === 5 ? 'grid-cols-5 min-w-[300px] sm:min-w-0' :
+        colCount === 4 ? 'grid-cols-4 min-w-[240px] sm:min-w-0' :
+        'grid-cols-3 min-w-[180px] sm:min-w-0'
+      } ${maxWClass} gap-1 xs:gap-1.5 sm:gap-2.5 w-full mx-auto justify-items-center items-stretch`}>
+        {/* ─── UKW-Dual-Dynamic─── */}
+        {isUKWDual && (
+          <RotorDial
+            label="UKW-ROTOR"
+            typeDisplay=""
+            currentPos={config.reflector.current}
+            ringFormat={ringFormat}
+            onStep={(delta) => onManualRotorStep('reflector', delta)}
+            onRandomize={() => onRandomizeRotor('reflector')}
+            turnoverAction="Dynamic Stator"
+            isNotch={false}
+          />
+        )}
+        {/* ────────────────────────────────────────────────────── */}
 
-      {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
-      {isM4Active && (
-        renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
-      )}
+        {/* Fixed Rotor (M4 Naval only — Beta/Gamma, visible only in M4 mode) — Far Left */}
+        {isM4Active && (
+          renderRotorView('FIXED', 'fourthRotor', config.fourthRotor.type === 'Beta' ? 'β' : 'γ', false)
+        )}
 
-      {/* Slow Rotor */}
-      {renderRotorView('SLOW', 'leftRotor', config.leftRotor.type, true)}
+        {/* Slow Rotor */}
+        {renderRotorView('SLOW', 'leftRotor', config.leftRotor.type, true)}
 
-      {/* Middle Rotor */}
-      {renderRotorView('MID', 'middleRotor', config.middleRotor.type, true)}
+        {/* Middle Rotor */}
+        {renderRotorView('MID', 'middleRotor', config.middleRotor.type, true)}
 
-      {/* Fast Rotor */}
-      {renderRotorView('FAST', 'rightRotor', config.rightRotor.type, true)}
+        {/* Fast Rotor */}
+        {renderRotorView('FAST', 'rightRotor', config.rightRotor.type, true)}
+      </div>
     </div>
   );
 };

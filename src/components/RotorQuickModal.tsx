@@ -432,6 +432,31 @@ export const RotorQuickModal: React.FC<RotorQuickModalProps> = ({
               >
                 M4 (Gamma)
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playRotorClickSound(soundEnabled);
+                  let nextRefType = config.reflector.type;
+                  if (nextRefType === 'Reflector B Thin') {
+                    nextRefType = 'Reflector B';
+                  } else if (nextRefType === 'Reflector C Thin') {
+                    nextRefType = 'Reflector C';
+                  }
+                  onUpdateConfig({
+                    ...config,
+                    fourthRotor: { ...config.fourthRotor, type: 'I' },
+                    reflector: {
+                      ...config.reflector,
+                      type: nextRefType as any
+                    }
+                  });
+                }}
+                className={`flex-1 py-1 px-2 text-xs rounded border cursor-pointer font-bold transition-all ${
+                  !isM4 ? t.activeBadge : t.inactiveBadge
+                }`}
+              >
+                Off (M3)
+              </button>
             </div>
           </div>
         </div>

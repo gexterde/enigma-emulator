@@ -115,6 +115,7 @@ interface LampboardPanelProps {
   batteryMode: string;
   batteryLevel: number;
   litLamp: string | null;
+  pressedKey?: string | null;
   dimIdleLights: boolean;
   keySize?: 'normal' | 'large';
   onToggleKeySize?: () => void;
@@ -125,6 +126,7 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
   batteryMode,
   batteryLevel,
   litLamp,
+  pressedKey,
   dimIdleLights,
   keySize = 'normal',
   onToggleKeySize,
@@ -132,26 +134,24 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
   const { theme, setTheme } = useTheme();
   const t = getTheme(theme);
 
-
-
   const isPowerOn = batteryMode !== 'aus';
   const isLarge = keySize === 'large';
-
 
   if (isCompact) {
     return (
       <div className={`${t.lampboardPanelBg} border ${t.borderBase} p-2 xs:p-3 sm:p-4 rounded-xl flex flex-col items-center w-full`}>
-        <div className={`w-full flex justify-between items-center mb-2 sm:mb-3 pb-1 border-b ${t.borderBase} px-1`}>
-          <span className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textSecondary} tracking-wider uppercase flex items-center gap-1.5 font-bold`}>
+        <div className={`w-full flex flex-nowrap justify-between items-center mb-2 sm:mb-3 pb-1 border-b ${t.borderBase} px-1 min-h-[32px]`}>
+          <span className={`text-[10px] sm:text-[11px] ${t.fontMono} ${t.textSecondary} tracking-wider uppercase flex items-center gap-1 sm:gap-1.5 font-bold shrink-0 truncate max-w-[45%] sm:max-w-none`}>
             <span className={`material-symbols-outlined text-xs sm:text-sm ${t.textAccent}`}>lightbulb</span>
-            LAMPENFELD (LAMPBOARD)
+            <span className="hidden xs:inline">LAMPENFELD (LAMPBOARD)</span>
+            <span className="xs:hidden">LAMPBOARD</span>
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             {onToggleKeySize && (
               <button
                 type="button"
                 onClick={onToggleKeySize}
-                className={`text-[9px] sm:text-[10px] ${t.fontMono} px-1.5 py-0.5 rounded border transition-all flex items-center gap-0.5 cursor-pointer ${
+                className={`text-[9px] sm:text-[10px] ${t.fontMono} px-1.5 py-0.5 rounded border transition-all flex items-center gap-0.5 cursor-pointer shrink-0 ${
                   isLarge
                     ? t.buttonHighlight + ' font-bold shadow-sm'
                     : t.buttonPrimary
@@ -161,23 +161,32 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
                 <span className="material-symbols-outlined text-[11px]">
                   {isLarge ? 'zoom_out' : 'zoom_in'}
                 </span>
-                <span>{isLarge ? 'Large Size' : 'Normal'}</span>
+                <span className="hidden xs:inline">{isLarge ? 'Large Size' : 'Normal'}</span>
+                <span className="xs:hidden">{isLarge ? 'Large' : 'Norm'}</span>
               </button>
             )}
-            {isPowerOn && litLamp && (
-              <span className={`animate-pulse text-[10px] ${t.fontMono} px-2 py-0.5 rounded border font-bold ${
+            <div className={`h-5 sm:h-6 flex items-center min-w-[50px] sm:min-w-[120px] justify-end ${isPowerOn && (litLamp || pressedKey) ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-75`}>
+              <span className={`text-[9px] sm:text-[10px] ${t.fontMono} px-1.5 py-0.5 rounded border font-bold flex items-center gap-1 whitespace-nowrap ${
                 batteryMode === 'dkl'
                   ? t.litLampBadgeDkl
                   : batteryMode === 'sammler'
                   ? t.litLampBadgeSammler
                   : t.litLampBadgeHell
               }`}>
-                {batteryMode === 'dkl' && '2.5V: '}
-                {batteryMode === 'sammler' && '4V: '}
-                {batteryMode === 'hell' && '3.5V: '}
-                {litLamp}
+                {pressedKey && (
+                  <span className="opacity-90 font-normal">
+                    KEY <span className="font-bold underline">{pressedKey}</span> ➔{' '}
+                  </span>
+                )}
+                <span className="hidden sm:inline">
+                  {batteryMode === 'dkl' && '2.5V: '}
+                  {batteryMode === 'sammler' && '4V: '}
+                  {batteryMode === 'hell' && '3.5V: '}
+                </span>
+                {!pressedKey && <span className="sm:hidden">LIT: </span>}
+                <span className="font-black">{litLamp || ' '}</span>
               </span>
-            )}
+            </div>
           </div>
         </div>
         <div className="space-y-1.5 xs:space-y-2 sm:space-y-2.5 w-full max-w-2xl px-0.5">
@@ -204,43 +213,53 @@ export const LampboardPanel: React.FC<LampboardPanelProps> = ({
 
   return (
     <div className={`${t.lampboardPanelBg} rounded-lg p-3 sm:p-4 md:p-6 flex flex-col items-center w-full`}>
-      <div className={`w-full flex justify-between items-center mb-3 sm:mb-4 pb-2 border-b ${t.borderBase}`}>
-        <span className={`${t.fontHeader} ${t.textPrimary} text-xs uppercase tracking-widest flex items-center gap-2`}>
+      <div className={`w-full flex flex-nowrap justify-between items-center mb-3 sm:mb-4 pb-2 border-b ${t.borderBase} min-h-[36px] sm:min-h-[40px]`}>
+        <span className={`${t.fontHeader} ${t.textPrimary} text-[11px] sm:text-xs uppercase tracking-wider sm:tracking-widest flex items-center gap-1.5 sm:gap-2 shrink-0 truncate max-w-[45%] sm:max-w-none`}>
           <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>lightbulb</span>
-          Lampboard (Glühlampenfeld)
+          <span className="hidden xs:inline">Lampboard (Glühlampenfeld)</span>
+          <span className="xs:hidden">Lampboard</span>
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {onToggleKeySize && (
             <button
               type="button"
               onClick={onToggleKeySize}
-              className={`text-[10px] ${t.fontMono} px-2 py-0.5 rounded border transition-all flex items-center gap-1 cursor-pointer ${
+              className={`text-[9px] sm:text-[10px] ${t.fontMono} px-1.5 sm:px-2 py-0.5 rounded border transition-all flex items-center gap-0.5 sm:gap-1 cursor-pointer shrink-0 ${
                 isLarge
                   ? t.buttonHighlight + ' font-bold shadow-sm'
                   : t.buttonPrimary
               }`}
               title="Toggle touch size between normal and large"
             >
-              <span className="material-symbols-outlined text-xs">
+              <span className="material-symbols-outlined text-[11px] sm:text-xs">
                 {isLarge ? 'zoom_out' : 'zoom_in'}
               </span>
-              <span>{isLarge ? 'Large Keys' : 'Normal Size'}</span>
+              <span className="hidden xs:inline">{isLarge ? 'Large Keys' : 'Normal Size'}</span>
+              <span className="xs:hidden">{isLarge ? 'Large' : 'Normal'}</span>
             </button>
           )}
-          {isPowerOn && litLamp && (
-            <span className={`animate-pulse text-xs ${t.fontMono} px-2 py-0.5 rounded border font-bold ${
+          <div className={`h-6 sm:h-7 flex items-center min-w-[60px] sm:min-w-[140px] justify-end ${isPowerOn && (litLamp || pressedKey) ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity duration-75`}>
+            <span className={`text-[10px] sm:text-xs ${t.fontMono} px-1.5 sm:px-2 py-0.5 rounded border font-bold flex items-center gap-1 whitespace-nowrap ${
               batteryMode === 'dkl'
                 ? t.litLampBadgeDkl
                 : batteryMode === 'sammler'
                 ? t.litLampBadgeSammler
                 : t.litLampBadgeHell
             }`}>
-              {batteryMode === 'dkl' && 'LAMP LIT (2.5V DIM): '}
-              {batteryMode === 'sammler' && 'LAMP LIT (4V SAMMLER): '}
-              {batteryMode === 'hell' && 'LAMP LIT (3.5V): '}
-              {litLamp}
+              {pressedKey && (
+                <span className="opacity-90 font-normal">
+                  KEY <span className="font-bold underline text-xs sm:text-sm">{pressedKey}</span> ➔{' '}
+                </span>
+              )}
+              <span className="hidden sm:inline">
+                {batteryMode === 'dkl' && 'LAMP LIT (2.5V): '}
+                {batteryMode === 'sammler' && 'LAMP LIT (4V): '}
+                {batteryMode === 'hell' && 'LAMP LIT (3.5V): '}
+              </span>
+              {!pressedKey && <span className="sm:hidden">LIT: </span>}
+              <span className="text-xs sm:text-sm font-black">{litLamp || ' '}</span>
             </span>
-          )}
+          </div>
         </div>
       </div>
       <div className="space-y-1.5 xs:space-y-2 sm:space-y-3 md:space-y-4 max-w-2xl w-full px-0.5">
