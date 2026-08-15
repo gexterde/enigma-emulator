@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { EnigmaConfig } from '../types';
 import { generateConfigString } from '../lib/enigmaEngine';
-import { useTheme, getTheme, ThemeName, AVAILABLE_THEMES } from '../lib/theme';
+import { useTheme, getTheme, ThemeName } from '../lib/theme';
 
 interface ModalProps {
   isOpen: boolean;
@@ -80,7 +80,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   batteryDrainEnabled,
   onToggleBatteryDrain,
 }) => {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, getAvailableThemes } = useTheme();
   const t = getTheme(theme);
 
   return (
@@ -186,7 +186,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             onChange={(e) => setTheme(e.target.value as ThemeName)}
             className={`${t.inputBg} ${t.fontMono} text-xs px-2 py-1 rounded border outline-none cursor-pointer`}
           >
-            {AVAILABLE_THEMES.map((opt) => (
+            {getAvailableThemes().map((opt) => (
               <option key={opt.id} value={opt.id}>
                 {opt.name}
               </option>

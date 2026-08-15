@@ -43,7 +43,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'morseTrainer', label: 'Morse Trainer', icon: 'school', shortcut: 'F6 / ^T' },
     { id: 'radio', label: 'Radio Transceiver', icon: 'radio', shortcut: 'F8 / ^X' },
     { id: 'frequency', label: 'Frequency Tool', icon: 'analytics', shortcut: 'F11 / ^Y' },
-    { id: 'cryptanalysis', label: 'Crib Cracking', icon: 'auto_fix', shortcut: 'F12 / ^E' }
+    { id: 'cryptanalysis', label: 'Crib Cracking', icon: 'auto_fix', shortcut: 'F12 / ^E' },
+    ...(isAdmin ? [{ id: 'themeDesigner' as ActiveTab, label: 'Theme Designer', icon: 'palette', shortcut: 'Admin' }] : [])
   ];
 
   return (

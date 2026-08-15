@@ -13,6 +13,7 @@ import { MorseTrainer } from './components/MorseTrainer';
 import { RadioStationView } from './components/RadioStationView';
 import { FrequencyAnalysisView } from './components/FrequencyAnalysisView';
 import { CryptanalysisView } from './components/CryptanalysisView';
+import { ThemeDesigner } from './components/ThemeDesigner';
 import { SettingsModal, InfoModal, ShareModal, ShortcutsModal } from './components/Modals';
 import { LoginModal } from './components/LoginModal';
 import { AdminPanel } from './components/AdminPanel';
@@ -538,6 +539,10 @@ export default function App() {
               setActiveTab={setActiveTab}
               soundEnabled={soundEnabled}
             />
+          )}
+
+          {activeTab === 'themeDesigner' && (
+            <ThemeDesigner />
           )}
         </main>
       </div>

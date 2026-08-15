@@ -237,7 +237,7 @@ export const PlugboardPanel: React.FC<PlugboardPanelProps> = ({
       const cp2Y = endY + droop;
 
       const d = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
-      const color = CORD_COLORS[idx % CORD_COLORS.length];
+      const color = `var(--cable-color-${idx % CORD_COLORS.length})`;
 
       newPaths.push({ a, b, path: d, color });
     });

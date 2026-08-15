@@ -14,7 +14,8 @@ const SYNC_KEYS = [
   'radio_state',
   'enigma_theme',
   'enigma_ring_format',
-  'enigma_battery_drain'
+  'enigma_battery_drain',
+  'enigma_custom_themes'
 ];
 
 export function useSyncState() {
