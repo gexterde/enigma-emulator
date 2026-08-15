@@ -1,5 +1,6 @@
 import express from "express";
 import http from "http";
+import fs from "fs";
 import path from "path";
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer as createViteServer } from "vite";
@@ -18,6 +19,55 @@ async function startServer() {
   app.use("/api/auth", authRoutes);
   app.use("/api", authRoutes);
   
+
+  // Theme API
+  const THEMES_FILE = path.join(process.cwd(), 'themes.json');
+  function getThemes() {
+    try {
+      if (fs.existsSync(THEMES_FILE)) {
+        return JSON.parse(fs.readFileSync(THEMES_FILE, 'utf8'));
+      }
+    } catch (e) {
+      console.error('Error reading themes:', e);
+    }
+    return [];
+  }
+  function saveThemes(themes) {
+    try {
+      fs.writeFileSync(THEMES_FILE, JSON.stringify(themes, null, 2), 'utf8');
+    } catch (e) {
+      console.error('Error writing themes:', e);
+    }
+  }
+
+  app.get("/api/themes", (req, res) => {
+    res.json(getThemes());
+  });
+
+  app.post("/api/themes", (req, res) => {
+    const newTheme = req.body;
+    if (!newTheme || !newTheme.id) {
+      return res.status(400).json({ error: 'Invalid theme' });
+    }
+    const themes = getThemes();
+    const existingIndex = themes.findIndex(t => t.id === newTheme.id);
+    if (existingIndex >= 0) {
+      themes[existingIndex] = newTheme;
+    } else {
+      themes.push(newTheme);
+    }
+    saveThemes(themes);
+    res.json({ success: true, theme: newTheme });
+  });
+
+  app.delete("/api/themes/:id", (req, res) => {
+    const { id } = req.params;
+    let themes = getThemes();
+    themes = themes.filter(t => t.id !== id);
+    saveThemes(themes);
+    res.json({ success: true });
+  });
+
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", service: "Enigma Radio Transceiver Server" });
   });
