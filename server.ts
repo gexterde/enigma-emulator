@@ -33,13 +33,14 @@ async function startServer() {
     frequency: string; // e.g. "7.025"
     ip: string;
     computerName: string;
+    isPowerOn?: boolean;
   }
 
   const clients = new Map<WebSocket, ClientInfo>();
 
   function broadcastFrequencyPresence(frequency: string) {
     const stationsInFreq = Array.from(clients.values())
-      .filter((c) => c.frequency === frequency)
+      .filter((c) => c.frequency === frequency && c.isPowerOn !== false)
       .map((c) => ({
         id: c.id,
         callSign: c.callSign,
@@ -93,7 +94,7 @@ async function startServer() {
       computerName = "LINUX-NODE-" + clientId.toUpperCase();
     }
 
-    clients.set(ws, { ws, id: clientId, callSign: "DFS", frequency: "7.025", ip, computerName });
+    clients.set(ws, { ws, id: clientId, callSign: "DFS", frequency: "7.025", ip, computerName, isPowerOn: true });
 
     // Send connection initialization
     ws.send(JSON.stringify({ type: "connected", clientId }));
@@ -110,6 +111,9 @@ async function startServer() {
             client.frequency = String(message.frequency || "7.025");
             if (message.callSign) {
               client.callSign = String(message.callSign).toUpperCase().substring(0, 5);
+            }
+            if (message.isPowerOn !== undefined) {
+              client.isPowerOn = !!message.isPowerOn;
             }
             broadcastFrequencyPresence(oldFreq);
             broadcastFrequencyPresence(client.frequency);
@@ -219,6 +223,26 @@ async function startServer() {
               settings: message.settings,
               timestamp: Date.now(),
             });
+
+            if (message.settings) {
+              if (message.settings.isPowerOn !== undefined) {
+                const oldPower = client.isPowerOn;
+                client.isPowerOn = !!message.settings.isPowerOn;
+                if (oldPower !== client.isPowerOn) {
+                  broadcastFrequencyPresence(client.frequency);
+                }
+              }
+              if (message.settings.frequency !== undefined) {
+                const oldFreq = client.frequency;
+                const newFreq = String(message.settings.frequency);
+                if (oldFreq !== newFreq) {
+                  client.frequency = newFreq;
+                  broadcastFrequencyPresence(oldFreq);
+                  broadcastFrequencyPresence(newFreq);
+                }
+              }
+            }
+
             clients.forEach((otherClient, otherWs) => {
               if (otherWs !== ws && otherWs.readyState === WebSocket.OPEN) {
                 otherWs.send(payload);

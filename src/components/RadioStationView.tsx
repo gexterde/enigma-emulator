@@ -109,6 +109,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
   // Socket & Presence State
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [connectedStations, setConnectedStations] = useState<StationPresence[]>([]);
+  const stationsToDisplay = isPowerOn ? connectedStations : [];
   const [clientId, setClientId] = useState<string>('');
   const [showConnectedStationsModal, setShowConnectedStationsModal] = useState<boolean>(false);
 
@@ -426,6 +427,15 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
       // ignore
     }
   }, []);
+
+  // Stop Tone and reset receiving states instantly when power is cut off
+  useEffect(() => {
+    if (!isPowerOn) {
+      stopTone();
+      setIsReceivingSignal(false);
+      setSignalStrength(0);
+    }
+  }, [isPowerOn, stopTone]);
 
   // Atmospheric Static Noise Engine
   useEffect(() => {
@@ -1060,28 +1070,31 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
         ctx.stroke();
       }
 
-      ctx.beginPath();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = isKeyPressed || isReceivingSignal ? waveActive : waveIdle;
+      if (isPowerOn) {
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = isKeyPressed || isReceivingSignal ? waveActive : waveIdle;
 
-      const amplitude = isKeyPressed || isReceivingSignal ? canvas.height * 0.35 : 2;
-      const freqMult = isKeyPressed || isReceivingSignal ? 0.08 : 0.02;
+        const amplitude = isKeyPressed || isReceivingSignal ? canvas.height * 0.35 : 2;
+        const freqMult = isKeyPressed || isReceivingSignal ? 0.08 : 0.02;
 
-      for (let x = 0; x < canvas.width; x++) {
-        const noise = (Math.random() - 0.5) * (staticEnabled ? 3 : 0.5);
-        const y = canvas.height / 2 + Math.sin(x * freqMult + phase) * amplitude + noise;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        for (let x = 0; x < canvas.width; x++) {
+          const noise = (Math.random() - 0.5) * (staticEnabled ? 3 : 0.5);
+          const y = canvas.height / 2 + Math.sin(x * freqMult + phase) * amplitude + noise;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        phase += 0.15;
       }
-      ctx.stroke();
 
-      phase += 0.15;
       animId = requestAnimationFrame(render);
     };
 
     render();
     return () => cancelAnimationFrame(animId);
-  }, [isKeyPressed, isReceivingSignal, staticEnabled, t]);
+  }, [isKeyPressed, isReceivingSignal, staticEnabled, t, isPowerOn]);
 
   // Quick Text Sequence Player
   const handleSendTextAsMorse = (textToPlay: string) => {
@@ -1232,7 +1245,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
           >
             <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>group</span>
             <span className={`text-xs font-bold ${t.textPrimary}`}>
-              {connectedStations.length} Station{connectedStations.length === 1 ? '' : 's'} Tuned In
+              {stationsToDisplay.length} Station{stationsToDisplay.length === 1 ? '' : 's'} Tuned In
             </span>
           </button>
         </div>
@@ -1279,6 +1292,14 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
                         const nextPower = !isPowerOn;
                         setIsPowerOn(nextPower);
                         playPowerClickSound(nextPower);
+                        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                          wsRef.current.send(JSON.stringify({
+                            type: 'join_frequency',
+                            frequency,
+                            callSign: senderCallSign || 'DFS',
+                            isPowerOn: nextPower
+                          }));
+                        }
                       }}
                       title="Turn Rotary Power Switch"
                       className={`w-10 h-10 rounded-full bg-gradient-to-b ${t.radioPowerKnobBg} border-2 shadow-[0_4px_10px_rgba(0,0,0,0.8)] relative flex items-center justify-center cursor-pointer group active:scale-95 transition-transform`}
@@ -1435,7 +1456,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
               {/* Active Call Signs on Frequency */}
               <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
                 <span className={`text-[10px] font-mono ${t.textMuted} mr-1`}>TUNED STATIONS:</span>
-                {connectedStations.map((st) => (
+                {stationsToDisplay.map((st) => (
                   <span
                     key={st.id}
                     className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
@@ -2091,12 +2112,12 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
 
             {/* List */}
             <div className="p-5 max-h-[280px] overflow-y-auto space-y-2.5">
-              {connectedStations.length === 0 ? (
+              {stationsToDisplay.length === 0 ? (
                 <div className={`py-8 text-center text-xs ${t.textMuted} font-mono`}>
                   No active radio operators found on this channel.
                 </div>
               ) : (
-                connectedStations.map((st) => (
+                stationsToDisplay.map((st) => (
                   <div
                     key={st.id}
                     className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-lg border ${t.wellBg} ${t.borderBase} font-mono text-xs shadow-sm gap-2.5`}
