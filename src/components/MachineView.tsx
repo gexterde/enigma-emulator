@@ -192,6 +192,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
   const [tapeCollapsed, setTapeCollapsed] = useState<boolean>(false);
   const [showSignalAnimation, setShowSignalAnimation] = useState<boolean>(false);
   const [keyboardBulbsOnly, setKeyboardBulbsOnly] = useState<boolean>(false);
+  const [showRotorsInBulbsView, setShowRotorsInBulbsView] = useLocalStorage<boolean>('enigma_show_rotors_in_bulbs_view', true);
   const [showBatterySwitch, setShowBatterySwitch] = useLocalStorage<boolean>('enigma_show_battery_switch', true);
 
   // Message Header / Funktelegramm States
@@ -696,9 +697,7 @@ export const MachineView: React.FC<MachineViewProps> = ({
       onAddLog(logEntry);
     }
 
-    if (!keyboardBulbsOnly) {
-      setInputTape((prev) => prev + uppercaseChar);
-    }
+    setInputTape((prev) => prev + uppercaseChar);
   };
 
   // Handle key press release (stops when key is released)
@@ -992,18 +991,29 @@ export const MachineView: React.FC<MachineViewProps> = ({
       {isCompactMode ? (
         <div className={`${t.panelBg} p-3 sm:p-5 rounded-2xl border ${t.borderBase} shadow-2xl space-y-4 max-w-2xl mx-auto ${t.appTexture}`}>
           {keyboardBulbsOnly && (
-            <div className={`rounded-lg p-2.5 text-center text-xs ${t.fontMono} flex items-center justify-between shadow-panel ${t.panelInner} border ${t.borderBase} ${t.textAccent}`}>
+            <div className={`rounded-lg p-2.5 text-center text-xs ${t.fontMono} flex flex-wrap items-center justify-between shadow-panel ${t.panelInner} border ${t.borderBase} ${t.textAccent} gap-2`}>
               <span className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">lightbulb</span>
                 Keys & Bulbs Only View Active (Minimalist Compact View)
               </span>
-              <button
-                type="button"
-                onClick={() => setKeyboardBulbsOnly(false)}
-                className={`${t.textPrimary} hover:${t.textAccent} underline ${t.fontHeader} cursor-pointer ml-2`}
-              >
-                Show All Panels
-              </button>
+              <div className="flex items-center gap-3">
+                {!showRotorsInBulbsView && (
+                  <button
+                    type="button"
+                    onClick={() => setShowRotorsInBulbsView(true)}
+                    className={`${t.textPrimary} hover:${t.textAccent} underline ${t.fontHeader} cursor-pointer font-bold`}
+                  >
+                    Show Rotors
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setKeyboardBulbsOnly(false)}
+                  className={`${t.textPrimary} hover:${t.textAccent} underline ${t.fontHeader} cursor-pointer`}
+                >
+                  Show All Panels
+                </button>
+              </div>
             </div>
           )}
 
@@ -1335,6 +1345,30 @@ export const MachineView: React.FC<MachineViewProps> = ({
             )}
           </div>
 
+          {/* Rotors in Keys & Bulbs view */}
+          {keyboardBulbsOnly && showRotorsInBulbsView && (
+            <div className={`${t.panelBg} border ${t.borderBase} rounded-xl p-3 shadow-md flex flex-col items-center relative animate-fade-in w-full`}>
+              <button
+                type="button"
+                onClick={() => setShowRotorsInBulbsView(false)}
+                className={`absolute top-2 right-2 p-1 rounded-md transition-colors ${t.textMuted} hover:${t.textAccent} cursor-pointer z-10`}
+                title="Hide Rotors"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+              <div className="w-full flex justify-center">
+                <RotorChamber
+                  config={config}
+                  ringFormat={ringFormat}
+                  isUKWDual={isUKWDual}
+                  isM4Active={isM4Active}
+                  onManualRotorStep={handleManualRotorStep}
+                  onRandomizeRotor={randomizeRotorGrundstellung}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Lampboard (Lampenfeld) */}
           <LampboardPanel
             isCompact={true}
@@ -1361,18 +1395,29 @@ export const MachineView: React.FC<MachineViewProps> = ({
       ) : (
         <>
         {keyboardBulbsOnly && (
-          <div className={`rounded-lg p-2.5 text-center text-xs ${t.fontMono} flex items-center justify-between shadow-panel ${t.panelInner} border ${t.borderBase} ${t.textAccent}`}>
+          <div className={`rounded-lg p-2.5 text-center text-xs ${t.fontMono} flex flex-wrap items-center justify-between shadow-panel ${t.panelInner} border ${t.borderBase} ${t.textAccent} gap-2`}>
             <span className="flex items-center gap-2">
               <span className="material-symbols-outlined text-sm">lightbulb</span>
               Keys & Bulbs Only View Active (Minimalist Machine View)
             </span>
-            <button
-              type="button"
-              onClick={() => setKeyboardBulbsOnly(false)}
-              className={`${t.textPrimary} hover:${t.textAccent} underline ${t.fontHeader} cursor-pointer ml-2`}
-            >
-              Show All Panels
-            </button>
+            <div className="flex items-center gap-3">
+              {!showRotorsInBulbsView && (
+                <button
+                  type="button"
+                  onClick={() => setShowRotorsInBulbsView(true)}
+                  className={`${t.textPrimary} hover:${t.textAccent} underline ${t.fontHeader} cursor-pointer font-bold`}
+                >
+                  Show Rotors
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setKeyboardBulbsOnly(false)}
+                className={`${t.textPrimary} hover:${t.textAccent} underline ${t.fontHeader} cursor-pointer`}
+              >
+                Show All Panels
+              </button>
+            </div>
           </div>
         )}
 
@@ -1581,6 +1626,30 @@ export const MachineView: React.FC<MachineViewProps> = ({
                 <span>Close</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rotors in Keys & Bulbs view */}
+      {keyboardBulbsOnly && showRotorsInBulbsView && (
+        <div className={`${t.panelBg} border ${t.borderBase} rounded-xl p-3 shadow-md flex flex-col items-center relative animate-fade-in w-full max-w-2xl mx-auto mb-4`}>
+          <button
+            type="button"
+            onClick={() => setShowRotorsInBulbsView(false)}
+            className={`absolute top-2 right-2 p-1 rounded-md transition-colors ${t.textMuted} hover:${t.textAccent} cursor-pointer z-10`}
+            title="Hide Rotors"
+          >
+            <span className="material-symbols-outlined text-sm">close</span>
+          </button>
+          <div className="w-full flex justify-center">
+            <RotorChamber
+              config={config}
+              ringFormat={ringFormat}
+              isUKWDual={isUKWDual}
+              isM4Active={isM4Active}
+              onManualRotorStep={handleManualRotorStep}
+              onRandomizeRotor={randomizeRotorGrundstellung}
+            />
           </div>
         </div>
       )}

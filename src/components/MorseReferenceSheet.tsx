@@ -77,17 +77,17 @@ export const MorseReferenceSheet: React.FC<MorseReferenceSheetProps> = ({
                 <span className="material-symbols-outlined text-xs">{group.icon}</span>
                 <span>{group.title}</span>
               </div>
-              <div className={`grid ${group.gridCols} gap-1.5`}>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(52px,1fr))] gap-1.5">
                 {group.items.map(([char, code]) => (
                   <button
                     key={char}
                     type="button"
                     onClick={() => onItemClick && onItemClick(char, code)}
-                    className={`flex flex-col items-center justify-center p-2 border ${t.borderBase}/50 rounded ${t.panelBg} hover:${t.borderAccent} hover:brightness-125 transition-all cursor-pointer hover:scale-105 active:scale-95 select-none touch-manipulation`}
+                    className={`flex flex-col items-center justify-center p-1.5 min-h-[58px] border ${t.borderBase}/60 rounded-md ${t.panelBg} hover:${t.borderAccent} hover:brightness-125 transition-all cursor-pointer hover:scale-105 active:scale-95 select-none touch-manipulation shadow-sm`}
                     title={`${itemTitlePrefix} "${char}" (${code})`}
                   >
                     <span className={`${t.textSecondary} font-extrabold text-base leading-none mb-1`}>{char}</span>
-                    <span className={`${t.textAccent} font-mono text-[11px] font-bold tracking-widest`}>{code}</span>
+                    <span className={`${t.textAccent} font-mono text-[10px] font-bold tracking-widest`}>{code}</span>
                   </button>
                 ))}
               </div>

@@ -28,9 +28,45 @@ export const RotorDial: React.FC<RotorDialProps> = ({
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
+  const dialRef = React.useRef<HTMLDivElement>(null);
+  const onStepRef = React.useRef(onStep);
+
+  React.useEffect(() => {
+    onStepRef.current = onStep;
+  }, [onStep]);
+
+  React.useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // Prevent browser default screen scrolling completely
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Step the rotor up or down based on wheel direction
+      if (e.deltaY < 0) {
+        onStepRef.current(1);
+      } else if (e.deltaY > 0) {
+        onStepRef.current(-1);
+      }
+    };
+
+    const element = dialRef.current;
+    if (element) {
+      element.addEventListener('wheel', handleWheel, { passive: false });
+    }
+
+    return () => {
+      if (element) {
+        element.removeEventListener('wheel', handleWheel);
+      }
+    };
+  }, []);
 
   return (
-    <div className={`${t.panelInner} rounded-lg p-1 xs:p-1.5 sm:p-2 border ${t.borderBase} flex flex-col items-center justify-between min-w-[56px] xs:min-w-[64px] sm:min-w-[86px] max-w-[96px] w-full shadow-sm select-none transition-all`}>
+    <div
+      ref={dialRef}
+      className={`${t.panelInner} rounded-lg p-1 xs:p-1.5 sm:p-2 border ${t.borderBase} flex flex-col items-center justify-between min-w-[56px] xs:min-w-[64px] sm:min-w-[86px] max-w-[96px] w-full shadow-sm select-none transition-all hover:border-[var(--border-accent)]`}
+      title="Scroll mouse wheel here to turn rotor"
+    >
       {/* Rotor Label & Type */}
       <span className={`text-[8px] xs:text-[9px] sm:text-[10px] font-bold ${t.textSecondary} ${t.fontMono} mb-0.5 xs:mb-1 tracking-tight xs:tracking-wider text-center truncate max-w-full`}>
         {label} {typeDisplay ? `(${typeDisplay})` : ''}

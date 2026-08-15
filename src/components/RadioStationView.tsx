@@ -649,16 +649,34 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
     handleFrequencyChange(clampedF.toFixed(3));
   }, [isPowerOn, frequency, tuningSpeed]);
 
-  // Mouse wheel scroll handler on the rotary knob
-  const handleTuningWheel = useCallback((e: React.WheelEvent) => {
-    if (!isPowerOn) return;
-    e.preventDefault();
-    if (e.deltaY < 0) {
-      stepTuning('up');
-    } else if (e.deltaY > 0) {
-      stepTuning('down');
-    }
-  }, [isPowerOn, stepTuning]);
+  const tuningKnobRef = useRef<HTMLDivElement | null>(null);
+  const stepTuningRef = useRef(stepTuning);
+
+  useEffect(() => {
+    stepTuningRef.current = stepTuning;
+  }, [stepTuning]);
+
+  useEffect(() => {
+    const element = tuningKnobRef.current;
+    if (!element) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!isPowerOnRef.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.deltaY < 0) {
+        stepTuningRef.current('up');
+      } else if (e.deltaY > 0) {
+        stepTuningRef.current('down');
+      }
+    };
+
+    element.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      element.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
 
   // Mouse drag handler on the rotary knob
   const isDraggingTuningRef = useRef<boolean>(false);
@@ -1013,10 +1031,18 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
 
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = t.radioScopeBg;
+      
+      // Query CSS custom properties from current theme token definitions
+      const styles = window.getComputedStyle(canvas);
+      const bg = styles.getPropertyValue('--radio-scope-bg').trim() || '#0a0806';
+      const grid = styles.getPropertyValue('--radio-scope-grid').trim() || 'rgba(235, 194, 56, 0.15)';
+      const waveActive = styles.getPropertyValue('--radio-scope-wave-active').trim() || '#ebc238';
+      const waveIdle = styles.getPropertyValue('--radio-scope-wave-idle').trim() || '#3b3426';
+
+      ctx.fillStyle = bg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.strokeStyle = t.radioScopeGrid;
+      ctx.strokeStyle = grid;
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += 20) {
         ctx.beginPath();
@@ -1033,7 +1059,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
 
       ctx.beginPath();
       ctx.lineWidth = 2;
-      ctx.strokeStyle = isKeyPressed || isReceivingSignal ? t.radioScopeWaveActive : t.radioScopeWaveIdle;
+      ctx.strokeStyle = isKeyPressed || isReceivingSignal ? waveActive : waveIdle;
 
       const amplitude = isKeyPressed || isReceivingSignal ? canvas.height * 0.35 : 2;
       const freqMult = isKeyPressed || isReceivingSignal ? 0.08 : 0.02;
@@ -1484,7 +1510,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
                 {/* HEAVY BAKELITE ROTARY TUNING KNOB WITH POINTER & DRAG/WHEEL SENSORS */}
                 <div className="flex flex-col items-center gap-2">
                   <div
-                    onWheel={handleTuningWheel}
+                    ref={tuningKnobRef}
                     onMouseDown={handleTuningMouseDown}
                     className={`relative w-28 h-28 rounded-full bg-gradient-to-b ${t.radioRotaryKnobBg} border-4 ${t.radioRotaryKnobBorder} shadow-[0_8px_20px_rgba(0,0,0,0.9),inset_0_2px_4px_rgba(255,255,255,0.1)] flex items-center justify-center select-none ${
                       isPowerOn ? `cursor-grab active:cursor-grabbing hover:${t.borderAccent}` : 'opacity-40 cursor-not-allowed'
@@ -1990,7 +2016,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
                       {log.text}
                     </div>
 
-                    <div className="pt-1 flex justify-end">
+                    <div className="pt-1 flex justify-end gap-2">
                       <button
                         type="button"
                         onClick={() => {
@@ -2000,6 +2026,18 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
                       >
                         <span className="material-symbols-outlined text-xs">content_copy</span>
                         <span>Copy as Text</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQsoLogs((prev) => prev.filter((item) => item.id !== log.id));
+                        }}
+                        className="text-[10px] font-bold px-2 py-1 rounded text-red-700 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-950/40 dark:hover:bg-red-950/60 border border-red-200 dark:border-red-900/50 flex items-center gap-1 shadow-sm cursor-pointer transition-colors"
+                        title="Delete this log entry"
+                      >
+                        <span className="material-symbols-outlined text-xs">delete</span>
+                        <span>Delete</span>
                       </button>
                     </div>
                   </div>
