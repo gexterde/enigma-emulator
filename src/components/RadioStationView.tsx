@@ -19,6 +19,8 @@ interface RadioStationViewProps {
 interface StationPresence {
   id: string;
   callSign: string;
+  ip?: string;
+  computerName?: string;
 }
 
 interface RadioSettingsState {
@@ -108,6 +110,7 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [connectedStations, setConnectedStations] = useState<StationPresence[]>([]);
   const [clientId, setClientId] = useState<string>('');
+  const [showConnectedStationsModal, setShowConnectedStationsModal] = useState<boolean>(false);
 
   // Keyer & Audio state
   const [isKeyPressed, setIsKeyPressed] = useState<boolean>(false);
@@ -1221,12 +1224,17 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
             />
           </div>
 
-          <div className={`${t.wellBg} px-3.5 py-1.5 rounded border ${t.borderBase} flex items-center gap-2`}>
+          <button
+            type="button"
+            onClick={() => setShowConnectedStationsModal(true)}
+            className={`${t.wellBg} px-3.5 py-1.5 rounded border ${t.borderBase} flex items-center gap-2 hover:bg-opacity-80 hover:border-[var(--border-accent)] dark:hover:border-[var(--border-accent)] focus:outline-none active:scale-95 transition-all cursor-pointer shadow-sm`}
+            title="Click to view connected stations"
+          >
             <span className={`material-symbols-outlined text-sm ${t.textAccent}`}>group</span>
             <span className={`text-xs font-bold ${t.textPrimary}`}>
               {connectedStations.length} Station{connectedStations.length === 1 ? '' : 's'} Tuned In
             </span>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -2047,6 +2055,107 @@ export const RadioStationView: React.FC<RadioStationViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Connected Stations List Modal */}
+      {showConnectedStationsModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fade-in"
+          onClick={() => setShowConnectedStationsModal(false)}
+        >
+          <div
+            className={`${t.modalBg || 'bg-[#15120e]'} rounded-xl max-w-md w-full border ${t.borderBase} shadow-2xl overflow-hidden flex flex-col animate-scale-up`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className={`p-4 ${t.modalHeaderBg || 'bg-[#1e1913]'} flex justify-between items-center border-b ${t.borderBase} shrink-0`}>
+              <div className="flex items-center gap-2.5">
+                <span className={`material-symbols-outlined ${t.textAccent} text-lg`}>sensors</span>
+                <div>
+                  <h3 className={`${t.fontHeader} ${t.textPrimary} text-sm font-bold tracking-wider uppercase`}>
+                    ACTIVE OPERATOR REGISTER
+                  </h3>
+                  <p className={`text-[10px] ${t.textMuted} tracking-wide font-mono`}>
+                    Frequency: {frequency} MHz
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConnectedStationsModal(false)}
+                className={`${t.textMuted} hover:${t.textAccent} transition-colors p-1.5 rounded-full cursor-pointer flex items-center justify-center focus:outline-none`}
+                aria-label="Close modal"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            {/* List */}
+            <div className="p-5 max-h-[280px] overflow-y-auto space-y-2.5">
+              {connectedStations.length === 0 ? (
+                <div className={`py-8 text-center text-xs ${t.textMuted} font-mono`}>
+                  No active radio operators found on this channel.
+                </div>
+              ) : (
+                connectedStations.map((st) => (
+                  <div
+                    key={st.id}
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-lg border ${t.wellBg} ${t.borderBase} font-mono text-xs shadow-sm gap-2.5`}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2.5">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                        <span className={`font-bold ${t.textPrimary} tracking-wider text-sm`}>
+                          {st.callSign || 'DFS'}
+                        </span>
+                        {st.callSign === senderCallSign && (
+                          <span className="text-[9px] font-extrabold tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 px-1.5 py-0.5 rounded uppercase">
+                            YOU
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Device & IP Details */}
+                      <div className="flex flex-wrap items-center gap-x-2 text-[10px] text-zinc-500 dark:text-zinc-400 pl-4.5">
+                        {st.computerName && (
+                          <span className="flex items-center gap-0.5" title="Station Device Name">
+                            <span className="material-symbols-outlined text-[11px]">laptop_mac</span>
+                            <span>{st.computerName}</span>
+                          </span>
+                        )}
+                        {st.computerName && st.ip && <span className="opacity-40">•</span>}
+                        {st.ip && (
+                          <span className="flex items-center gap-0.5" title="Operator IP Address">
+                            <span className="material-symbols-outlined text-[11px]">language</span>
+                            <span>{st.ip}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 pl-4.5 sm:pl-0 shrink-0">
+                      <span className="material-symbols-outlined text-xs">radio</span>
+                      <span>ONLINE</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className={`p-4 ${t.modalFooterBg || 'bg-[#1e1913]'} flex justify-end border-t ${t.borderBase} shrink-0`}>
+              <button
+                type="button"
+                onClick={() => setShowConnectedStationsModal(false)}
+                className={`px-4 py-2 ${t.buttonHighlight} ${t.fontHeader} rounded shadow-sm text-xs font-bold cursor-pointer transition-colors focus:outline-none`}
+              >
+                Close Register
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

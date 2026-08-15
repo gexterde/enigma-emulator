@@ -31,6 +31,8 @@ async function startServer() {
     id: string;
     callSign: string;
     frequency: string; // e.g. "7.025"
+    ip: string;
+    computerName: string;
   }
 
   const clients = new Map<WebSocket, ClientInfo>();
@@ -38,7 +40,12 @@ async function startServer() {
   function broadcastFrequencyPresence(frequency: string) {
     const stationsInFreq = Array.from(clients.values())
       .filter((c) => c.frequency === frequency)
-      .map((c) => ({ id: c.id, callSign: c.callSign }));
+      .map((c) => ({
+        id: c.id,
+        callSign: c.callSign,
+        ip: c.ip,
+        computerName: c.computerName
+      }));
 
     const payload = JSON.stringify({
       type: "presence",
@@ -54,9 +61,39 @@ async function startServer() {
     });
   }
 
-  wss.on("connection", (ws) => {
+  wss.on("connection", (ws, req) => {
     const clientId = Math.random().toString(36).substring(2, 9);
-    clients.set(ws, { ws, id: clientId, callSign: "DFS", frequency: "7.025" });
+
+    // Extract IP address safely
+    let ip = "127.0.0.1";
+    const xForwardedFor = req.headers["x-forwarded-for"];
+    if (typeof xForwardedFor === "string") {
+      ip = xForwardedFor.split(",")[0].trim();
+    } else if (req.socket.remoteAddress) {
+      ip = req.socket.remoteAddress;
+    }
+    if (ip === "::1" || ip === "::ffff:127.0.0.1") {
+      ip = "127.0.0.1";
+    } else if (ip.startsWith("::ffff:")) {
+      ip = ip.substring(7);
+    }
+
+    // Extract operating system / platform from user agent for a realistic computer/workstation hostname
+    const userAgent = req.headers["user-agent"] || "";
+    let computerName = "WORKSTATION-" + clientId.toUpperCase();
+    if (userAgent.includes("Android")) {
+      computerName = "ANDROID-NODE-" + clientId.toUpperCase();
+    } else if (userAgent.includes("iPhone") || userAgent.includes("iPad")) {
+      computerName = "MOBILE-STATION-" + clientId.toUpperCase();
+    } else if (userAgent.includes("Windows")) {
+      computerName = "WIN-PC-" + clientId.toUpperCase();
+    } else if (userAgent.includes("Macintosh")) {
+      computerName = "MAC-STATION-" + clientId.toUpperCase();
+    } else if (userAgent.includes("Linux")) {
+      computerName = "LINUX-NODE-" + clientId.toUpperCase();
+    }
+
+    clients.set(ws, { ws, id: clientId, callSign: "DFS", frequency: "7.025", ip, computerName });
 
     // Send connection initialization
     ws.send(JSON.stringify({ type: "connected", clientId }));
