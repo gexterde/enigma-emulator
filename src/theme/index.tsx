@@ -299,14 +299,30 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Load custom themes and initial theme
   useEffect(() => {
+    // Synchronously populate from localStorage first
+    try {
+      const raw = localStorage.getItem('enigma_custom_themes');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setCustomThemes(parsed);
+        }
+      }
+    } catch (e) {}
+
     fetch('/api/themes')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) return null;
+        const ct = res.headers.get('content-type');
+        if (!ct || !ct.includes('application/json')) return null;
+        return res.json().catch(() => null);
+      })
       .then(data => {
         if (Array.isArray(data)) {
           setCustomThemes(data);
         }
       })
-      .catch(e => console.error('Failed to fetch themes', e))
+      .catch(() => {})
       .finally(() => {
         isLoaded.current = true;
       });
@@ -392,7 +408,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedTheme)
-      }).catch(e => console.error('Failed to save theme to server', e));
+      }).catch(() => {});
     }
   };
 
@@ -406,7 +422,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     fetch(`/api/themes/${id}`, {
       method: 'DELETE'
-    }).catch(e => console.error('Failed to delete theme from server', e));
+    }).catch(() => {});
   };
 
   const getAvailableThemes = () => {

@@ -51,3 +51,14 @@ export function playRotorClickSound(enabled: boolean = true) {
 export function playPlugConnectSound(enabled: boolean = true) {
   playTone(enabled, { type: 'sine', freqStart: 220, freqEnd: 440, decay: 0.05, gain: 0.2 });
 }
+
+export function playShutterClickSound(enabled: boolean = true, opening: boolean = true) {
+  playTone(enabled, {
+    type: 'triangle',
+    freqStart: opening ? 480 : 360,
+    freqEnd: opening ? 120 : 80,
+    decay: 0.025,
+    gain: 0.12
+  });
+}
+

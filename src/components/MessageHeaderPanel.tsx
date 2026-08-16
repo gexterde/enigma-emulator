@@ -31,6 +31,7 @@ interface MessageHeaderPanelProps {
   handleCopyFullMessage: () => void;
   setShowImportModal: (val: boolean) => void;
   setShowBroadcastModal: (val: boolean) => void;
+  onSendToMorseTrainer?: () => void;
   onApplyRotorGrundstellung?: (newGrundstellung: string) => void;
 }
 
@@ -60,6 +61,7 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
   handleCopyFullMessage,
   setShowImportModal,
   setShowBroadcastModal,
+  onSendToMorseTrainer,
   onApplyRotorGrundstellung,
 }) => {
   const { theme } = useTheme();
@@ -461,6 +463,20 @@ export const MessageHeaderPanel: React.FC<MessageHeaderPanelProps> = ({
               <span className="material-symbols-outlined text-[13px]">rss_feed</span>
               {isCompact ? 'Broadcast' : 'Broadcast Message'}
             </button>
+
+            {onSendToMorseTrainer && (
+              <button
+                type="button"
+                onClick={onSendToMorseTrainer}
+                className={`shrink-0 ${
+                  isCompact ? 'text-[9px] px-2 py-1' : 'text-[10px] px-3 py-1.5'
+                } font-monospaced-technical font-bold uppercase rounded border transition-all flex items-center gap-1 cursor-pointer bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20 shadow-sm`}
+                title="Send ciphertext to Morse Trainer"
+              >
+                <span className="material-symbols-outlined text-[13px]">headphones</span>
+                {isCompact ? 'To Trainer' : 'To Morse Trainer'}
+              </button>
+            )}
           </div>
         </>
       )}

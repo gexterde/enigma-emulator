@@ -80,6 +80,7 @@ interface MachineViewProps {
   senderCallSign?: string;
   onUpdateSenderCallSign?: (newSender: string) => void;
   onBroadcastOverRadio?: (header: string, ciphertext: string) => void;
+  onSendToMorseTrainer?: (header: string, ciphertext: string) => void;
 }
 
 // Authentic Enigma M3/M4 Lampboard/Keyboard Layout (3 rows: 9, 8, 9 keys)
@@ -105,7 +106,8 @@ export const MachineView: React.FC<MachineViewProps> = ({
   onToggleBatteryDrain,
   senderCallSign: propSenderCallSign,
   onUpdateSenderCallSign,
-  onBroadcastOverRadio
+  onBroadcastOverRadio,
+  onSendToMorseTrainer
 }) => {
   const { theme } = useTheme();
   const t = getTheme(theme);
@@ -1137,6 +1139,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
                   onBroadcastOverRadio(getHeaderString(), formatTapeText(cipherTape) || '');
                 }
               }}
+              onSendToMorseTrainer={() => {
+                if (onSendToMorseTrainer) {
+                  onSendToMorseTrainer(getHeaderString(), formatTapeText(cipherTape) || '');
+                }
+              }}
             />
           )}
 
@@ -1762,6 +1769,11 @@ export const MachineView: React.FC<MachineViewProps> = ({
               setShowBroadcastModal={(val) => {
                 if (val && onBroadcastOverRadio) {
                   onBroadcastOverRadio(getHeaderString(), formatTapeText(cipherTape) || '');
+                }
+              }}
+              onSendToMorseTrainer={() => {
+                if (onSendToMorseTrainer) {
+                  onSendToMorseTrainer(getHeaderString(), formatTapeText(cipherTape) || '');
                 }
               }}
               onApplyRotorGrundstellung={(newGrundstellung) => {

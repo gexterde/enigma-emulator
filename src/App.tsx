@@ -474,6 +474,11 @@ export default function App() {
                 setActiveTab('radio');
                 setPendingAutoTransmit(true);
               }}
+              onSendToMorseTrainer={(header, ciphertext) => {
+                setCipherHeader(header);
+                setCipherTape(ciphertext);
+                setActiveTab('morseTrainer');
+              }}
             />
           )}
 
@@ -499,7 +504,15 @@ export default function App() {
 
           {activeTab === 'morseTrainer' && (
             <ProtectedView onRequireLogin={() => setIsLoginOpen(true)} title="Morse Trainer">
-              <MorseTrainer />
+              <MorseTrainer
+                cipherTape={cipherTape}
+                onLoadCiphertextToMachine={(header, ciphertext) => {
+                  setCipherHeader(header);
+                  setCipherTape(ciphertext);
+                  setInputTape('');
+                  setActiveTab('machine');
+                }}
+              />
             </ProtectedView>
           )}
 
