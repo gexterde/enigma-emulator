@@ -127,19 +127,7 @@ export const SimplifiedMorseTrainer: React.FC<SimplifiedMorseTrainerProps> = ({
 
   // Flashlight / Aldis Optical Shutter Lamp state
   const [isTheaterMode, setIsTheaterMode] = useState<boolean>(false);
-  const [showFlashlight, setShowFlashlight] = useState<boolean>(() => {
-    return outputChannel !== 'audio';
-  });
-
-  // When outputChannel is audio, ensure flashlight is turned off and hidden
-  useEffect(() => {
-    if (outputChannel === 'audio') {
-      setShowFlashlight(false);
-      setIsLampFlashing(false);
-    } else {
-      setShowFlashlight(true);
-    }
-  }, [outputChannel, setIsLampFlashing]);
+  const [showFlashlight, setShowFlashlight] = useState<boolean>(true);
 
   // Content type for simplified view
   const [contentType, setContentType] = useState<PracticeContentType>('lesson');
@@ -154,6 +142,7 @@ export const SimplifiedMorseTrainer: React.FC<SimplifiedMorseTrainerProps> = ({
   const [hideFutureChars, setHideFutureChars] = useState<boolean>(true);
   const [showTouchKeypad, setShowTouchKeypad] = useState<boolean>(true);
   const activeCharRef = useRef<HTMLDivElement>(null);
+  const tapeContainerRef = useRef<HTMLDivElement>(null);
 
   // Reverse / Keying practice state
   const [reverseCount, setReverseCount] = useState<number>(10);
@@ -189,12 +178,13 @@ export const SimplifiedMorseTrainer: React.FC<SimplifiedMorseTrainerProps> = ({
 
   // Auto-scroll active char into view
   useEffect(() => {
-    if (copyTypingStatus === 'playing' && activeCharRef.current) {
-      activeCharRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center'
-      });
+    if (copyTypingStatus === 'playing' && activeCharRef.current && tapeContainerRef.current) {
+      const container = tapeContainerRef.current;
+      const target = activeCharRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const scrollLeft = container.scrollLeft + (targetRect.left - containerRect.left) - (containerRect.width / 2) + (targetRect.width / 2);
+      container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
     }
   }, [copyTypingIndex, copyTypingStatus]);
 
@@ -923,30 +913,38 @@ export const SimplifiedMorseTrainer: React.FC<SimplifiedMorseTrainerProps> = ({
           </span>
         </div>
 
-        {/* Channel toggles and Flashlight Button */}
+        {/* Channel toggles, Repeat Audio, and Flashlight Beacon Button */}
         <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono">
-          {/* Flashlight visual toggle */}
+          {/* Quick Repeat Button */}
           <button
             type="button"
-            onClick={() => {
-              if (outputChannel !== 'audio' && showFlashlight) {
-                setOutputChannel('audio');
-                setShowFlashlight(false);
-                setIsLampFlashing(false);
-              } else {
-                setOutputChannel('both');
-                setShowFlashlight(true);
-              }
-            }}
+            onClick={handleReplayCurrentChar}
+            className="px-2.5 py-1 text-xs rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 font-bold transition-all cursor-pointer flex items-center gap-1 shadow-xs active:scale-95"
+            title="Repeat current audio or optical signal (↺)"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {outputChannel === 'audio' ? 'volume_up' : 'replay'}
+            </span>
+            <span>
+              {outputChannel === 'audio' ? 'Repeat Audio' : outputChannel === 'optical' ? 'Repeat Flash' : 'Repeat Signal'}
+            </span>
+          </button>
+
+          {/* Flashlight visual beacon toggle */}
+          <button
+            type="button"
+            onClick={() => setShowFlashlight((prev) => !prev)}
             className={`px-2.5 py-1 text-xs rounded border transition-all cursor-pointer flex items-center gap-1.5 ${
-              outputChannel !== 'audio' && showFlashlight
+              showFlashlight
                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 font-bold shadow-xs'
                 : `${t.panelInner} ${t.borderBase} ${t.textMuted} hover:${t.textPrimary}`
             }`}
-            title={outputChannel !== 'audio' && showFlashlight ? "Turn off and hide flashlight (Audio Only)" : "Turn on flashlight and enable optical beam"}
+            title={showFlashlight ? "Hide Signaling Beacon Panel" : "Show Signaling Beacon Panel"}
           >
-            <span className="material-symbols-outlined text-sm text-amber-400">flare</span>
-            <span>Flashlight {outputChannel !== 'audio' && showFlashlight ? 'Active' : 'Off'}</span>
+            <span className="material-symbols-outlined text-sm text-amber-400">
+              {outputChannel === 'audio' ? 'volume_up' : 'flare'}
+            </span>
+            <span>Signaling Beacon {showFlashlight ? 'Active' : 'Off'}</span>
           </button>
 
           {/* Signaling channel selector */}
@@ -956,15 +954,7 @@ export const SimplifiedMorseTrainer: React.FC<SimplifiedMorseTrainerProps> = ({
               <button
                 key={ch}
                 type="button"
-                onClick={() => {
-                  setOutputChannel(ch);
-                  if (ch === 'audio') {
-                    setShowFlashlight(false);
-                    setIsLampFlashing(false);
-                  } else {
-                    setShowFlashlight(true);
-                  }
-                }}
+                onClick={() => setOutputChannel(ch)}
                 className={`px-2 py-0.5 rounded border transition-colors cursor-pointer capitalize flex items-center gap-1 ${
                   outputChannel === ch
                     ? `${t.bgAccentFaint} ${t.textAccentStrong} ${t.borderAccent} font-bold`
@@ -981,8 +971,8 @@ export const SimplifiedMorseTrainer: React.FC<SimplifiedMorseTrainerProps> = ({
         </div>
       </div>
 
-      {/* ALDIS OPTICAL SHUTTER LAMP / FLASHLIGHT - Hidden when Audio Only is selected */}
-      {outputChannel !== 'audio' && showFlashlight && (
+      {/* SIGNALING BEACON & ALDIS SHUTTER LAMP STATION */}
+      {showFlashlight && (
         <div className="animate-fadeIn sticky top-2 z-40">
           <AldisLamp
             isFlashing={isLampFlashing}
@@ -1065,7 +1055,7 @@ export const SimplifiedMorseTrainer: React.FC<SimplifiedMorseTrainerProps> = ({
           </div>
 
           {/* MAIN TAPE RIBBON DISPLAY */}
-          <div className={`p-4 ${t.panelInner} rounded-lg border ${t.borderBase} overflow-x-auto min-h-[96px] flex items-center shadow-inner`}>
+          <div ref={tapeContainerRef} className={`p-4 ${t.panelInner} rounded-lg border ${t.borderBase} overflow-x-auto min-h-[96px] flex items-center shadow-inner`}>
             {copyTypingStatus === 'idle' ? (
               <div className="w-full text-center py-4 space-y-2">
                 <p className={`text-sm ${t.textMuted} font-mono`}>

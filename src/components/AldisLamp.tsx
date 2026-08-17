@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTheme, getTheme } from '../lib/theme';
 import { OpticalFilterColor, OPTICAL_FILTERS } from '../lib/morseTrainingData';
 import { playShutterClickSound } from '../lib/audio';
@@ -73,21 +74,41 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
     }
   });
 
+  const [visibilityThreshold, setVisibilityThreshold] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('aldis_popup_threshold');
+      return saved !== null ? parseFloat(saved) : 0.3;
+    } catch {
+      return 0.3;
+    }
+  });
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isInView, setIsInView] = useState<boolean>(true);
+  const lensRef = useRef<HTMLDivElement>(null);
+  const [isLensInView, setIsLensInView] = useState<boolean>(true);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsInView(entry.isIntersecting);
+        // Show popup when the lens visibility ratio is below or equal to the adjustable threshold
+        setIsLensInView(entry.isIntersecting && entry.intersectionRatio > visibilityThreshold);
       },
-      { threshold: 0.1 }
+      {
+        threshold: [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+      }
     );
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
+    if (lensRef.current) {
+      observer.observe(lensRef.current);
     }
     return () => observer.disconnect();
-  }, []);
+  }, [visibilityThreshold]);
+
+  const handleThresholdChange = (val: number) => {
+    setVisibilityThreshold(val);
+    try {
+      localStorage.setItem('aldis_popup_threshold', String(val));
+    } catch {}
+  };
 
   // Play realistic mechanical shutter clicks on flash state transition
   const prevFlashingRef = useRef<boolean>(isFlashing);
@@ -152,22 +173,123 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
     if (onManualPulse) onManualPulse(false);
   };
 
+  // When Audio Only is selected, hide flashlight visual optics & portal, rendering only the Audio Buttons bar
+  if (outputChannel === 'audio') {
+    return (
+      <div className={`${t.panelBg} border ${t.borderBase} rounded-lg p-3 sm:p-4 shadow-panel ${t.appTexture} flex flex-wrap items-center justify-between gap-3`}>
+        {/* Audio Station Status */}
+        <div className="flex items-center gap-2.5">
+          <span className="material-symbols-outlined text-amber-500 text-lg">volume_up</span>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider font-bold`}>
+                Morse Audio Station
+              </h3>
+              <span
+                className={`inline-block w-2.5 h-2.5 rounded-full transition-all ${
+                  isFlashing ? 'bg-emerald-400 ring-4 ring-emerald-400/40 animate-pulse' : 'bg-zinc-700'
+                }`}
+                title={isFlashing ? 'Transmitting Audio Sidetone' : 'Audio Idle'}
+              />
+            </div>
+            <div className="text-[10px] font-mono text-zinc-400">
+              {isFlashing ? (activeSym === '-' ? 'DAH ( —— )' : activeSym === '.' ? 'DIT ( • )' : 'AUDIO SIGNAL ACTIVE') : 'AUDIO SIDETONE READY'}
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons: Channel Selector + Repeat Audio + Transmit / Stop */}
+        <div className="flex flex-wrap items-center gap-2 ml-auto">
+          {/* Channel selector */}
+          <div className="flex items-center gap-0.5 bg-black/25 p-0.5 rounded border border-zinc-700/50 text-[10px] font-mono">
+            <button
+              type="button"
+              onClick={() => onOutputChannelChange('optical')}
+              className={`px-2 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${t.textMuted} hover:${t.textPrimary}`}
+              title="Switch to Soundless Flashlight"
+            >
+              <span className="material-symbols-outlined text-[13px]">flare</span>
+              <span>Light</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onOutputChannelChange('both')}
+              className={`px-2 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${t.textMuted} hover:${t.textPrimary}`}
+              title="Switch to Dual Audio + Light Flashlight"
+            >
+              <span className="material-symbols-outlined text-[13px]">sync</span>
+              <span>Dual</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onOutputChannelChange('audio')}
+              className={`px-2 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${t.bgAccentSolid} text-white font-bold shadow-xs`}
+              title="Audio Only Mode (Flashlight Hidden)"
+            >
+              <span className="material-symbols-outlined text-[13px]">volume_up</span>
+              <span>Audio</span>
+            </button>
+          </div>
+
+          {/* Repeat Audio Button */}
+          <button
+            type="button"
+            onClick={handleRepeatClick}
+            className={`px-3 py-1.5 rounded ${t.fontHeader} font-bold text-xs uppercase tracking-wider transition-all border active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40`}
+            title="Repeat Audio Signal (↺)"
+          >
+            <span className="material-symbols-outlined text-sm font-bold">volume_up</span>
+            <span>Repeat Audio</span>
+          </button>
+
+          {/* Transmit / Start / Stop Signal Button */}
+          {onStartStop && (
+            <button
+              type="button"
+              onClick={onStartStop}
+              className={`px-3 py-1.5 rounded ${t.fontHeader} font-bold text-xs uppercase tracking-wider transition-all border active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-md ${
+                isPlaying
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 hover:bg-rose-500/30'
+                  : `${t.bgAccentFaint} ${t.textAccentStrong} ${t.borderAccent}`
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm font-bold">
+                {isPlaying ? 'stop' : 'play_arrow'}
+              </span>
+              <span>{startStopLabel || (isPlaying ? 'Stop Signal' : 'Start Signal')}</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div ref={containerRef} className={`${t.panelBg} border ${t.borderBase} rounded-lg p-3 sm:p-4 shadow-panel ${t.appTexture} relative overflow-hidden space-y-3`}>
         {/* Header Bar - Responsive and Clean */}
       <div className={`pb-2 border-b ${t.borderBase} flex flex-wrap justify-between items-center gap-2`}>
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-amber-500 text-base">flashlight_on</span>
+          <span className="material-symbols-outlined text-amber-500 text-base">
+            {outputChannel === 'audio' ? 'volume_up' : 'flashlight_on'}
+          </span>
           <h3 className={`text-ui-header ${t.fontHeader} ${t.textSecondary} text-xs uppercase tracking-wider`}>
-            Aldis Optical Shutter Lamp
+            {outputChannel === 'audio' ? 'Morse Audio & Signaling Station' : outputChannel === 'both' ? 'Aldis Optical & Audio Station' : 'Aldis Optical Shutter Lamp'}
           </h3>
-          {/* Active Flash indicator dot */}
+          {/* Active Flash / Audio indicator dot */}
           <span
             className={`inline-block w-2.5 h-2.5 rounded-full transition-all ${
-              isFlashing ? 'bg-amber-400 ring-4 ring-amber-400/40 animate-pulse' : 'bg-zinc-700'
+              isFlashing
+                ? outputChannel === 'audio'
+                  ? 'bg-emerald-400 ring-4 ring-emerald-400/40 animate-pulse'
+                  : 'bg-amber-400 ring-4 ring-amber-400/40 animate-pulse'
+                : 'bg-zinc-700'
             }`}
-            title={isFlashing ? 'Transmitting Light Beam' : 'Shutter Closed'}
+            title={
+              isFlashing
+                ? outputChannel === 'audio' ? 'Transmitting Audio Sidetone' : 'Transmitting Light Beam'
+                : outputChannel === 'audio' ? 'Audio Idle' : 'Shutter Closed'
+            }
           />
           <span className="hidden sm:inline-block text-[10px] font-mono text-zinc-500">
             ({opticalWpm} WPM • {ditDurationMs}ms Dit)
@@ -221,15 +343,25 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
             </button>
           </div>
 
-          {/* Repeat Flash Button */}
+          {/* Repeat Button (Dynamic label based on outputChannel) */}
           <button
             type="button"
             onClick={handleRepeatClick}
             className="p-1 sm:px-2 sm:py-1 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 text-xs transition-colors flex items-center gap-1 cursor-pointer font-bold"
-            title="Repeat Flash Signal (↺)"
+            title={
+              outputChannel === 'audio'
+                ? "Repeat Audio Signal (↺)"
+                : outputChannel === 'optical'
+                ? "Repeat Flash Signal (↺)"
+                : "Repeat Audio & Flash Signal (↺)"
+            }
           >
-            <span className="material-symbols-outlined text-[14px]">replay</span>
-            <span className="hidden sm:inline text-[10px] font-mono">Repeat</span>
+            <span className="material-symbols-outlined text-[14px]">
+              {outputChannel === 'audio' ? 'volume_up' : 'replay'}
+            </span>
+            <span className="hidden sm:inline text-[10px] font-mono">
+              {outputChannel === 'audio' ? 'Repeat Audio' : outputChannel === 'optical' ? 'Repeat Flash' : 'Repeat'}
+            </span>
           </button>
 
           {/* Theater Mode Button */}
@@ -275,6 +407,7 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
         {/* Center / Left: Circular Aldis Optical Lens */}
         <div className="flex items-center gap-4 z-10 w-full sm:w-auto justify-center sm:justify-start">
           <div
+            ref={lensRef}
             className={`relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-zinc-700 bg-zinc-950 flex items-center justify-center cursor-pointer shadow-xl transition-all duration-75 shrink-0 ${
               isFlashing ? 'scale-105 ring-4 ring-amber-500/40' : 'hover:border-zinc-500'
             }`}
@@ -389,10 +522,20 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
               type="button"
               onClick={handleRepeatClick}
               className={`px-3 py-2 rounded ${t.fontHeader} font-bold text-xs uppercase tracking-wider transition-all border active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40`}
-              title="Repeat last transmitted flash signal (↺)"
+              title={
+                outputChannel === 'audio'
+                  ? "Repeat last transmitted audio signal (↺)"
+                  : outputChannel === 'optical'
+                  ? "Repeat last transmitted flash signal (↺)"
+                  : "Repeat last transmitted audio & flash signal (↺)"
+              }
             >
-              <span className="material-symbols-outlined text-sm font-bold">replay</span>
-              <span>Repeat Flash</span>
+              <span className="material-symbols-outlined text-sm font-bold">
+                {outputChannel === 'audio' ? 'volume_up' : 'replay'}
+              </span>
+              <span>
+                {outputChannel === 'audio' ? 'Repeat Audio' : outputChannel === 'optical' ? 'Repeat Flash' : 'Repeat Signal'}
+              </span>
             </button>
 
             {onStartStop && (
@@ -446,10 +589,10 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
             <div className="flex flex-wrap gap-1 pt-0.5">
               {[
                 { label: '3 WPM (Slow 400ms)', wpmVal: 3 },
-                { label: '5 WPM (Moderate 240ms)', wpmVal: 5 },
-                { label: '8 WPM (Standard 150ms)', wpmVal: 8 },
-                { label: '12 WPM (Rapid 100ms)', wpmVal: 12 },
-                { label: '16 WPM (Fast 75ms)', wpmVal: 16 }
+                { label: '4 WPM (4 WPM)', wpmVal: 4 },
+                { label: '5 WPM (Human Std 240ms)', wpmVal: 5 },
+                { label: '6 WPM (6 WPM)', wpmVal: 6 },
+                { label: '8 WPM (Optimal 150ms)', wpmVal: 8 }
               ].map((p) => (
                 <button
                   key={p.wpmVal}
@@ -550,7 +693,50 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
           </div>
 
 
-          {/* Visual Morse Training Guidance Tip */}
+          {/* Setting: Floating Flashlight Scroll Visibility Threshold */}
+          <div className="space-y-1.5 pt-2 border-t border-zinc-800">
+            <div className={`flex justify-between items-center text-[11px] font-mono ${t.textMuted}`}>
+              <div className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs text-amber-500">visibility</span>
+                <span className={`font-bold ${t.textPrimary}`}>Floating Flashlight Trigger Sensitivity</span>
+              </div>
+              <span className={`${t.textAccentStrong} font-bold`}>{Math.round(visibilityThreshold * 100)}% visible</span>
+            </div>
+            <p className={`text-[10px] ${t.textMuted}`}>
+              Shows floating popup when main lens visibility drops to or below this ratio:
+            </p>
+            <input
+              type="range"
+              min="0.05"
+              max="0.95"
+              step="0.05"
+              value={visibilityThreshold}
+              onChange={(e) => handleThresholdChange(parseFloat(e.target.value))}
+              className={`w-full h-1.5 ${t.panelInner} rounded cursor-pointer accent-amber-500`}
+            />
+            <div className="flex flex-wrap items-center justify-between gap-1 pt-0.5">
+              {[
+                { label: '10% (Nearly Gone)', val: 0.1 },
+                { label: '30% (Default)', val: 0.3 },
+                { label: '50% (Half Visible)', val: 0.5 },
+                { label: '75% (Early)', val: 0.75 },
+                { label: '90% (Instant)', val: 0.9 }
+              ].map((preset) => (
+                <button
+                  key={preset.val}
+                  type="button"
+                  onClick={() => handleThresholdChange(preset.val)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-all cursor-pointer ${
+                    Math.abs(visibilityThreshold - preset.val) < 0.02
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 font-bold'
+                      : `${t.panelBg} ${t.borderBase} ${t.textMuted} hover:${t.textPrimary}`
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className={`text-[11px] ${t.textSecondary} leading-relaxed pt-1 border-t ${t.borderBase}`}>
             <span className={`font-bold ${t.textAccent} font-mono uppercase mr-1`}>Visual Telegraphy Tip:</span>
             Human visual shutter perception requires lower frequencies than acoustic CW. <strong>3–8 WPM</strong> allows the eye to cleanly distinguish Dits from Dahs without visual persistence fatigue.
@@ -667,7 +853,7 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
             <div className="h-4 w-px bg-zinc-700 mx-1" />
 
             <span className="text-xs font-mono text-zinc-400">Flash Speed:</span>
-            {[3, 5, 8, 12].map((s) => (
+            {[3, 4, 5, 6, 8].map((s) => (
               <button
                 key={s}
                 type="button"
@@ -684,8 +870,8 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
       )}
       </div>
 
-      {/* Floating Popup Flashlight Bit (Always shown, without the letter) */}
-      {!popupDismissed && (
+      {/* Floating Popup Flashlight Bit (Shown when main flashlight circle is 30% or less visible) */}
+      {!popupDismissed && !isLensInView && typeof document !== 'undefined' && createPortal(
         <div className="fixed top-4 right-4 z-[9999] p-2.5 sm:p-3 rounded-2xl shadow-2xl flex items-center gap-2.5 bg-zinc-950/95 border border-amber-500/50 backdrop-blur-md transition-all text-white font-mono animate-fadeIn select-none">
           {/* Glowing Flashlight Lens */}
           <div className="relative flex items-center justify-center shrink-0">
@@ -721,10 +907,20 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
               type="button"
               onClick={handleRepeatClick}
               className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition-all flex items-center gap-1 shadow-md cursor-pointer active:scale-95"
-              title="Repeat Flash Signal (↺)"
+              title={
+                outputChannel === 'audio'
+                  ? "Repeat Audio Signal (↺)"
+                  : outputChannel === 'optical'
+                  ? "Repeat Flash Signal (↺)"
+                  : "Repeat Audio & Flash Signal (↺)"
+              }
             >
-              <span className="material-symbols-outlined text-sm font-bold">replay</span>
-              <span className="text-[11px] uppercase tracking-wider font-bold">Repeat</span>
+              <span className="material-symbols-outlined text-sm font-bold">
+                {outputChannel === 'audio' ? 'volume_up' : 'replay'}
+              </span>
+              <span className="text-[11px] uppercase tracking-wider font-bold">
+                {outputChannel === 'audio' ? 'Repeat Audio' : outputChannel === 'optical' ? 'Repeat Flash' : 'Repeat'}
+              </span>
             </button>
 
             {onStartStop && (
@@ -742,11 +938,11 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
               </button>
             )}
 
-            {!isInView && (
+            {!isLensInView && (
               <button
                 type="button"
                 onClick={() => {
-                  containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  lensRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }}
                 className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors cursor-pointer"
                 title="Scroll to Flashlight"
@@ -764,7 +960,8 @@ export const AldisLamp: React.FC<AldisLampProps> = ({
               <span className="material-symbols-outlined text-sm">close</span>
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

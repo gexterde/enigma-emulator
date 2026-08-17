@@ -43,7 +43,7 @@ class MorsePlayer {
   
   private effWpm: number = 20;
   private charWpm: number = 20;
-  private opticalWpm: number = 6;
+  private opticalWpm: number = 5;
   private frequency: number = 600;
   private noiseLevel: number = 0; // 0 to 1
   private volume: number = 1.0; // 0 to 1
@@ -67,7 +67,7 @@ class MorsePlayer {
     wordSpaceMultiplier: number = 2.0,
     edgeMs: number = 10,
     outputChannel: OutputChannel = 'both',
-    opticalWpm: number = 6
+    opticalWpm: number = 5
   ) {
     this.effWpm = effWpm;
     this.charWpm = charWpm;
@@ -477,7 +477,7 @@ export const MorseTrainer: React.FC<MorseTrainerProps> = ({ cipherTape, onLoadCi
         if (parsed.opticalWpm !== undefined) return parsed.opticalWpm;
       }
     } catch (e) {}
-    return 6;
+    return 5;
   });
   const [showTransmittedChar, setShowTransmittedChar] = useState<boolean>(() => {
     try {
@@ -650,15 +650,17 @@ export const MorseTrainer: React.FC<MorseTrainerProps> = ({ cipherTape, onLoadCi
   const batchInputRef = useRef<HTMLTextAreaElement>(null);
   const [hideFutureChars, setHideFutureChars] = useState<boolean>(true);
   const activeCharRef = useRef<HTMLDivElement>(null);
+  const tapeContainerRef = useRef<HTMLDivElement>(null);
 
   // Smooth horizontal centering of active character on ticker tape ribbon
   useEffect(() => {
-    if (copyTypingStatus === 'playing' && activeCharRef.current) {
-      activeCharRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center'
-      });
+    if (copyTypingStatus === 'playing' && activeCharRef.current && tapeContainerRef.current) {
+      const container = tapeContainerRef.current;
+      const target = activeCharRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const scrollLeft = container.scrollLeft + (targetRect.left - containerRect.left) - (containerRect.width / 2) + (targetRect.width / 2);
+      container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
     }
   }, [copyTypingIndex, copyTypingStatus]);
 
@@ -2121,7 +2123,7 @@ export const MorseTrainer: React.FC<MorseTrainerProps> = ({ cipherTape, onLoadCi
                 {/* Sub-controls when Optical or Dual is selected */}
                 {outputChannel !== 'audio' && (
                   <div className={`p-2.5 rounded border ${t.borderBase} ${t.panelInner} space-y-2.5 mt-2`}>
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <div className="flex justify-between items-center text-[10px] font-mono">
                         <span className={`font-bold ${t.textPrimary}`}>Flash Frequency (Optical WPM):</span>
                         <span className={`${t.textAccentStrong} font-bold`}>{opticalWpm} WPM ({Math.round(1200 / opticalWpm)}ms Dit)</span>
@@ -2135,11 +2137,31 @@ export const MorseTrainer: React.FC<MorseTrainerProps> = ({ cipherTape, onLoadCi
                         onChange={(e) => setOpticalWpm(parseInt(e.target.value, 10))}
                         className={`w-full h-1.5 ${t.panelBg} rounded cursor-pointer accent-amber-500`}
                       />
-                      <div className="flex justify-between text-[9px] text-zinc-500 font-mono">
-                        <span>2 WPM (Slow 600ms)</span>
-                        <span>6 WPM (Std 200ms)</span>
-                        <span>20 WPM (Fast 60ms)</span>
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {[
+                          { label: '3 WPM (Slow 400ms)', wpmVal: 3 },
+                          { label: '4 WPM (4 WPM)', wpmVal: 4 },
+                          { label: '5 WPM (Human Std 240ms)', wpmVal: 5 },
+                          { label: '6 WPM (6 WPM)', wpmVal: 6 },
+                          { label: '8 WPM (Optimal 150ms)', wpmVal: 8 }
+                        ].map((p) => (
+                          <button
+                            key={p.wpmVal}
+                            type="button"
+                            onClick={() => setOpticalWpm(p.wpmVal)}
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-mono border transition-all cursor-pointer ${
+                              opticalWpm === p.wpmVal
+                                ? `${t.bgAccentFaint} ${t.textAccentStrong} ${t.borderAccent} font-bold shadow-xs`
+                                : `${t.panelBg} ${t.borderBase} ${t.textMuted} hover:${t.textPrimary}`
+                            }`}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
                       </div>
+                      <p className={`text-[9.5px] ${t.textMuted} leading-tight pt-0.5`}>
+                        <span className="text-amber-500 font-bold">Visual Perception Rule:</span> Human eye & shutter perception requires lower frequencies than acoustic CW. The <strong>3–8 WPM</strong> range prevents visual persistence blur.
+                      </p>
                     </div>
 
                     <div className="flex items-center justify-between pt-1 border-t border-zinc-800">
@@ -2423,11 +2445,10 @@ export const MorseTrainer: React.FC<MorseTrainerProps> = ({ cipherTape, onLoadCi
             </div>
           </div>
 
-          {/* Aldis Optical Shutter Lamp - Rendered only when Light or Dual is active */}
-          {outputChannel !== 'audio' && (
-            <div className="sticky top-2 z-40 transition-all">
-              <AldisLamp
-                isFlashing={isLampFlashing}
+          {/* Signaling Beacon & Optical Shutter Lamp Station */}
+          <div className="transition-all">
+            <AldisLamp
+              isFlashing={isLampFlashing}
               flashSymbol={flashSymbol}
               flashChar={flashChar}
               filter={opticalFilter}
@@ -2473,8 +2494,7 @@ export const MorseTrainer: React.FC<MorseTrainerProps> = ({ cipherTape, onLoadCi
               }
               onRepeat={handleReplayCurrentChar}
             />
-            </div>
-          )}
+          </div>
 
           {/* CLASSIC BATCH INTERACTION AREA */}
           {practiceMode === 'batch' && (
@@ -2674,7 +2694,7 @@ export const MorseTrainer: React.FC<MorseTrainerProps> = ({ cipherTape, onLoadCi
                 <div className="space-y-4">
                   
                   {/* Glowing letter box tape with auto-centering horizontal scroller */}
-                  <div className={`${t.panelInner} border ${t.borderBase} shadow-inner rounded-md p-4 overflow-x-auto scroll-smooth`}>
+                  <div ref={tapeContainerRef} className={`${t.panelInner} border ${t.borderBase} shadow-inner rounded-md p-4 overflow-x-auto scroll-smooth`}>
                     <div className="flex gap-2 justify-start py-2 px-[45%] min-w-max">
                       {targetSequence.split('').map((char, idx) => {
                         const isCurrent = idx === copyTypingIndex;

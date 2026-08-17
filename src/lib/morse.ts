@@ -45,6 +45,13 @@ export const MORSE_MAP: Record<string, string> = {
   '-': '-....-',
   '(': '-.--.',
   ')': '-.--.-',
+  'IMI': '..--..',
+  'VE': '...-.',
+  'AR': '.-.-.',
+  'SK': '...-.-',
+  'BT': '-...-',
+  'AS': '.-...',
+  'HH': '........',
   ' ': '/'
 };
 
@@ -73,9 +80,23 @@ export const MORSE_GROUPS: MorseGroup[] = [
     gridCols: 'grid-cols-3 sm:grid-cols-5 md:grid-cols-10',
   },
   {
+    title: 'Procedural Signals & Signs (Prosigns)',
+    icon: 'cell_tower',
+    items: [
+      ['IMI', '..--..'],   // Repeat Sign / Say Again
+      ['VE', '...-.'],     // Visual Sign / Verified
+      ['AR', '.-.-.'],     // End of Message
+      ['SK', '...-.-'],    // End of Work / Final Sign
+      ['BT', '-...-'],     // Break / Pause
+      ['AS', '.-...'],     // Wait Sign
+      ['HH', '........'],  // Error Sign
+    ],
+    gridCols: 'grid-cols-2 sm:grid-cols-4 md:grid-cols-7',
+  },
+  {
     title: 'Special Characters & Punctuation',
     icon: 'notes',
-    items: Object.entries(MORSE_MAP).filter(([char]) => !/^[A-Z0-9 ]$/.test(char)),
+    items: Object.entries(MORSE_MAP).filter(([char]) => !/^[A-Z0-9 ]$/.test(char) && !['IMI', 'VE', 'AR', 'SK', 'BT', 'AS', 'HH'].includes(char)),
     gridCols: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-7',
   },
 ];
